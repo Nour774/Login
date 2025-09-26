@@ -6,65 +6,65 @@
   <title>تسجيل الدخول</title>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
+      
     body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #6a0dad, #b5173a, #ffffff);
-      background-size: 300% 300%;
-      animation: gradientMove 8s ease infinite;
-      color: #2b0a3d;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      font-family: "Tahoma", sans-serif;
+      background: linear-gradient(135deg, #6a0572, #b5173a);
       margin: 0;
-    }
-
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
     }
 
     .container {
-      background: rgba(255, 255, 255, 0.9);
-      padding: 35px;
-      border-radius: 20px;
-      box-shadow: 0 0 25px rgba(186, 0, 99, 0.6);
-      width: 380px;
+      background: #fff0f6;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.3);
+      width: 320px;
       text-align: center;
-      border: 2px solid #b5173a;
-      backdrop-filter: blur(10px);
     }
 
     h2 {
       margin-bottom: 20px;
-      color: #6a0dad;
-      font-weight: bold;
-      text-shadow: 1px 1px 4px #b5173a;
+      color: #6a0572;
+      text-shadow: 1px 1px 3px #b5173a;
     }
 
-    input {
+    input, button {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
-      border-radius: 10px;
-      border: 2px solid #6a0dad;
+      border-radius: 8px;
+      border: 2px solid #6a0572;
       outline: none;
-      transition: 0.3s;
+      font-size: 14px;
+      box-sizing: border-box;
     }
 
     input:focus {
       border-color: #b5173a;
-      box-shadow: 0 0 8px #b5173a;
     }
 
-    .password-wrapper {
-      position: relative;
-      width: 100%;
+    button {
+      background: linear-gradient(135deg, #b5173a, #6a0572);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      transition: 0.3s;
     }
 
-    .password-wrapper input {
-      padding-right: 40px;
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    button:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: scale(1.02);
     }
 
     .toggle-password {
@@ -77,56 +77,40 @@
       font-size: 18px;
     }
 
-    button {
+    .password-wrapper {
+      position: relative;
       width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      background: linear-gradient(90deg, #b5173a, #6a0dad);
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      box-shadow: 0 4px 10px rgba(106, 13, 173, 0.4);
     }
 
-    button:hover:enabled {
-      background: linear-gradient(90deg, #6a0dad, #b5173a);
-      box-shadow: 0 6px 15px rgba(181, 23, 58, 0.6);
-    }
-
-    button:disabled {
-      background: #aaa;
-      cursor: not-allowed;
-      box-shadow: none;
+    .password-wrapper input {
+      width: 100%;
+      padding-right: 35px;
+      box-sizing: border-box;
     }
 
     .switch {
       margin-top: 15px;
-      color: #6a0dad;
-      cursor: pointer;
-      font-size: 14px;
-      text-decoration: underline;
+    }
+
+    .switch a {
+      color: #6a0572;
       font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .switch a:hover {
+      text-decoration: underline;
     }
 
     .error {
-      color: #b5173a;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-
-    .success {
-      color: #4caf50;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-
-    .hidden {
+      color: red;
+      font-size: 13px;
+      margin-top: -5px;
+      margin-bottom: 10px;
       display: none;
     }
+    
   </style>
 </head>
 <body>
