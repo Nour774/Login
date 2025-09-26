@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>تسجيل دخول / إنشاء حساب</title>
+
+  <!-- Supabase JS (CDN) -->
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+
+  <style>
+    :root{
+      --bg1:#12131a; --card:#222433; --accent:#b0884a; --btn:#4cafef;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+      font-family:tahoma, sans-serif; background:linear-gradient(135deg,#0f1220,#17172b);
+      color:#fff; padding:20px;
+    }
+    .card{
+      width:360px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.6);
+    }
+    h2{margin:0 0 14px 0; font-size:20px; color:var(--accent)}
+    input{width:100%; padding:10px 12px; margin:8px 0; border-radius:8px; border:0; outline:none;
+           background:rgba(255,255,255,0.02); color:#fff}
+    button{width:100%; padding:10px; border-radius:8px; border:0; cursor:pointer; background:var(--btn); color:#031022; font-weight:600}
+    .muted{font-size:13px; color:rgba(255,255,255,0.65); margin-top:10px; text-align:center}
+    .link{color:var(--btn); cursor:pointer; text-decoration:underline}
+    .msg{margin-top:10px; font-size:14px}
+    .error{color:#ff7070}
+    .success{color:#9be79b}
+    .small-row{display:flex; gap:8px; align-items:center}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2 id="title">تسجيل الدخول</h2>
+
+    <!-- Login Form -->
+    <form id="login-form">
+      <input id="login-email" type="email" placeholder="البريد الإلكتروني" required />
+      <input id="login-password" type="password" placeholder="كلمة المرور" required />
+      <button type="submit">دخول</button>
+      <div class="msg" id="login-msg"></div>
+    </form>
+
+    <!-- Signup Form (مخفي افتراضياً) -->
+    <form id="signup-form" style="display:none;">
+      <input id="su-username" type="text" placeholder="اسم المستخدم (اختياري)" />
+      <input id="su-fullname" type="text" placeholder="الاسم الكامل (اختياري)" />
+      <input id="su-email" type="email" placeholder="البريد الإلكتروني" required />
+      <input id="su-password" type="password" placeholder="كلمة المرور" required />
+      <button type="submit">إنشاء حساب</button>
+      <div class="msg" id="signup-msg"></div>
+    </form>
+
+    <div class="muted small-row" style="justify-content:center; margin-top:14px;">
+      <div id="switch-text">لا تملك حسابًا؟</div>
+      <div style="width:6px"></div>
+      <div id="switch-link" class="link">إنشاء حساب</div>
+    </div>
+  </div>
+
+  <script>
+    // ======== ضع هنا رابط مشروعك و anon key ========
+    const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co"; // مثال: رابط مشروعك
+    const SUPABASE_KEY = "ضع_هنا_المفتاح_العمومي_anon";               // ضع الـ anon public key هنا
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // ================================================
+
+    // عناصر DOM
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const switchLink = document.getElementById('switch-link');
+    const title = document.getElementById('title');
+    const loginMsg = document.getElementById('login-msg');
+    const signupMsg = document.getElementById('signup-msg');
+
+    // دوال عرض/إخفاء بسيطة
+    function showLogin(){
+      loginForm.style.display = 'block';
+      signupForm.style.display = 'none';
+      title.textContent = 'تسجيل الدخول';
+      switchLink.textContent = 'إنشاء حساب';
+      loginMsg.textContent = '';
+      signupMsg.textContent = '';
+    }
+    function showSignup(){
+      loginForm.style.display = 'none';
+      signupForm.style.display = 'block';
+      title.textContent = 'إنشاء حساب جديد';
+      switchLink.textContent = 'لدي حساب بالفعل';
+      loginMsg.textContent = '';
+      signupMsg.textContent = '';
+    }
+
+    // ربط الرابط (الزر)
+    switchLink.addEventListener('click', () => {
+      if (loginForm.style.display === 'none') showLogin();
+      else showSignup();
+    });
+
+    // تسجيل الدخول
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginMsg.className = 'msg'; loginMsg.textContent = '...جارٍ تسجيل الدخول';
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          loginMsg.className = 'msg error'; loginMsg.textContent = 'خطأ: ' + error.message;
+          return;
+        }
+        // نجاح
+        loginMsg.className = 'msg success'; loginMsg.textContent = 'تم تسجيل الدخول — نقل...';
+        // إعادة التوجيه
+        window.location.href = 'index2.html';
+      } catch (err){
+        loginMsg.className = 'msg error'; loginMsg.textContent = 'خطأ غير متوقع';
+      }
+    });
+
+    // إنشاء حساب + إضافة صف profile
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      signupMsg.className = 'msg'; signupMsg.textContent = '...جارٍ الإنشاء';
+      const email = document.getElementById('su-email').value.trim();
+      const password = document.getElementById('su-password').value;
+      const username = document.getElementById('su-username').value.trim() || null;
+      const fullName = document.getElementById('su-fullname').value.trim() || null;
+
+      try {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) {
+          signupMsg.className = 'msg error'; signupMsg.textContent = 'خطأ: ' + error.message;
+          return;
+        }
+
+        // supabase قد يرجع user داخل data.user
+        const user = data && data.user ? data.user : null;
+        if (user && user.id) {
+          // أدخل صف في جدول profiles; لو لم تنشئ جدول profiles، احذف هذا المقطع
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([{ id: user.id, username: username, full_name: fullName }]);
+          if (profileError) {
+            // لا نوقف العملية على أخطاء الprofile لكن نظهرها
+            signupMsg.className = 'msg error';
+            signupMsg.textContent = 'تم التسجيل لكن حدث خطأ في إنشاء البروفايل: ' + profileError.message;
+            return;
+          }
+        }
+
+        signupMsg.className = 'msg success';
+        signupMsg.textContent = 'تم إنشاء الحساب. توجه الآن...';
+        // يمكنك توجيه المستخدم مباشرة أو الانتظار لتأكيد البريد حسب إعداداتك
+        window.location.href = 'index2.html';
+      } catch (err) {
+        signupMsg.className = 'msg error';
+        signupMsg.textContent = 'خطأ غير متوقع';
+      }
+    });
+
+    // عند التحميل: تأكد إننا في وضع تسجيل دخول افتراضياً
+    showLogin();
+  </script>
+</body>
+        </html>
