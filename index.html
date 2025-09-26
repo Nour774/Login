@@ -23,6 +23,7 @@
       box-shadow: 0 0 15px rgba(0,0,0,0.5);
       width: 350px;
       text-align: center;
+      transition: 0.3s;
     }
     h2 {
       margin-bottom: 20px;
@@ -36,8 +37,20 @@
       border: none;
       outline: none;
     }
+    .password-container {
+      position: relative;
+    }
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 14px;
+      color: #aaa;
+    }
     button {
-      width: 48%;
+      width: 100%;
       padding: 12px;
       border: none;
       border-radius: 8px;
@@ -46,14 +59,20 @@
       font-weight: bold;
       cursor: pointer;
       transition: 0.3s;
-      margin: 5px 1%;
+      margin-top: 10px;
     }
     button:hover {
       background: #369ddf;
     }
-    button:disabled {
-      background: gray;
-      cursor: not-allowed;
+    .switch {
+      margin-top: 15px;
+      color: #bbb;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .switch:hover {
+      color: #fff;
+      text-decoration: underline;
     }
     .error {
       color: #ff6b6b;
@@ -63,32 +82,67 @@
       color: #4caf50;
       margin-top: 10px;
     }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>تسجيل الدخول / إنشاء حساب</h2>
-    <input type="email" id="email" placeholder="البريد الإلكتروني" required>
-    <input type="password" id="password" placeholder="كلمة المرور" required>
-    <input type="text" id="username" placeholder="اسم المستخدم" required>
-    <div>
-      <button id="loginButton" onclick="login()">دخول</button>
-      <button id="signupButton" onclick="signup()">إنشاء حساب</button>
+    <!-- تسجيل الدخول -->
+    <div id="loginForm">
+      <h2>تسجيل الدخول</h2>
+      <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required>
+      <div class="password-container">
+        <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
+        <span class="toggle-password" onclick="togglePassword('loginPassword', this)">👁️</span>
+      </div>
+      <button onclick="login()">دخول</button>
+      <div class="switch" onclick="showSignup()">إنشاء حساب جديد</div>
+      <div id="loginMessage"></div>
     </div>
-    <div id="message"></div>
+
+    <!-- إنشاء حساب -->
+    <div id="signupForm" class="hidden">
+      <h2>إنشاء حساب</h2>
+      <input type="text" id="signupUsername" placeholder="اسم المستخدم" required>
+      <input type="email" id="signupEmail" placeholder="البريد الإلكتروني" required>
+      <div class="password-container">
+        <input type="password" id="signupPassword" placeholder="كلمة المرور" required>
+        <span class="toggle-password" onclick="togglePassword('signupPassword', this)">👁️</span>
+      </div>
+      <button onclick="signup()">تسجيل</button>
+      <div class="switch" onclick="showLogin()">لديك حساب؟ تسجيل الدخول</div>
+      <div id="signupMessage"></div>
+    </div>
   </div>
 
   <script>
     // إعداد Supabase
-    const supabaseUrl = "https://YOUR_PROJECT_ID.supabase.co"; // ضع رابط مشروعك
-    const supabaseKey = "YOUR_ANON_PUBLIC_KEY"; // ضع المفتاح العمومي
+    const supabaseUrl = "https://YOUR_PROJECT_ID.supabase.co"; // استبدل بـ URL مشروعك
+    const supabaseKey = "YOUR_ANON_PUBLIC_KEY"; // المفتاح العمومي
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // دالة عرض الرسائل
-    function showMessage(msg, type = "error") {
-      const el = document.getElementById("message");
-      el.className = type;
-      el.textContent = msg;
+    // تبديل النماذج
+    function showSignup() {
+      document.getElementById("loginForm").classList.add("hidden");
+      document.getElementById("signupForm").classList.remove("hidden");
+    }
+    function showLogin() {
+      document.getElementById("signupForm").classList.add("hidden");
+      document.getElementById("loginForm").classList.remove("hidden");
+    }
+
+    // إظهار / إخفاء كلمة المرور
+    function togglePassword(fieldId, el) {
+      const input = document.getElementById(fieldId);
+      if (input.type === "password") {
+        input.type = "text";
+        el.textContent = "🙈";
+      } else {
+        input.type = "password";
+        el.textContent = "👁️";
+      }
     }
 
     // تحقق من صيغة البريد
@@ -99,16 +153,19 @@
 
     // تسجيل الدخول
     async function login() {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+      const msg = document.getElementById("loginMessage");
 
       if (!email || !password) {
-        showMessage("يجب إدخال البريد وكلمة المرور");
+        msg.textContent = "يجب إدخال البريد وكلمة المرور";
+        msg.className = "error";
         return;
       }
 
       if (!isValidEmail(email)) {
-        showMessage("صيغة البريد الإلكتروني غير صحيحة");
+        msg.textContent = "صيغة البريد الإلكتروني غير صحيحة";
+        msg.className = "error";
         return;
       }
 
@@ -118,31 +175,37 @@
       });
 
       if (error) {
-        showMessage("خطأ: البريد الإلكتروني أو كلمة المرور غير صحيحة");
+        msg.textContent = "خطأ: البريد أو كلمة المرور غير صحيحة";
+        msg.className = "error";
       } else {
-        showMessage("تم تسجيل الدخول بنجاح 🎉", "success");
+        msg.textContent = "تم تسجيل الدخول بنجاح 🎉";
+        msg.className = "success";
         window.location.href = "index2.html";
       }
     }
 
-    // إنشاء حساب جديد
+    // إنشاء حساب
     async function signup() {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
-      const username = document.getElementById("username").value.trim();
+      const email = document.getElementById("signupEmail").value.trim();
+      const password = document.getElementById("signupPassword").value;
+      const username = document.getElementById("signupUsername").value.trim();
+      const msg = document.getElementById("signupMessage");
 
       if (!email || !password || !username) {
-        showMessage("كل الحقول مطلوبة (البريد، كلمة المرور، اسم المستخدم)");
+        msg.textContent = "كل الحقول مطلوبة";
+        msg.className = "error";
         return;
       }
 
       if (!isValidEmail(email)) {
-        showMessage("صيغة البريد الإلكتروني غير صحيحة");
+        msg.textContent = "صيغة البريد الإلكتروني غير صحيحة";
+        msg.className = "error";
         return;
       }
 
       if (password.length < 6) {
-        showMessage("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+        msg.textContent = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+        msg.className = "error";
         return;
       }
 
@@ -152,29 +215,20 @@
       });
 
       if (error) {
-        showMessage("خطأ في إنشاء الحساب: " + error.message);
+        msg.textContent = "خطأ في إنشاء الحساب: " + error.message;
+        msg.className = "error";
         return;
       }
 
       const user = data.user;
-
-      // إنشاء صف في Profiles
-      const { error: profileError } = await supabase.from("Profiles").insert([
-        {
-          id: user.id,
-          username: username,
-          full_name: null,
-          avatar_url: null
-        }
+      await supabase.from("Profiles").insert([
+        { id: user.id, username: username }
       ]);
 
-      if (profileError) {
-        showMessage("خطأ في إنشاء البروفايل: " + profileError.message);
-      } else {
-        showMessage("تم إنشاء الحساب بنجاح 🎉", "success");
-        window.location.href = "index2.html";
-      }
+      msg.textContent = "تم إنشاء الحساب بنجاح 🎉";
+      msg.className = "success";
+      window.location.href = "index2.html";
     }
   </script>
 </body>
-</html>
+  </html>
