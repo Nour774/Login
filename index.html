@@ -6,7 +6,7 @@
   <title>تسجيل الدخول</title>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
-      
+     
     body {
       font-family: "Tahoma", sans-serif;
       background: linear-gradient(135deg, #6a0572, #b5173a);
@@ -67,16 +67,6 @@
       transform: scale(1.02);
     }
 
-    .toggle-password {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      color: #b5173a;
-      font-size: 18px;
-    }
-
     .password-wrapper {
       position: relative;
       width: 100%;
@@ -85,7 +75,16 @@
     .password-wrapper input {
       width: 100%;
       padding-right: 35px;
-      box-sizing: border-box;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #b5173a;
+      font-size: 18px;
     }
 
     .switch {
@@ -108,6 +107,10 @@
       font-size: 13px;
       margin-top: -5px;
       margin-bottom: 10px;
+      display: none;
+    }
+
+    #username {
       display: none;
     }
     
