@@ -5,22 +5,41 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>تسجيل الدخول / إنشاء حساب</title>
   <style>
-    body { font-family: "Tahoma", sans-serif;
+    body {
+      font-family: "Tahoma", sans-serif;
       background: linear-gradient(135deg,#6a0572,#b5173a);
-      margin:0;display:flex;align-items:center;justify-content:center;height:100vh;}
-    .container{background:#fff0f6;padding:30px;border-radius:15px;box-shadow:0 4px 25px rgba(0,0,0,0.3);width:320px;text-align:center;position:relative;}
-    h2{margin-bottom:20px;color:#6a0572;text-shadow:1px 1px 3px #b5173a;}
-    input,button{width:100%;padding:12px;margin:10px 0;border-radius:8px;border:2px solid #6a0572;box-sizing:border-box;font-size:14px}
-    input:focus{border-color:#b5173a}
-    button{background:linear-gradient(135deg,#b5173a,#6a0572);color:#fff;border:none;cursor:pointer;font-weight:700;transition:.25s}
+      margin:0;display:flex;align-items:center;justify-content:center;height:100vh;
+    }
+    .container {
+      background:#fff0f6;padding:30px;border-radius:15px;
+      box-shadow:0 4px 25px rgba(0,0,0,0.3);
+      width:320px;text-align:center;position:relative;
+    }
+    h2 { margin-bottom:20px;color:#6a0572;text-shadow:1px 1px 3px #b5173a; }
+    input,button {
+      width:100%;padding:12px;margin:10px 0;border-radius:8px;
+      border:2px solid #6a0572;box-sizing:border-box;font-size:14px
+    }
+    input:focus { border-color:#b5173a }
+    button {
+      background:linear-gradient(135deg,#b5173a,#6a0572);
+      color:#fff;border:none;cursor:pointer;font-weight:700;transition:.25s
+    }
     button:disabled{background:#ccc;cursor:not-allowed}
     .password-wrapper{position:relative}
     .password-wrapper input{padding-right:35px}
-    .toggle-password{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#b5173a;font-size:18px}
+    .toggle-password{
+      position:absolute;right:10px;top:50%;
+      transform:translateY(-50%);cursor:pointer;
+      color:#b5173a;font-size:18px;user-select:none;
+    }
     .switch{margin-top:12px;font-size:14px}
     .switch span{color:#6a0572}
     .switch a{color:#6a0572;font-weight:700;text-decoration:none;margin-inline-start:6px;cursor:pointer}
-    .alert{position:absolute;top:-56px;left:50%;transform:translateX(-50%);padding:10px 14px;border-radius:8px;font-weight:700;display:none;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+    .alert{position:absolute;top:-56px;left:50%;transform:translateX(-50%);
+      padding:10px 14px;border-radius:8px;font-weight:700;display:none;
+      box-shadow:0 2px 8px rgba(0,0,0,.2)
+    }
     .alert.success{background:#4CAF50;color:#fff}
     .alert.error{background:#f44336;color:#fff}
     #username{display:none}
@@ -48,18 +67,14 @@
     </div>
   </div>
 
-  <!-- Supabase -->
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <script>
-    // --- إعداد Supabase (استبدل المفتاح إذا لزم)
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const supabaseKey = "SUPABASE_CLIENT_API_KEY";
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-    // -----------------------------------------------
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    let isLogin = true; // true => شاشة تسجيل الدخول
+    let isLogin = true;
 
-    // عناصر ثابتة
     const alertBox = document.getElementById('alert-box');
     const switchLink = document.getElementById('switch-link');
     const switchLabel = document.getElementById('switch-label');
@@ -68,6 +83,7 @@
     const submitBtn = document.getElementById('submit-btn');
     const authForm = document.getElementById('auth-form');
     const togglePass = document.getElementById('toggle-pass');
+    const passwordInput = document.getElementById('password');
 
     function showAlert(msg, type='error') {
       alertBox.textContent = msg;
@@ -77,35 +93,37 @@
       alertBox._t = setTimeout(()=> alertBox.style.display = 'none', 3200);
     }
 
-    // منع السلوك الافتراضي للرابط ثم استدعاء التبديل
+    // تبديل كلمة المرور
+    togglePass.addEventListener('click', function(){
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        togglePass.textContent = '🙈';
+      } else {
+        passwordInput.type = 'password';
+        togglePass.textContent = '👁';
+      }
+    });
+
+    // تبديل الشاشة
     switchLink.addEventListener('click', function(e){
       e.preventDefault();
       toggleForm();
     });
 
-    // أيقونة إظهار/إخفاء كلمة المرور
-    togglePass.addEventListener('click', function(){ 
-      const p = document.getElementById('password');
-      p.type = p.type === 'password' ? 'text' : 'password';
-    });
-
-    // تبديل الحالة — نغيّر الحالة أولاً ثم نحدّث الواجهة، بدون innerHTML
     function toggleForm() {
       authForm.reset();
       submitBtn.disabled = false;
       alertBox.style.display = 'none';
 
-      isLogin = !isLogin; // قلب الحالة
+      isLogin = !isLogin;
 
       if (!isLogin) {
-        // وضع إنشاء حساب
         formTitle.textContent = 'إنشاء حساب جديد';
         usernameInput.style.display = 'block';
         submitBtn.textContent = 'تسجيل';
         switchLabel.textContent = 'لديك حساب؟';
         switchLink.textContent = 'تسجيل الدخول';
       } else {
-        // وضع تسجيل دخول
         formTitle.textContent = 'تسجيل الدخول';
         usernameInput.style.display = 'none';
         submitBtn.textContent = 'دخول';
@@ -114,7 +132,7 @@
       }
     }
 
-    // تأكد أن الواجهة متطابقة مع الحالة الابتدائية
+    // تهيئة
     (function initUI(){
       if (isLogin) {
         usernameInput.style.display = 'none';
@@ -125,12 +143,12 @@
       }
     })();
 
-    // معالجة الفورم (Supabase logic كما قبل)
+    // معالجة تسجيل الدخول/التسجيل
     authForm.addEventListener('submit', async function(e){
       e.preventDefault();
       const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const username = document.getElementById('username').value.trim();
+      const password = passwordInput.value.trim();
+      const username = usernameInput.value.trim();
 
       if (!isLogin && !username) { showAlert('اسم المستخدم إجباري.','error'); return; }
       const emailRegex = /^[^ ]+@[^ ]+\.[a-z]{2,}$/i;
@@ -141,33 +159,25 @@
 
       try {
         if (isLogin) {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) { showAlert('خطأ في تسجيل الدخول: ' + (error.message || error),'error'); submitBtn.disabled = false; return; }
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) { showAlert('خطأ في تسجيل الدخول: ' + error.message,'error'); submitBtn.disabled=false; return; }
           showAlert('تم تسجيل الدخول بنجاح!','success');
           setTimeout(()=> window.location.href = 'index2.html', 900);
         } else {
-          const { data: signupData, error: signupErr } = await supabase.auth.signUp({ email, password });
-          if (signupErr) { showAlert('خطأ: '+(signupErr.message||signupErr),'error'); submitBtn.disabled=false; return; }
-
-          // حاول تسجيل الدخول تلقائياً — قد يتطلب المشروع تحقق بالإيميل
-          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-          if (signInErr || !signInData?.user) {
-            showAlert('تم إرسال رسالة تأكيد إلى بريدك. تحقق من صندوق الوارد لتفعيل الحساب.','success');
-            submitBtn.disabled=false;
-            return;
-          }
-          const user = signInData.user;
-          const { error: profileError } = await supabase.from('Profiles').insert([{ id: user.id, username }]);
-          if (profileError) { showAlert('تم التسجيل لكن حدث خطأ في إنشاء البروفايل: '+profileError.message,'error'); submitBtn.disabled=false; return; }
-          showAlert('تم إنشاء الحساب وتسجيل الدخول!','success');
-          setTimeout(()=> window.location.href='index2.html',900);
+          const { data, error: signupErr } = await supabase.auth.signUp({ email, password });
+          if (signupErr) { showAlert('خطأ: '+signupErr.message,'error'); submitBtn.disabled=false; return; }
+          showAlert('تم إنشاء الحساب! تحقق من بريدك لتأكيده.','success');
+          submitBtn.disabled=false;
         }
       } catch(err) {
         console.error(err);
-        showAlert('حدث خطأ غير متوقع. افتح Console للمزيد.','error');
+        showAlert('حدث خطأ غير متوقع.','error');
         submitBtn.disabled=false;
       }
     });
+
+    // اختبار سريع — اختياري: فك الـ console وشغّله لتتأكد أن الاتصال ناجح
+    // supabase.from('Profiles').select('*').limit(1).then(r => console.log('test:', r)).catch(console.error);
   </script>
 </body>
-</html>
+  </html>
