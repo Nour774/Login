@@ -18,7 +18,6 @@
       color: white;
       text-align: center;
     }
-
     .container {
       background: rgba(0,0,0,0.4);
       padding: 40px;
@@ -26,13 +25,11 @@
       box-shadow: 0 4px 25px rgba(0,0,0,0.4);
       width: 350px;
     }
-
     h1 {
       margin-bottom: 20px;
       font-size: 24px;
       text-shadow: 1px 1px 3px black;
     }
-
     button {
       width: 100%;
       padding: 12px;
@@ -46,7 +43,6 @@
       cursor: pointer;
       transition: 0.3s;
     }
-
     button:hover {
       opacity: 0.9;
       transform: scale(1.02);
@@ -62,7 +58,6 @@
   </div>
 
   <script>
-    // إعداد Supabase
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; 
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -75,9 +70,8 @@
         return;
       }
 
-      // جلب البروفايل
       const { data: profile, error: profileError } = await supabase
-        .from("Profiles")
+        .from("profiles")
         .select("username")
         .eq("id", user.id)
         .single();
@@ -104,7 +98,6 @@
       window.location.href = "index4.html";
     }
 
-    // تحميل المستخدم عند فتح الصفحة
     loadUser();
   </script>
 </body>
