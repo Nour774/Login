@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الصفحة الرئيسية</title>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
     body {
       font-family: "Tahoma", sans-serif;
@@ -35,7 +36,7 @@
     button {
       width: 100%;
       padding: 12px;
-      margin-top: 20px;
+      margin-top: 15px;
       border-radius: 8px;
       border: none;
       font-size: 16px;
@@ -54,27 +55,58 @@
 </head>
 <body>
   <div class="container">
-    <h1 id="welcome">مرحباً بك</h1>
+    <h1 id="welcome">جاري التحميل...</h1>
     <button onclick="logout()">تسجيل خروج</button>
+    <button onclick="goToMembers()">أعضاء النادي</button>
+    <button onclick="goToAdmins()">المشرفون</button>
   </div>
 
   <script>
-    // جلب المستخدم الحالي
-    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    // إعداد Supabase
+    const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const supabaseKey = "SUPABASE_CLIENT_API_KEY"; 
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    if (!currentUser) {
-      // إذا ما في جلسة يرجع للتسجيل
-      window.location.href = "index.html";
-    } else {
-      // ترحيب بالاسم
+    async function loadUser() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        // لا يوجد جلسة → رجوع لصفحة تسجيل الدخول
+        window.location.href = "index.html";
+        return;
+      }
+
+      // جلب البروفايل
+      const { data: profile, error: profileError } = await supabase
+        .from("Profiles")
+        .select("username")
+        .eq("id", user.id)
+        .single();
+
       const welcome = document.getElementById("welcome");
-      welcome.textContent = `مرحباً بك، ${currentUser.username || "مستخدم"} 👋`;
+
+      if (profileError || !profile) {
+        welcome.textContent = `مرحباً بك، مستخدم 👋`;
+      } else {
+        welcome.textContent = `مرحباً بك، ${profile.username} 👋`;
+      }
     }
 
-    function logout() {
-      localStorage.removeItem("currentUser");
+    async function logout() {
+      await supabase.auth.signOut();
       window.location.href = "index.html";
     }
+
+    function goToMembers() {
+      window.location.href = "index3.html";
+    }
+
+    function goToAdmins() {
+      window.location.href = "index4.html";
+    }
+
+    // تحميل المستخدم عند فتح الصفحة
+    loadUser();
   </script>
 </body>
 </html>
