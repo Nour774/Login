@@ -64,11 +64,11 @@
   <script>
     // إعداد Supabase
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const supabaseKey = "SUPABASE_CLIENT_API_KEY"; 
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; 
+    const client = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     async function loadUser() {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const { data: { user }, error } = await client.auth.getUser();
 
       if (error || !user) {
         // لا يوجد جلسة → رجوع لصفحة تسجيل الدخول
@@ -77,7 +77,7 @@
       }
 
       // جلب البروفايل
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await client
         .from("Profiles")
         .select("username")
         .eq("id", user.id)
@@ -93,7 +93,7 @@
     }
 
     async function logout() {
-      await supabase.auth.signOut();
+      await client.auth.signOut();
       window.location.href = "index.html";
     }
 
