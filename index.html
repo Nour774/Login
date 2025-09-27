@@ -1,189 +1,125 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>تسجيل الدخول / إنشاء حساب</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول</title>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
     body {
       font-family: "Tahoma", sans-serif;
-      background: linear-gradient(135deg,#6a0572,#b5173a);
-      margin:0;display:flex;align-items:center;justify-content:center;height:100vh;
+      background: linear-gradient(135deg, #6a0572, #b5173a);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: white;
+      text-align: center;
     }
     .container {
-      background:#fff0f6;padding:30px;border-radius:15px;
-      box-shadow:0 4px 25px rgba(0,0,0,0.3);
-      width:320px;text-align:center;position:relative;
+      background: rgba(0,0,0,0.4);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.4);
+      width: 350px;
     }
-    h2 { margin-bottom:20px;color:#6a0572;text-shadow:1px 1px 3px #b5173a; }
-    input,button {
-      width:100%;padding:12px;margin:10px 0;border-radius:8px;
-      border:2px solid #6a0572;box-sizing:border-box;font-size:14px
+    h1 {
+      margin-bottom: 20px;
+      font-size: 24px;
+      text-shadow: 1px 1px 3px black;
     }
-    input:focus { border-color:#b5173a }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
     button {
-      background:linear-gradient(135deg,#b5173a,#6a0572);
-      color:#fff;border:none;cursor:pointer;font-weight:700;transition:.25s
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      background: linear-gradient(135deg, #b5173a, #6a0572);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
     }
-    button:disabled{background:#ccc;cursor:not-allowed}
-    .password-wrapper{position:relative}
-    .password-wrapper input{padding-right:35px}
-    .toggle-password{
-      position:absolute;right:10px;top:50%;
-      transform:translateY(-50%);cursor:pointer;
-      color:#b5173a;font-size:18px;user-select:none;
+    button:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
     }
-    .switch{margin-top:12px;font-size:14px}
-    .switch span{color:#6a0572}
-    .switch a{color:#6a0572;font-weight:700;text-decoration:none;margin-inline-start:6px;cursor:pointer}
-    .alert{position:absolute;top:-56px;left:50%;transform:translateX(-50%);
-      padding:10px 14px;border-radius:8px;font-weight:700;display:none;
-      box-shadow:0 2px 8px rgba(0,0,0,.2)
+    .error {
+      color: #ffb3b3;
+      margin-top: 10px;
     }
-    .alert.success{background:#4CAF50;color:#fff}
-    .alert.error{background:#f44336;color:#fff}
-    #username{display:none}
   </style>
 </head>
 <body>
   <div class="container">
-    <div id="alert-box" class="alert" role="status" aria-live="polite"></div>
-
-    <h2 id="form-title">تسجيل الدخول</h2>
-
-    <form id="auth-form" autocomplete="on">
-      <input type="text" id="username" placeholder="اسم المستخدم" autocomplete="username">
-      <input type="email" id="email" placeholder="البريد الإلكتروني" required autocomplete="email">
-      <div class="password-wrapper">
-        <input type="password" id="password" placeholder="كلمة المرور" required autocomplete="current-password">
-        <span class="toggle-password" id="toggle-pass">👁</span>
-      </div>
-      <button type="submit" id="submit-btn">دخول</button>
-    </form>
-
-    <div class="switch">
-      <span id="switch-label">ليس لديك حساب؟</span>
-      <a id="switch-link" href="#" role="button">إنشاء حساب جديد</a>
-    </div>
+    <h1>تسجيل الدخول / إنشاء حساب</h1>
+    <input type="text" id="username" placeholder="اسم المستخدم" />
+    <input type="email" id="email" placeholder="البريد الإلكتروني" />
+    <input type="password" id="password" placeholder="كلمة المرور" />
+    <button onclick="signUp()">إنشاء حساب</button>
+    <button onclick="signIn()">تسجيل الدخول</button>
+    <p class="error" id="error"></p>
   </div>
 
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <script>
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; 
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    let isLogin = true;
+    async function signUp() {
+      const username = document.getElementById("username").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const errorBox = document.getElementById("error");
 
-    const alertBox = document.getElementById('alert-box');
-    const switchLink = document.getElementById('switch-link');
-    const switchLabel = document.getElementById('switch-label');
-    const usernameInput = document.getElementById('username');
-    const formTitle = document.getElementById('form-title');
-    const submitBtn = document.getElementById('submit-btn');
-    const authForm = document.getElementById('auth-form');
-    const togglePass = document.getElementById('toggle-pass');
-    const passwordInput = document.getElementById('password');
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
 
-    function showAlert(msg, type='error') {
-      alertBox.textContent = msg;
-      alertBox.className = 'alert ' + (type === 'success' ? 'success' : 'error');
-      alertBox.style.display = 'block';
-      clearTimeout(alertBox._t);
-      alertBox._t = setTimeout(()=> alertBox.style.display = 'none', 3200);
+      if (error) {
+        errorBox.textContent = error.message;
+        return;
+      }
+
+      if (data.user) {
+        const { error: insertErr } = await supabase.from("profiles").insert([
+          { id: data.user.id, username: username }
+        ]);
+        if (insertErr) console.error("خطأ عند إدخال البروفايل:", insertErr.message);
+      }
+
+      window.location.href = "index2.html";
     }
 
-    // تبديل كلمة المرور
-    togglePass.addEventListener('click', function(){
-      if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        togglePass.textContent = '🙈';
-      } else {
-        passwordInput.type = 'password';
-        togglePass.textContent = '👁';
+    async function signIn() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const errorBox = document.getElementById("error");
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        errorBox.textContent = error.message;
+        return;
       }
-    });
 
-    // تبديل الشاشة
-    switchLink.addEventListener('click', function(e){
-      e.preventDefault();
-      toggleForm();
-    });
-
-    function toggleForm() {
-      authForm.reset();
-      submitBtn.disabled = false;
-      alertBox.style.display = 'none';
-
-      isLogin = !isLogin;
-
-      if (!isLogin) {
-        formTitle.textContent = 'إنشاء حساب جديد';
-        usernameInput.style.display = 'block';
-        submitBtn.textContent = 'تسجيل';
-        switchLabel.textContent = 'لديك حساب؟';
-        switchLink.textContent = 'تسجيل الدخول';
-      } else {
-        formTitle.textContent = 'تسجيل الدخول';
-        usernameInput.style.display = 'none';
-        submitBtn.textContent = 'دخول';
-        switchLabel.textContent = 'ليس لديك حساب؟';
-        switchLink.textContent = 'إنشاء حساب جديد';
-      }
+      window.location.href = "index2.html";
     }
-
-    // تهيئة
-    (function initUI(){
-      if (isLogin) {
-        usernameInput.style.display = 'none';
-        formTitle.textContent = 'تسجيل الدخول';
-        submitBtn.textContent = 'دخول';
-        switchLabel.textContent = 'ليس لديك حساب؟';
-        switchLink.textContent = 'إنشاء حساب جديد';
-      }
-    })();
-
-    // معالجة تسجيل الدخول/التسجيل
-    authForm.addEventListener('submit', async function(e){
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const password = passwordInput.value.trim();
-      const username = usernameInput.value.trim();
-
-      if (!isLogin && !username) { showAlert('اسم المستخدم إجباري.','error'); return; }
-      const emailRegex = /^[^ ]+@[^ ]+\.[a-z]{2,}$/i;
-      if (!emailRegex.test(email)) { showAlert('الرجاء إدخال بريد إلكتروني صالح.','error'); return; }
-      if (password.length < 6) { showAlert('كلمة المرور يجب أن تكون 6 أحرف على الأقل.','error'); return; }
-
-      submitBtn.disabled = true;
-
-      try {
-        if (isLogin) {
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) { showAlert('خطأ في تسجيل الدخول: ' + error.message,'error'); submitBtn.disabled=false; return; }
-          showAlert('تم تسجيل الدخول بنجاح!','success');
-          setTimeout(()=> window.location.href = 'index2.html', 900);
-        } else {
-          const { data, error: signupErr } = await supabase.auth.signUp({ email, password });
-          if (signupErr) { showAlert('خطأ: '+signupErr.message,'error'); submitBtn.disabled=false; return; }
-
-          if (data.user) {
-            // إدخال المستخدم في جدول Profiles
-            const { error: insertErr } = await supabase.from("Profiles").insert([
-              { id: data.user.id, username: username }
-            ]);
-            if (insertErr) console.error("خطأ عند إدخال البروفايل:", insertErr.message);
-          }
-
-          showAlert('تم إنشاء الحساب! تحقق من بريدك لتأكيده.','success');
-          submitBtn.disabled=false;
-        }
-      } catch(err) {
-        console.error(err);
-        showAlert('حدث خطأ غير متوقع.','error');
-        submitBtn.disabled=false;
-      }
-    });
   </script>
 </body>
 </html>
