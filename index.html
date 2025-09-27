@@ -70,7 +70,7 @@
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <script>
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; 
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     let isLogin = true;
@@ -166,6 +166,15 @@
         } else {
           const { data, error: signupErr } = await supabase.auth.signUp({ email, password });
           if (signupErr) { showAlert('خطأ: '+signupErr.message,'error'); submitBtn.disabled=false; return; }
+
+          if (data.user) {
+            // إدخال المستخدم في جدول Profiles
+            const { error: insertErr } = await supabase.from("Profiles").insert([
+              { id: data.user.id, username: username }
+            ]);
+            if (insertErr) console.error("خطأ عند إدخال البروفايل:", insertErr.message);
+          }
+
           showAlert('تم إنشاء الحساب! تحقق من بريدك لتأكيده.','success');
           submitBtn.disabled=false;
         }
@@ -175,9 +184,6 @@
         submitBtn.disabled=false;
       }
     });
-
-    // اختبار سريع — اختياري: فك الـ console وشغّله لتتأكد أن الاتصال ناجح
-    // supabase.from('Profiles').select('*').limit(1).then(r => console.log('test:', r)).catch(console.error);
   </script>
 </body>
-  </html>
+</html>
