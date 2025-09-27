@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الصفحة الرئيسية</title>
+  <style>
+    body {
+      font-family: "Tahoma", sans-serif;
+      background: linear-gradient(135deg, #6a0572, #b5173a);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      background: rgba(0,0,0,0.4);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.4);
+      width: 350px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 24px;
+      text-shadow: 1px 1px 3px black;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      background: linear-gradient(135deg, #b5173a, #6a0572);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="welcome">مرحباً بك</h1>
+    <button onclick="logout()">تسجيل خروج</button>
+  </div>
+
+  <script>
+    // جلب المستخدم الحالي
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+    if (!currentUser) {
+      // إذا ما في جلسة يرجع للتسجيل
+      window.location.href = "index.html";
+    } else {
+      // ترحيب بالاسم
+      const welcome = document.getElementById("welcome");
+      welcome.textContent = `مرحباً بك، ${currentUser.username || "مستخدم"} 👋`;
+    }
+
+    function logout() {
+      localStorage.removeItem("currentUser");
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>
