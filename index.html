@@ -1,21 +1,18 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>تسجيل الدخول / إنشاء حساب</title>
+
   <style>
     body {
       font-family: "Tahoma", sans-serif;
       background: linear-gradient(135deg, #6a0572, #b5173a);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      margin: 0; padding: 0;
+      display: flex; align-items: center; justify-content: center;
       height: 100vh;
     }
-
     .container {
       background: #fff0f6;
       padding: 30px;
@@ -25,114 +22,47 @@
       text-align: center;
       position: relative;
     }
-
-    h2 {
-      margin-bottom: 20px;
-      color: #6a0572;
-      text-shadow: 1px 1px 3px #b5173a;
-    }
-
+    h2 { margin-bottom: 20px; color: #6a0572; text-shadow: 1px 1px 3px #b5173a; }
     input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 2px solid #6a0572;
-      outline: none;
-      font-size: 14px;
-      box-sizing: border-box;
+      width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px;
+      border: 2px solid #6a0572; outline: none; font-size: 14px; box-sizing: border-box;
     }
-
-    input:focus {
-      border-color: #b5173a;
-    }
-
+    input:focus { border-color: #b5173a; }
     button {
       background: linear-gradient(135deg, #b5173a, #6a0572);
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      border: none;
-      transition: 0.3s;
+      color: white; font-weight: bold; cursor: pointer; border: none; transition: 0.3s;
+    }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    button:hover:not(:disabled){ opacity:0.95; transform: scale(1.01); }
+
+    .password-wrapper{ position: relative; width:100%; }
+    .password-wrapper input{ padding-right:35px; }
+    .toggle-password{
+      position:absolute; right:10px; top:50%; transform:translateY(-50%);
+      cursor:pointer; color:#b5173a; font-size:18px;
     }
 
-    button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-
-    button:hover:not(:disabled) {
-      opacity: 0.9;
-      transform: scale(1.02);
-    }
-
-    .password-wrapper {
-      position: relative;
-      width: 100%;
-    }
-
-    .password-wrapper input {
-      width: 100%;
-      padding-right: 35px;
-    }
-
-    .toggle-password {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      color: #b5173a;
-      font-size: 18px;
-    }
-
-    .switch {
-      margin-top: 15px;
-    }
-
-    .switch a {
-      color: #6a0572;
-      font-weight: bold;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .switch a:hover {
-      text-decoration: underline;
-    }
+    .switch{ margin-top:15px; }
+    .switch a{ color:#6a0572; font-weight: bold; cursor: pointer; text-decoration:none; }
+    .switch a:hover{ text-decoration: underline; }
 
     .alert {
-      position: absolute;
-      top: -50px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: bold;
-      display: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
+      padding: 10px 15px; border-radius: 8px; font-size:14px; font-weight:600;
+      display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
+    .alert.success{ background:#4CAF50; color:white; }
+    .alert.error{ background:#f44336; color:white; }
 
-    .alert.success {
-      background: #4CAF50;
-      color: white;
-    }
-
-    .alert.error {
-      background: #f44336;
-      color: white;
-    }
-
-    #username {
-      display: none;
-    }
+    #username{ display: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <div id="alert-box" class="alert"></div>
+
     <h2 id="form-title">تسجيل الدخول</h2>
+
     <form id="auth-form">
       <input type="text" id="username" placeholder="اسم المستخدم">
       <input type="email" id="email" placeholder="البريد الإلكتروني" required>
@@ -140,31 +70,32 @@
         <input type="password" id="password" placeholder="كلمة المرور" required>
         <span class="toggle-password" onclick="togglePassword()">👁</span>
       </div>
+
       <button type="submit" id="submit-btn">دخول</button>
     </form>
+
     <div class="switch">
       <span id="switch-text">ليس لديك حساب؟ <a onclick="toggleForm()">أنشئ واحداً</a></span>
     </div>
   </div>
 
-  <!-- مكتبة Supabase -->
+  <!-- Supabase JS -->
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <script>
-    // إعداد Supabase
+    // إعداد Supabase برابط مشروعك ومفتاحك العمومي
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "SUPABASE_CLIENT_API_KEY"; 
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     let isLogin = true;
 
-    function showAlert(message, type="error") {
-      const alertBox = document.getElementById("alert-box");
-      alertBox.textContent = message;
-      alertBox.className = "alert " + type;
-      alertBox.style.display = "block";
-      setTimeout(() => {
-        alertBox.style.display = "none";
-      }, 3000);
+    function showAlert(message, type = "error") {
+      const box = document.getElementById("alert-box");
+      box.textContent = message;
+      box.className = "alert " + (type === "success" ? "success" : "error");
+      box.style.display = "block";
+      clearTimeout(box._hideTimer);
+      box._hideTimer = setTimeout(() => { box.style.display = "none"; }, 3500);
     }
 
     function toggleForm() {
@@ -176,8 +107,11 @@
 
       form.reset();
       submitBtn.disabled = false;
+      document.getElementById("alert-box").style.display = "none";
 
-      if (isLogin) {
+      isLogin = !isLogin;
+
+      if (!isLogin) {
         title.textContent = "إنشاء حساب";
         username.style.display = "block";
         submitBtn.textContent = "تسجيل";
@@ -188,13 +122,11 @@
         submitBtn.textContent = "دخول";
         switchText.innerHTML = 'ليس لديك حساب؟ <a onclick="toggleForm()">أنشئ واحداً</a>';
       }
-
-      isLogin = !isLogin;
     }
 
     function togglePassword() {
-      const passwordInput = document.getElementById("password");
-      passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+      const p = document.getElementById("password");
+      p.type = (p.type === "password") ? "text" : "password";
     }
 
     document.getElementById("auth-form").addEventListener("submit", async function(e) {
@@ -208,13 +140,11 @@
         showAlert("اسم المستخدم إجباري.", "error");
         return;
       }
-
-      const emailRegex = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
+      const emailRegex = /^[^ ]+@[^ ]+\.[a-z]{2,}$/i;
       if (!emailRegex.test(email)) {
         showAlert("الرجاء إدخال بريد إلكتروني صالح.", "error");
         return;
       }
-
       if (password.length < 6) {
         showAlert("كلمة المرور يجب أن تكون 6 أحرف على الأقل.", "error");
         return;
@@ -222,45 +152,53 @@
 
       submitBtn.disabled = true;
 
-      if (isLogin) {
-        // تسجيل الدخول
-        const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-
-        if (loginError) {
-          showAlert("البريد أو كلمة المرور غير صحيحة.", "error");
-          submitBtn.disabled = false;
-        } else {
+      try {
+        if (isLogin) {
+          const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+          if (loginError) {
+            showAlert("البريد أو كلمة المرور غير صحيحة.", "error");
+            submitBtn.disabled = false;
+            return;
+          }
           showAlert("تم تسجيل الدخول بنجاح!", "success");
-          setTimeout(() => window.location.href = "index2.html", 1200);
-        }
-      } else {
-        // إنشاء حساب
-        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+          setTimeout(() => window.location.href = "index2.html", 900);
+        } else {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
 
-        if (signUpError) {
-          showAlert("خطأ: " + signUpError.message, "error");
-          submitBtn.disabled = false;
-          return;
-        }
+          if (signUpError) {
+            showAlert("خطأ: " + (signUpError.message || signUpError), "error");
+            submitBtn.disabled = false;
+            return;
+          }
 
-        const user = data.user;
-        if (user) {
-          // إضافة للبروفايل
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+          if (signInError || !signInData?.user) {
+            showAlert("تم إرسال رسالة تأكيد إلى بريدك. تحقق من صندوق الوارد.", "success");
+            submitBtn.disabled = false;
+            return;
+          }
+
+          const user = signInData.user;
           const { error: profileError } = await supabase
             .from("Profiles")
             .insert([{ id: user.id, username }]);
 
           if (profileError) {
-            showAlert("خطأ في إنشاء البروفايل: " + profileError.message, "error");
+            showAlert("تم التسجيل لكن حدث خطأ في إنشاء البروفايل: " + profileError.message, "error");
             submitBtn.disabled = false;
             return;
           }
 
-          showAlert("تم إنشاء الحساب بنجاح!", "success");
-          setTimeout(() => window.location.href = "index2.html", 1200);
+          showAlert("تم إنشاء الحساب وتسجيل الدخول بنجاح!", "success");
+          setTimeout(() => window.location.href = "index2.html", 900);
         }
+      } catch (err) {
+        console.error(err);
+        showAlert("حدث خطأ غير متوقع.", "error");
+        submitBtn.disabled = false;
       }
     });
   </script>
 </body>
-  </html>
+        </html>
