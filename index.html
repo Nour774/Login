@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تسجيل الدخول</title>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <title>تسجيل الدخول / إنشاء حساب</title>
   <style>
-     
     body {
       font-family: "Tahoma", sans-serif;
       background: linear-gradient(135deg, #6a0572, #b5173a);
@@ -113,157 +111,151 @@
     #username {
       display: none;
     }
-    
   </style>
 </head>
 <body>
   <div class="container">
-
-    <!-- نموذج تسجيل الدخول -->
-    <div id="loginForm">
-      <h2>تسجيل الدخول</h2>
-      <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required>
+    <h2 id="form-title">تسجيل الدخول</h2>
+    <form id="auth-form">
+      <input type="text" id="username" placeholder="اسم المستخدم">
+      <input type="email" id="email" placeholder="البريد الإلكتروني" required>
       <div class="password-wrapper">
-        <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
-        <span class="toggle-password" onclick="togglePassword('loginPassword')">👁</span>
+        <input type="password" id="password" placeholder="كلمة المرور" required>
+        <span class="toggle-password" onclick="togglePassword()">👁</span>
       </div>
-      <button onclick="login(event)">دخول</button>
-      <div id="loginMessage" class="error"></div>
-      <div class="switch" onclick="showSignup()">ليس لديك حساب؟ أنشئ واحداً</div>
+      <div id="error-message" class="error"></div>
+      <button type="submit" id="submit-btn">دخول</button>
+    </form>
+    <div class="switch">
+      <span id="switch-text">ليس لديك حساب؟ <a onclick="toggleForm()">أنشئ واحداً</a></span>
     </div>
-
-    <!-- نموذج إنشاء حساب -->
-    <div id="signupForm" class="hidden">
-      <h2>إنشاء حساب جديد</h2>
-      <input type="text" id="signupUsername" placeholder="اسم المستخدم" required>
-      <input type="email" id="signupEmail" placeholder="البريد الإلكتروني" required>
-      <div class="password-wrapper">
-        <input type="password" id="signupPassword" placeholder="كلمة المرور" required>
-        <span class="toggle-password" onclick="togglePassword('signupPassword')">👁</span>
-      </div>
-      <button onclick="signup(event)">تسجيل</button>
-      <div id="signupMessage" class="error"></div>
-      <div class="switch" onclick="showLogin()">لديك حساب بالفعل؟ سجل الدخول</div>
-    </div>
-
   </div>
 
   <script>
-    const supabaseUrl = "https://YOUR_PROJECT_ID.supabase.co";
-    const supabaseKey = "YOUR_ANON_PUBLIC_KEY";
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    let isLogin = true;
 
-    function showSignup() {
-      document.getElementById("loginForm").classList.add("hidden");
-      document.getElementById("signupForm").classList.remove("hidden");
-    }
-    function showLogin() {
-      document.getElementById("signupForm").classList.add("hidden");
-      document.getElementById("loginForm").classList.remove("hidden");
-    }
-    function isValidEmail(email) {
-      const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return regex.test(email);
-    }
-    function togglePassword(id) {
-      const input = document.getElementById(id);
-      input.type = input.type === "password" ? "text" : "password";
+    // تحميل المستخدمين من LocalStorage
+    function loadUsers() {
+      return JSON.parse(localStorage.getItem("users")) || [];
     }
 
-    async function login(event) {
-      const email = document.getElementById("loginEmail").value.trim();
-      const password = document.getElementById("loginPassword").value;
-      const msg = document.getElementById("loginMessage");
-      const btn = event.target;
+    // حفظ المستخدمين في LocalStorage
+    function saveUsers(users) {
+      localStorage.setItem("users", JSON.stringify(users));
+    }
 
-      btn.disabled = true;
-      btn.textContent = "جاري تسجيل الدخول...";
+    // حفظ الجلسة
+    function saveSession(user) {
+      localStorage.setItem("currentUser", JSON.stringify(user));
+    }
 
-      if (!email || !password) {
-        msg.textContent = "يجب إدخال البريد وكلمة المرور";
-        btn.disabled = false;
-        btn.textContent = "دخول";
-        return;
-      }
-      if (!isValidEmail(email)) {
-        msg.textContent = "صيغة البريد الإلكتروني غير صحيحة";
-        btn.disabled = false;
-        btn.textContent = "دخول";
-        return;
-      }
-      if (password.length < 6) {
-        msg.textContent = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
-        btn.disabled = false;
-        btn.textContent = "دخول";
-        return;
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) {
-        msg.textContent = "خطأ: البريد أو كلمة المرور غير صحيحة";
-        btn.disabled = false;
-        btn.textContent = "دخول";
-      } else {
-        msg.textContent = "تم تسجيل الدخول بنجاح 🎉";
-        msg.className = "success";
+    // التحقق من وجود جلسة
+    function checkSession() {
+      const currentUser = localStorage.getItem("currentUser");
+      if (currentUser) {
         window.location.href = "index2.html";
       }
     }
 
-    async function signup(event) {
-      const email = document.getElementById("signupEmail").value.trim();
-      const password = document.getElementById("signupPassword").value;
-      const username = document.getElementById("signupUsername").value.trim();
-      const msg = document.getElementById("signupMessage");
-      const btn = event.target;
+    // عند تحميل الصفحة تحقق من الجلسة
+    checkSession();
 
-      btn.disabled = true;
-      btn.textContent = "جاري التسجيل...";
+    function toggleForm() {
+      const title = document.getElementById("form-title");
+      const username = document.getElementById("username");
+      const submitBtn = document.getElementById("submit-btn");
+      const switchText = document.getElementById("switch-text");
+      const form = document.getElementById("auth-form");
+      const error = document.getElementById("error-message");
 
-      if (!email || !password || !username) {
-        msg.textContent = "كل الحقول مطلوبة";
-        btn.disabled = false;
-        btn.textContent = "تسجيل";
-        return;
-      }
-      if (!isValidEmail(email)) {
-        msg.textContent = "صيغة البريد الإلكتروني غير صحيحة";
-        btn.disabled = false;
-        btn.textContent = "تسجيل";
-        return;
-      }
-      if (password.length < 6) {
-        msg.textContent = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
-        btn.disabled = false;
-        btn.textContent = "تسجيل";
-        return;
-      }
+      error.style.display = "none";
+      form.reset();
+      submitBtn.disabled = false;
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
-
-      if (error) {
-        msg.textContent = "خطأ في إنشاء الحساب: " + error.message;
-        btn.disabled = false;
-        btn.textContent = "تسجيل";
-        return;
-      }
-
-      const user = data.user;
-      const { error: profileError } = await supabase.from("Profiles").insert([
-        { id: user.id, username: username }
-      ]);
-
-      if (profileError) {
-        msg.textContent = "خطأ في إنشاء البروفايل: " + profileError.message;
-        btn.disabled = false;
-        btn.textContent = "تسجيل";
+      if (isLogin) {
+        title.textContent = "إنشاء حساب";
+        username.style.display = "block";
+        submitBtn.textContent = "تسجيل";
+        switchText.innerHTML = 'لديك حساب؟ <a onclick="toggleForm()">تسجيل الدخول</a>';
       } else {
-        msg.textContent = "تم إنشاء الحساب بنجاح 🎉";
-        msg.className = "success";
+        title.textContent = "تسجيل الدخول";
+        username.style.display = "none";
+        submitBtn.textContent = "دخول";
+        switchText.innerHTML = 'ليس لديك حساب؟ <a onclick="toggleForm()">أنشئ واحداً</a>';
+      }
+
+      isLogin = !isLogin;
+    }
+
+    function togglePassword() {
+      const passwordInput = document.getElementById("password");
+      passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+    }
+
+    document.getElementById("auth-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const error = document.getElementById("error-message");
+      const submitBtn = document.getElementById("submit-btn");
+
+      error.style.display = "none";
+
+      if (!isLogin && username === "") {
+        error.textContent = "اسم المستخدم إجباري.";
+        error.style.display = "block";
+        return;
+      }
+
+      const emailRegex = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
+      if (!emailRegex.test(email)) {
+        error.textContent = "الرجاء إدخال بريد إلكتروني صالح.";
+        error.style.display = "block";
+        return;
+      }
+
+      if (password.length < 6) {
+        error.textContent = "كلمة المرور يجب أن تكون 6 أحرف على الأقل.";
+        error.style.display = "block";
+        return;
+      }
+
+      submitBtn.disabled = true;
+
+      let users = loadUsers();
+
+      if (isLogin) {
+        // تحقق من وجود المستخدم
+        const user = users.find(u => u.email === email && u.password === password);
+        if (user) {
+          saveSession(user);
+          window.location.href = "index2.html";
+        } else {
+          error.textContent = "البريد أو كلمة المرور غير صحيحة.";
+          error.style.display = "block";
+          submitBtn.disabled = false;
+        }
+      } else {
+        // تحقق إن كان البريد مستخدم مسبقاً
+        const exists = users.some(u => u.email === email);
+        if (exists) {
+          error.textContent = "البريد الإلكتروني مسجل مسبقاً.";
+          error.style.display = "block";
+          submitBtn.disabled = false;
+          return;
+        }
+
+        // إضافة المستخدم
+        const newUser = { email, password, username };
+        users.push(newUser);
+        saveUsers(users);
+        saveSession(newUser);
+
+        // دخول مباشر بعد إنشاء الحساب
         window.location.href = "index2.html";
       }
-    }
+    });
   </script>
 </body>
-  </html>
+      </html>
