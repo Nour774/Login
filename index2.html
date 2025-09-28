@@ -2,105 +2,90 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <title>مرحباً</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>الصفحة الرئيسية</title>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
     body {
       font-family: "Tahoma", sans-serif;
       background: linear-gradient(135deg, #6a0572, #b5173a);
       margin: 0;
-      padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      color: white;
+      color: #fff;
       text-align: center;
     }
-
     .container {
-      background: rgba(0,0,0,0.4);
-      padding: 40px;
+      background: rgba(0,0,0,0.5);
+      padding: 30px;
       border-radius: 15px;
-      box-shadow: 0 4px 25px rgba(0,0,0,0.4);
       width: 350px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.4);
     }
-
-    h1 {
-      margin-bottom: 20px;
-      font-size: 24px;
-      text-shadow: 1px 1px 3px black;
-    }
-
+    h1 { margin-bottom: 20px; }
     button {
       width: 100%;
       padding: 12px;
-      margin-top: 15px;
+      margin-top: 10px;
       border-radius: 8px;
       border: none;
       font-size: 16px;
-      background: linear-gradient(135deg, #b5173a, #6a0572);
-      color: white;
       font-weight: bold;
       cursor: pointer;
+      background: linear-gradient(135deg,#b5173a,#6a0572);
+      color: white;
       transition: 0.3s;
     }
-
-    button:hover {
-      opacity: 0.9;
-      transform: scale(1.02);
-    }
+    button:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1 id="welcome">جاري التحميل...</h1>
-    <button onclick="logout()">تسجيل خروج</button>
-    <button onclick="goToMembers()">أعضاء النادي</button>
-    <button onclick="goToAdmins()">المشرفون</button>
+    <button onclick="goToProfile()">تعديل الحساب</button>
+    <button onclick="goHome()">الصفحة الرئيسية</button>
+    <button onclick="logout()">تسجيل الخروج</button>
   </div>
 
   <script>
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; 
-    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     async function loadUser() {
-      const { data: { user }, error } = await supabaseClient.auth.getUser();
-
+      const { data: { user }, error } = await supabase.auth.getUser();
       if (error || !user) {
         window.location.href = "index.html";
         return;
       }
 
-      const { data: profile, error: profileError } = await supabaseClient
+      const { data: profile } = await supabase
         .from("profiles")
         .select("username")
         .eq("id", user.id)
         .single();
 
       const welcome = document.getElementById("welcome");
-
-      if (profileError || !profile) {
-        console.error(profileError?.message);
-        welcome.textContent = `مرحباً بك، مستخدم 👋`;
-      } else {
+      if (profile && profile.username) {
         welcome.textContent = `مرحباً بك، ${profile.username} 👋`;
+      } else {
+        welcome.textContent = "مرحباً بك، مستخدم 👋";
       }
     }
 
-    window.logout = async function() {
-      await supabaseClient.auth.signOut();
-      window.location.href = "index.html";
-    }
-
-    window.goToMembers = function() {
+    function goToProfile() {
       window.location.href = "index3.html";
     }
 
-    window.goToAdmins = function() {
-      window.location.href = "index4.html";
+    function goHome() {
+      window.location.href = "index5.html";
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = "index.html";
     }
 
     loadUser();
