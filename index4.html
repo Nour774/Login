@@ -5,33 +5,32 @@
   <title>تسجيل دخول المشرف</title>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
-    body { font-family:"Tahoma",sans-serif; background: linear-gradient(135deg, #b5173a, #6a0572); display:flex; align-items:center; justify-content:center; height:100vh; margin:0; color:white; }
-    .container { background: rgba(0,0,0,0.4); padding:30px; border-radius:15px; box-shadow:0 4px 25px rgba(0,0,0,0.4); width:320px; text-align:center; }
-    input, button { width:100%; padding:10px; margin-top:12px; border-radius:8px; border:none; font-size:16px; }
-    button { font-weight:700; cursor:pointer; background: linear-gradient(135deg,#6a0572,#b5173a); color:#fff; transition:.2s; }
-    button:hover { opacity:.95; transform: translateY(-2px); }
+    body { font-family:"Tahoma",sans-serif; background: linear-gradient(135deg,#b5173a,#6a0572); display:flex; justify-content:center; align-items:center; height:100vh; margin:0; color:white; }
+    .container { background: rgba(0,0,0,0.4); padding:30px; border-radius:15px; width:300px; text-align:center; }
+    input, button { width:100%; padding:10px; margin-top:15px; border-radius:8px; border:none; }
+    button { font-weight:bold; background: linear-gradient(135deg,#6a0572,#b5173a); color:white; cursor:pointer; transition:0.3s; }
+    button:hover{opacity:0.9; transform:scale(1.02);}
   </style>
 </head>
 <body>
   <div class="container">
     <h1>تحقق المشرف</h1>
     <input type="password" id="adminCode" placeholder="أدخل رمز المشرف">
-    <button type="button" onclick="verifyAdmin()">دخول</button>
+    <button onclick="verifyAdmin()">دخول</button>
   </div>
 
   <script>
-    // رمز تجريبي — أي شخص يطلع على الكود يعرفه. هذا حل تجريبي فقط.
-    const ADMIN_SECRET = "123456";
+    const ADMIN_SECRET = "123456"; // رمز افتراضي
 
-    function verifyAdmin() {
+    function verifyAdmin(){
       const code = document.getElementById("adminCode").value;
-      if (code === ADMIN_SECRET) {
-        localStorage.setItem("isAdmin", "true");
-        window.location.href = "index5.html";
+      if(code === ADMIN_SECRET){
+        localStorage.setItem("isAdmin","true"); // مجرد خطوة إضافية، القرار النهائي من جدول profiles
+        window.location.href="index5.html";
       } else {
         alert("رمز المشرف غير صحيح");
       }
     }
   </script>
 </body>
-    </html>
+</html>
