@@ -5,10 +5,39 @@
   <title>الرئيسية</title>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
-    body { font-family:"Tahoma",sans-serif; background: linear-gradient(135deg,#6a0572,#b5173a); display:flex; justify-content:center; align-items:center; height:100vh; margin:0; color:white; }
-    .container { background: rgba(0,0,0,0.4); padding:30px; border-radius:15px; width:350px; text-align:center; }
-    button { width:100%; padding:12px; margin-top:12px; border-radius:8px; border:none; font-weight:bold; background: linear-gradient(135deg,#b5173a,#6a0572); color:white; cursor:pointer; transition:0.3s; }
-    button:hover{opacity:0.9; transform:scale(1.02);}
+    body {
+      font-family:"Tahoma",sans-serif;
+      background: linear-gradient(135deg,#6a0572,#b5173a);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      margin:0;
+      color:white;
+    }
+    .container {
+      background: rgba(0,0,0,0.4);
+      padding:30px;
+      border-radius:15px;
+      width:350px;
+      text-align:center;
+    }
+    button {
+      width:100%;
+      padding:12px;
+      margin-top:12px;
+      border-radius:8px;
+      border:none;
+      font-weight:bold;
+      background: linear-gradient(135deg,#b5173a,#6a0572);
+      color:white;
+      cursor:pointer;
+      transition:0.3s;
+    }
+    button:hover{
+      opacity:0.9;
+      transform:scale(1.02);
+    }
   </style>
 </head>
 <body>
@@ -20,32 +49,52 @@
   </div>
 
   <script>
+    // ---------- إعداد Supabase ----------
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; 
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     async function loadUser(){
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if(error || !user){ window.location.href="index.html"; return; }
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if(error || !user){
+          window.location.href = "index.html";
+          return;
+        }
 
-      const { data: profile } = await supabase.from("profiles").select("username, role").eq("id", user.id).single();
-      document.getElementById("welcome").textContent = profile ? `مرحباً بك، ${profile.username} 👋` : "مرحباً بك 👋";
+        const { data: profile, error: profileErr } = await supabase
+          .from("profiles")
+          .select("username, role")
+          .eq("id", user.id)
+          .single();
 
-      if(profile && profile.role === "admin"){ 
-        document.getElementById("adminBtn").style.display="block"; 
-      } else { 
-        localStorage.removeItem("isAdmin"); 
+        if(profileErr && profileErr.code !== "PGRST116"){ 
+          alert("خطأ في جلب البروفايل: " + profileErr.message);
+          return;
+        }
+
+        document.getElementById("welcome").textContent = profile && profile.username 
+          ? `مرحباً بك، ${profile.username} 👋`
+          : "مرحباً بك 👋";
+
+        if(profile && profile.role === "admin"){
+          document.getElementById("adminBtn").style.display = "block";
+        } else {
+          localStorage.removeItem("isAdmin");
+        }
+      } catch(err){
+        alert("حدث خطأ غير متوقع: " + (err.message || err));
       }
     }
 
     async function logout(){
       await supabase.auth.signOut();
       localStorage.removeItem("isAdmin");
-      window.location.href="index.html";
+      window.location.href = "index.html";
     }
 
-    function goToMembers(){ window.location.href="index3.html"; }
-    function goToAdmin(){ window.location.href="index6.html"; }
+    function goToMembers(){ window.location.href = "index3.html"; }
+    function goToAdmin(){ window.location.href = "index6.html"; }
 
     loadUser();
   </script>
