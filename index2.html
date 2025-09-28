@@ -4,101 +4,95 @@
   <meta charset="UTF-8">
   <title>الصفحة الرئيسية</title>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
       font-family: "Tahoma", sans-serif;
       background: linear-gradient(135deg, #6a0572, #b5173a);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      color: white;
-      text-align: center;
+      margin: 0; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      height: 100vh; color: white; text-align: center;
     }
     .container {
-      background: rgba(0,0,0,0.4);
-      padding: 40px;
-      border-radius: 15px;
-      box-shadow: 0 4px 25px rgba(0,0,0,0.4);
-      width: 350px;
+      background: rgba(0,0,0,0.4); padding: 30px; border-radius: 15px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.4); width: 350px;
     }
-    h1 {
-      margin-bottom: 20px;
-      font-size: 24px;
-      text-shadow: 1px 1px 3px black;
-    }
+    h1 { margin: 0 0 10px 0; font-size: 20px; }
     button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 15px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
+      width: 100%; padding: 12px; margin-top: 15px;
+      border-radius: 8px; border: none; font-size: 16px;
       background: linear-gradient(135deg, #b5173a, #6a0572);
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
+      color: white; font-weight: bold; cursor: pointer; transition: 0.3s;
     }
-    button:hover {
-      opacity: 0.9;
-      transform: scale(1.02);
-    }
+    button:hover { opacity: 0.9; transform: scale(1.02); }
+    .small { font-size: 12px; opacity: 0.85; margin-top: 8px; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1 id="welcome">جاري التحميل...</h1>
-    <button onclick="logout()">تسجيل خروج</button>
-    <button onclick="goToMembers()">أعضاء النادي</button>
+    <button onclick="goToProfile()">تعديل البروفايل</button>
     <button onclick="goToAdmins()">المشرفون</button>
+    <button onclick="logout()">تسجيل خروج</button>
+    <div class="small">مفعل بـ Supabase (client-side anonymous key)</div>
   </div>
 
   <script>
+    // رابط المشروع
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+
+    // المفتاح العمومي الذي زودتني به — مخصص للاستخدام من جهة العميل (anon key).
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-    const { createClient } = supabase;
-    const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
+    // تهيئة عميل Supabase
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // تحميل بيانات المستخدم وبروفايله
     async function loadUser() {
-      const { data: { user }, error } = await supabaseClient.auth.getUser();
+      try {
+        const { data: userData, error: userErr } = await supabase.auth.getUser();
+        if (userErr) throw userErr;
+        const user = userData?.user;
+        if (!user) { window.location.href = "index.html"; return; }
 
-      if (error || !user) {
+        const { data: profile, error: profileErr } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", user.id)
+          .single();
+
+        if (profileErr && profileErr.code !== "PGRST116") {
+          // لا نريد إغراق الواجهة برسائل خطأ مفصلة هنا — فقط نقوم بتسجيلها في الكونسول.
+          console.error("خطأ بجلب البروفايل:", profileErr);
+        }
+
+        const welcome = document.getElementById("welcome");
+        welcome.textContent = profile?.username
+          ? `مرحباً بك، ${profile.username} 👋`
+          : "مرحباً بك، مستخدم 👋";
+
+      } catch (err) {
+        // في حال أي خطأ غير متوقع: أعد التوجيه للصفحة الرئيسية لتسجيل الدخول.
+        console.error("خطأ أثناء التحميل:", err);
         window.location.href = "index.html";
-        return;
-      }
-
-      const { data: profile, error: profileError } = await supabaseClient
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .single();
-
-      const welcome = document.getElementById("welcome");
-
-      if (profileError || !profile) {
-        welcome.textContent = `مرحباً بك، مستخدم 👋`;
-      } else {
-        welcome.textContent = `مرحباً بك، ${profile.username} 👋`;
       }
     }
 
     // تسجيل الخروج
-    window.logout = async function() {
-      await supabaseClient.auth.signOut();
-      window.location.href = "index.html";
+    async function logout() {
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.error("فشل تسجيل الخروج:", e);
+      } finally {
+        window.location.href = "index.html";
+      }
     }
 
-    window.goToMembers = function() {
-      window.location.href = "index3.html";
-    }
+    function goToProfile() { window.location.href = "index3.html"; }
+    function goToAdmins() { window.location.href = "index4.html"; }
 
-    window.goToAdmins = function() {
-      window.location.href = "index4.html";
-    }
-
+    // نفّذ التحميل فوراً
     loadUser();
   </script>
 </body>
