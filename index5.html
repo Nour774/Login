@@ -6,46 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
-    body {
-      font-family: "Tahoma", sans-serif;
-      background: linear-gradient(135deg,#6a0572,#b5173a);
-      margin:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      height:100vh;
-      color:#fff;
-      text-align:center;
-    }
-    .container {
-      background: rgba(0,0,0,0.5);
-      padding: 30px;
-      border-radius: 15px;
-      width: 350px;
-      box-shadow:0 4px 25px rgba(0,0,0,0.4);
-    }
-    h1 { margin-bottom: 20px; }
-    img {
-      width: 80px; height: 80px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin: 10px auto;
-      display: block;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      background: linear-gradient(135deg,#b5173a,#6a0572);
-      color: white;
-      transition:0.3s;
-    }
-    button:hover { opacity:0.9; }
+    body { font-family:"Tahoma",sans-serif; background: linear-gradient(135deg,#6a0572,#b5173a); margin:0; display:flex; align-items:center; justify-content:center; height:100vh; color:#fff; text-align:center; }
+    .container { background: rgba(0,0,0,0.4); padding:30px; border-radius:15px; width:350px; box-shadow:0 4px 25px rgba(0,0,0,0.4); }
+    h1 { margin-bottom:10px; }
+    img { width:80px; height:80px; border-radius:50%; object-fit:cover; display:block; margin:10px auto; }
+    button { width:100%; padding:12px; margin-top:12px; border-radius:8px; border:none; font-size:16px; font-weight:700; cursor:pointer; background: linear-gradient(135deg,#b5173a,#6a0572); color:#fff; transition:0.3s; }
+    button:hover { opacity:0.95; transform: translateY(-2px); }
   </style>
 </head>
 <body>
@@ -53,49 +19,51 @@
     <h1 id="welcome">جاري التحميل...</h1>
     <img id="avatar" src="" alt="صورة البروفايل" style="display:none;">
     <button onclick="logout()">تسجيل خروج</button>
+    <button onclick="goToMembers()">أعضاء النادي</button>
+    <button id="adminBtn" style="display:none;" onclick="goToAdmin()">لوحة التحكم</button>
   </div>
 
   <script>
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    const { createClient } = supabase;
+    const client = createClient(supabaseUrl, supabaseKey);
 
-    async function loadHome() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        window.location.href = "index.html";
-        return;
-      }
+    async function loadUser() {
+      const { data: { user }, error } = await client.auth.getUser();
+      if (error || !user) { window.location.href = "index.html"; return; }
 
-      const { data: profile } = await supabase
+      const { data: profile } = await client
         .from("profiles")
-        .select("username, avatar_url")
+        .select("username, avatar_url, role")
         .eq("id", user.id)
         .single();
 
-      const welcome = document.getElementById("welcome");
-      const avatar = document.getElementById("avatar");
+      document.getElementById("welcome").textContent =
+        profile && profile.username ? `مرحباً بك، ${profile.username} 👋` : "مرحباً بك 👋";
 
-      if (profile) {
-        welcome.textContent = profile.username
-          ? `مرحباً بك، ${profile.username} 🎉`
-          : "مرحباً بك، مستخدم 🎉";
+      if (profile && profile.avatar_url) {
+        const avatar = document.getElementById("avatar");
+        avatar.src = profile.avatar_url;
+        avatar.style.display = "block";
+      }
 
-        if (profile.avatar_url) {
-          avatar.src = profile.avatar_url;
-          avatar.style.display = "block";
-        }
-      } else {
-        welcome.textContent = "مرحباً بك، مستخدم 🎉";
+      // عرض زر لوحة التحكم لو تم تفعيل isAdmin محلياً
+      if (localStorage.getItem("isAdmin") === "true") {
+        document.getElementById("adminBtn").style.display = "block";
       }
     }
 
     async function logout() {
-      await supabase.auth.signOut();
+      await client.auth.signOut();
+      localStorage.removeItem("isAdmin");
       window.location.href = "index.html";
     }
 
-    loadHome();
+    function goToMembers() { window.location.href = "index3.html"; }
+    function goToAdmin() { window.location.href = "index6.html"; }
+
+    loadUser();
   </script>
 </body>
-    </html>
+</html>
