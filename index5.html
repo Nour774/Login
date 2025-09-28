@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>الرئيسية</title>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <!-- مكتبة supabase الصحيحة للمتصفح -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family:"Tahoma",sans-serif; background: linear-gradient(135deg,#6a0572,#b5173a); display:flex; justify-content:center; align-items:center; height:100vh; margin:0; color:white; }
     .container { background: rgba(0,0,0,0.4); padding:30px; border-radius:15px; width:350px; text-align:center; }
@@ -22,16 +23,18 @@
   <script>
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     async function loadUser(){
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if(error || !user){
+        const { data, error } = await supabase.auth.getUser();
+        if(error || !data.user){
           console.log("No user session, redirecting...");
           window.location.href = "index.html";
           return;
         }
+
+        const user = data.user;
 
         const { data: profile, error: profileErr } = await supabase
           .from("profiles")
@@ -44,19 +47,14 @@
           return;
         }
 
-        console.log("Profile fetched:", profile);
-
         const username = profile?.username || "مستخدم";
         document.getElementById("welcome").textContent = `مرحباً بك، ${username} 👋`;
 
-        // تحقق من role واظهار زر المشرف فقط إذا كان admin
         const role = profile?.role?.toLowerCase() || "";
         if(role === "admin"){
           document.getElementById("adminBtn").style.display = "block";
-          console.log("User is admin, button shown.");
         } else {
           document.getElementById("adminBtn").style.display = "none";
-          console.log("User is not admin.");
         }
 
       } catch(err){
