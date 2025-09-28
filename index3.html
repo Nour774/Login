@@ -13,6 +13,7 @@
     button { width:100%; padding:12px; margin-top:10px; border-radius:8px; border:none; font-size:16px; font-weight:700; cursor:pointer; background: linear-gradient(135deg,#b5173a,#6a0572); color:#fff; transition:0.2s; }
     button:hover { opacity:0.95; transform: translateY(-1px); }
     .avatar-preview { width:80px; height:80px; border-radius:50%; object-fit:cover; margin:10px auto; display:none; }
+    #welcomeMessage { margin-top:15px; font-size:16px; display:none; }
   </style>
 </head>
 <body>
@@ -23,28 +24,20 @@
     <img id="preview" class="avatar-preview" alt="Avatar Preview">
     <button id="confirmBtn" type="button" onclick="saveProfile()">تأكيد</button>
     <button id="skipBtn" type="button" style="display:none;" onclick="skip()">تخطي</button>
+    <p id="welcomeMessage"></p>
   </div>
 
   <script>
-    // ---------- إعداد Supabase (ثابت وآمن) ----------
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-    const supabase = window.supabase && window.supabase.createClient
-      ? window.supabase.createClient(supabaseUrl, supabaseKey)
-      : null;
-
-    if (!supabase) {
-      alert("خطأ: لم يتم تهيئة مكتبة Supabase بشكل صحيح. تأكد من تحميل السكربت.");
-      throw new Error("Supabase not initialized");
-    }
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     const usernameInput = document.getElementById("username");
     const avatarInput = document.getElementById("avatar");
     const preview = document.getElementById("preview");
     const skipBtn = document.getElementById("skipBtn");
-    const confirmBtn = document.getElementById("confirmBtn");
+    const welcomeMessage = document.getElementById("welcomeMessage");
 
-    // معاينة الصورة فور اختيارها
     avatarInput.addEventListener("change", () => {
       const file = avatarInput.files[0];
       if (!file) { preview.style.display = "none"; preview.src = ""; return; }
@@ -53,91 +46,65 @@
       reader.readAsDataURL(file);
     });
 
-    // عند تحميل الصفحة: جلب البروفايل وتقرير إظهار زر "تخطي" أو لا
     async function loadProfile() {
-      try {
-        const { data: { user }, error: userErr } = await supabase.auth.getUser();
-        if (userErr || !user) {
-          alert("⚠️ لا توجد جلسة نشطة. يرجى تسجيل الدخول أولاً.");
-          // لا نعيد التوجيه الأوتوماتيكي هنا — تظهر رسالة فقط لتفادي إخفاء السبب
-          return;
-        }
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !user) { window.location.href="index.html"; return; }
 
-        const { data: profile, error: profileErr } = await supabase
-          .from("profiles")
-          .select("username, avatar_url")
-          .eq("id", user.id)
-          .single();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username, avatar_url")
+        .eq("id", user.id)
+        .single();
 
-        if (profileErr && profileErr.code !== "PGRST116") { // PGRST116 = no rows (depends on env), لكن نظهر alert لو خطأ حقيقي
-          alert("خطأ في تحميل ملف البروفايل: " + profileErr.message);
-          return;
-        }
+      if (profile && profile.username) {
+        usernameInput.value = profile.username;
+        skipBtn.style.display = "inline-block";
+      } else {
+        skipBtn.style.display = "none";
+      }
 
-        // إذا وجد اسم مسبق، نعرضه ونُبقي على زر التخطي
-        if (profile && profile.username) {
-          usernameInput.value = profile.username;
-          skipBtn.style.display = "inline-block";
-        } else {
-          // لا اسم سابق -> لا نسمح بالتخطي
-          skipBtn.style.display = "none";
-        }
-
-        if (profile && profile.avatar_url) {
-          preview.src = profile.avatar_url;
-          preview.style.display = "block";
-        }
-      } catch (err) {
-        alert("حدث خطأ غير متوقع أثناء التحميل: " + (err.message || err));
+      if (profile && profile.avatar_url) {
+        preview.src = profile.avatar_url;
+        preview.style.display = "block";
       }
     }
 
-    // دالة الحفظ (مربوطة بزر التأكيد)
     async function saveProfile() {
-      try {
-        const { data: { user }, error: userErr } = await supabase.auth.getUser();
-        if (userErr || !user) { alert("⚠️ لم يتم العثور على جلسة. أعد تسجيل الدخول."); return; }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { window.location.href="index.html"; return; }
 
-        const username = usernameInput.value.trim();
-        if (!username) { alert("⚠️ اسم المستخدم إجباري."); return; }
+      const username = usernameInput.value.trim();
+      if (!username) { alert("⚠️ اسم المستخدم إجباري."); return; }
 
-        let avatarUrl = null;
-        const file = avatarInput.files[0];
-
-        if (file) {
-          // رفع الملف إلى bucket 'avatars' داخل مجلد معرف المستخدم
-          const fileName = `${user.id}/${Date.now()}_${file.name}`;
-          const { error: uploadErr } = await supabase.storage.from("avatars").upload(fileName, file, { upsert: true });
-          if (uploadErr) { alert("⚠️ فشل رفع الصورة: " + uploadErr.message); return; }
-
-          const publicData = supabase.storage.from("avatars").getPublicUrl(fileName);
-          avatarUrl = publicData?.data?.publicUrl || null;
-        }
-
-        // upsert بصيغة مصفوفة (أكثر موثوقية)
-        const record = { id: user.id, username };
-        if (avatarUrl) record.avatar_url = avatarUrl;
-
-        const { error: upsertErr } = await supabase.from("profiles").upsert([record], { onConflict: "id" });
-
-        if (upsertErr) {
-          alert("⚠️ فشل حفظ البروفايل: " + upsertErr.message);
-          return;
-        }
-
-        alert("✅ تم حفظ بياناتك بنجاح.");
-        // ذهاب للصفحة التالية
-        window.location.href = "index5.html";
-      } catch (err) {
-        alert("خطأ غير متوقع أثناء الحفظ: " + (err.message || err));
+      let avatarUrl = null;
+      const file = avatarInput.files[0];
+      if (file) {
+        const fileName = `${user.id}/${Date.now()}_${file.name}`;
+        const { error: uploadErr } = await supabase.storage.from("avatars").upload(fileName, file, { upsert: true });
+        if (uploadErr) { alert("⚠️ فشل رفع الصورة: " + uploadErr.message); return; }
+        const { data } = supabase.storage.from("avatars").getPublicUrl(fileName);
+        avatarUrl = data.publicUrl;
       }
+
+      const updates = { id: user.id, username };
+      if (avatarUrl) updates.avatar_url = avatarUrl;
+
+      const { error } = await supabase.from("profiles").upsert([updates], { onConflict: "id" });
+      if (error) { alert("⚠️ فشل الحفظ: " + error.message); return; }
+
+      // ✅ عرض رسالة ترحيب ثم الانتقال
+      welcomeMessage.textContent = `مرحباً بك، ${username} 🎉`;
+      welcomeMessage.style.display = "block";
+
+      setTimeout(() => {
+        window.location.href = "index5.html";
+      }, 2000); // الانتظار ثانيتين
     }
 
     function skip() {
       window.location.href = "index5.html";
     }
 
-    // نحمّل البيانات الآن
     loadProfile();
   </script>
 </body>
