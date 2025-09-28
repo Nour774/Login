@@ -2,81 +2,88 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <title>إعداد الحساب</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تحديث البروفايل</title>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body {
       font-family: "Tahoma", sans-serif;
       background: linear-gradient(135deg,#6a0572,#b5173a);
-      margin:0;display:flex;align-items:center;justify-content:center;
-      height:100vh;color:white;
+      margin:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
+      color:#fff;
+      text-align:center;
     }
     .container {
-      background: rgba(0,0,0,0.6);
-      padding:30px;border-radius:15px;
-      width:350px;text-align:center;
-      box-shadow:0 4px 20px rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.5);
+      padding: 30px;
+      border-radius: 15px;
+      width: 350px;
+      box-shadow:0 4px 25px rgba(0,0,0,0.4);
     }
-    h2 { margin-bottom:15px; }
-    input { width:100%;padding:12px;margin:10px 0;border-radius:8px;border:none;font-size:14px }
+    h2 { margin-bottom: 20px; }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+    }
     button {
-      width:100%;padding:12px;margin-top:12px;border:none;
-      border-radius:8px;background:linear-gradient(135deg,#b5173a,#6a0572);
-      color:#fff;font-weight:bold;cursor:pointer;transition:0.3s;
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(135deg,#b5173a,#6a0572);
+      color: white;
+      transition:0.3s;
     }
-    button:hover {opacity:0.9;transform:scale(1.02);}
-    .skip {margin-top:15px;display:block;color:#fff;text-decoration:underline;cursor:pointer}
-    #alert {margin-bottom:10px;padding:10px;border-radius:8px;display:none}
-    #alert.success {background:#4caf50}
-    #alert.error {background:#f44336}
+    button:hover { opacity:0.9; }
     .avatar-preview {
-      width:80px;height:80px;border-radius:50%;
-      object-fit:cover;margin:10px auto;display:none;border:2px solid #fff;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 10px auto;
+      display: none;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>تحديث البروفايل</h2>
-    <div id="alert"></div>
-
-    <input type="text" id="username" placeholder="اسم المستخدم الجديد">
+    <h2>إعداد حسابك</h2>
+    <input type="text" id="username" placeholder="اسم المستخدم">
     <input type="file" id="avatar" accept="image/*">
-
-    <img id="avatarPreview" class="avatar-preview">
-
-    <button onclick="updateProfile()">تأكيد</button>
-    <a class="skip" id="skip" onclick="skip()">تخطي للصفحة الرئيسية</a>
+    <img id="preview" class="avatar-preview" alt="Avatar Preview">
+    <button onclick="saveProfile()">تأكيد</button>
+    <button id="skipBtn" onclick="skip()">تخطي</button>
   </div>
 
   <script>
-    // Supabase config
-    const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const supabaseKey = "YOUR_ANON_KEY"; // ضع هنا anon key فقط
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    // إعداد supabase
+    const supabaseUrl = "YOUR_SUPABASE_URL";
+    const supabaseKey = "YOUR_SUPABASE_KEY";
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    const alertBox = document.getElementById("alert");
     const usernameInput = document.getElementById("username");
     const avatarInput = document.getElementById("avatar");
-    const avatarPreview = document.getElementById("avatarPreview");
-    const skipBtn = document.getElementById("skip");
+    const preview = document.getElementById("preview");
+    const skipBtn = document.getElementById("skipBtn");
 
-    function showAlert(msg,type="error"){
-      alertBox.textContent = msg;
-      alertBox.className = type === "success" ? "success" : "error";
-      alertBox.style.display="block";
-      setTimeout(()=>alertBox.style.display="none",3000);
-    }
-
-    // عرض الصورة قبل الرفع
-    avatarInput.addEventListener("change", ()=>{
+    avatarInput.addEventListener("change", () => {
       const file = avatarInput.files[0];
       if(file){
         const reader = new FileReader();
         reader.onload = e => {
-          avatarPreview.src = e.target.result;
-          avatarPreview.style.display="block";
+          preview.src = e.target.result;
+          preview.style.display = "block";
         };
         reader.readAsDataURL(file);
       }
@@ -94,65 +101,59 @@
 
       if(profile){
         if(profile.username){
-          usernameInput.placeholder = "تغيير الاسم (اختياري)";
-          skipBtn.style.display="block";
-        }else{
-          skipBtn.style.display="none";
+          usernameInput.value = profile.username;
+          skipBtn.style.display = "inline-block";
+        } else {
+          skipBtn.style.display = "none";
         }
-
         if(profile.avatar_url){
-          avatarPreview.src = profile.avatar_url;
-          avatarPreview.style.display="block";
+          preview.src = profile.avatar_url;
+          preview.style.display = "block";
         }
       }
     }
 
-    async function updateProfile(){
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if(error || !user){ window.location.href="index.html"; return; }
+    async function saveProfile(){
+      const { data: { user } } = await supabase.auth.getUser();
+      if(!user) return;
 
       const username = usernameInput.value.trim();
-      const file = avatarInput.files[0];
-      let avatar_url = null;
-
-      // إذا رفع صورة
-      if(file){
-        const filePath = `${user.id}/${Date.now()}_${file.name}`;
-        let { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(filePath, file, { upsert: true });
-        if(uploadError){ showAlert("فشل رفع الصورة","error"); return; }
-
-        const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-        avatar_url = data.publicUrl;
-      }
-
-      // إذا ما عنده username قديم → إجباري يدخل اسم
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .single();
-
-      if(!profile.username && !username){
-        showAlert("اسم المستخدم إجباري","error");
+      if(!username){
+        alert("اسم المستخدم إجباري!");
         return;
       }
 
-      const updates = {};
-      if(username) updates.username = username;
-      if(avatar_url) updates.avatar_url = avatar_url;
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update(updates)
-        .eq("id", user.id);
-
-      if(updateError){
-        showAlert("خطأ: " + updateError.message,"error");
-      }else{
-        showAlert("تم تحديث البروفايل","success");
+      let avatarUrl = null;
+      const file = avatarInput.files[0];
+      if(file){
+        const fileName = `${user.id}/${Date.now()}_${file.name}`;
+        let { error: uploadErr } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, file, { upsert: true });
+        if(uploadErr){
+          alert("خطأ في رفع الصورة: " + uploadErr.message);
+          return;
+        }
+        const { data: { publicUrl } } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(fileName);
+        avatarUrl = publicUrl;
       }
+
+      const updates = { id: user.id, username };
+      if(avatarUrl) updates.avatar_url = avatarUrl;
+
+      const { error } = await supabase
+        .from("profiles")
+        .upsert(updates, { onConflict: "id" });
+
+      if(error){
+        alert("خطأ: " + error.message);
+        return;
+      }
+
+      alert("تم حفظ البيانات!");
+      window.location.href="index5.html";
     }
 
     function skip(){
