@@ -63,7 +63,7 @@
     <input type="file" id="avatar" accept="image/*">
     <img id="preview" class="avatar-preview" alt="Avatar Preview">
     <button onclick="saveProfile()">تأكيد</button>
-    <button id="skipBtn" style="display:none;" onclick="skip()">تخطي</button>
+    <button id="skipBtn" onclick="skip()">تخطي</button>
   </div>
 
   <script>
@@ -77,7 +77,6 @@
     const preview = document.getElementById("preview");
     const skipBtn = document.getElementById("skipBtn");
 
-    // معاينة الصورة
     avatarInput.addEventListener("change", () => {
       const file = avatarInput.files[0];
       if(file){
@@ -90,23 +89,31 @@
       }
     });
 
-    // تحميل بيانات البروفايل
     async function loadProfile(){
       const { data: { user }, error } = await supabase.auth.getUser();
-      if(error || !user){ window.location.href="index.html"; return; }
+      if(error || !user){ 
+        alert("⚠️ لم يتم العثور على جلسة مستخدم!"); 
+        window.location.href="index.html"; 
+        return; 
+      }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("username, avatar_url")
         .eq("id", user.id)
         .single();
 
+      if(profileError){
+        alert("⚠️ خطأ في تحميل البيانات: " + profileError.message);
+        return;
+      }
+
       if(profile){
         if(profile.username){
           usernameInput.value = profile.username;
-          skipBtn.style.display = "block"; // يظهر زر التخطي فقط لو فيه اسم
+          skipBtn.style.display = "inline-block";
         } else {
-          skipBtn.style.display = "none"; // إجباري إدخال اسم جديد
+          skipBtn.style.display = "none";
         }
         if(profile.avatar_url){
           preview.src = profile.avatar_url;
@@ -115,14 +122,16 @@
       }
     }
 
-    // حفظ البيانات
     async function saveProfile(){
-      const { data: { user } } = await supabase.auth.getUser();
-      if(!user) return;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if(userError || !user){
+        alert("⚠️ لم يتم العثور على المستخدم!");
+        return;
+      }
 
       const username = usernameInput.value.trim();
       if(!username){
-        alert("اسم المستخدم إجباري!");
+        alert("⚠️ اسم المستخدم إجباري!");
         return;
       }
 
@@ -133,13 +142,16 @@
         let { error: uploadErr } = await supabase.storage
           .from("avatars")
           .upload(fileName, file, { upsert: true });
+
         if(uploadErr){
-          alert("خطأ في رفع الصورة: " + uploadErr.message);
+          alert("⚠️ خطأ في رفع الصورة: " + uploadErr.message);
           return;
         }
+
         const { data: { publicUrl } } = supabase.storage
           .from("avatars")
           .getPublicUrl(fileName);
+
         avatarUrl = publicUrl;
       }
 
@@ -151,11 +163,11 @@
         .upsert(updates, { onConflict: "id" });
 
       if(error){
-        alert("خطأ: " + error.message);
+        alert("⚠️ خطأ في حفظ البيانات: " + error.message);
         return;
       }
 
-      alert("تم حفظ البيانات!");
+      alert("✅ تم حفظ البيانات بنجاح!");
       window.location.href="index5.html";
     }
 
@@ -166,4 +178,4 @@
     loadProfile();
   </script>
 </body>
-</html>
+    </html>
