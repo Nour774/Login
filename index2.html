@@ -18,6 +18,7 @@
       color: white;
       text-align: center;
     }
+
     .container {
       background: rgba(0,0,0,0.4);
       padding: 40px;
@@ -25,11 +26,13 @@
       box-shadow: 0 4px 25px rgba(0,0,0,0.4);
       width: 350px;
     }
+
     h1 {
       margin-bottom: 20px;
       font-size: 24px;
       text-shadow: 1px 1px 3px black;
     }
+
     button {
       width: 100%;
       padding: 12px;
@@ -43,6 +46,7 @@
       cursor: pointer;
       transition: 0.3s;
     }
+
     button:hover {
       opacity: 0.9;
       transform: scale(1.02);
@@ -60,17 +64,17 @@
   <script>
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; 
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     async function loadUser() {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const { data: { user }, error } = await supabaseClient.auth.getUser();
 
       if (error || !user) {
         window.location.href = "index.html";
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await supabaseClient
         .from("profiles")
         .select("username")
         .eq("id", user.id)
@@ -79,22 +83,23 @@
       const welcome = document.getElementById("welcome");
 
       if (profileError || !profile) {
+        console.error(profileError?.message);
         welcome.textContent = `مرحباً بك، مستخدم 👋`;
       } else {
         welcome.textContent = `مرحباً بك، ${profile.username} 👋`;
       }
     }
 
-    async function logout() {
-      await supabase.auth.signOut();
+    window.logout = async function() {
+      await supabaseClient.auth.signOut();
       window.location.href = "index.html";
     }
 
-    function goToMembers() {
+    window.goToMembers = function() {
       window.location.href = "index3.html";
     }
 
-    function goToAdmins() {
+    window.goToAdmins = function() {
       window.location.href = "index4.html";
     }
 
