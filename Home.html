@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>الرئيسية</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: "Tahoma", sans-serif;
+      background: linear-gradient(135deg,#6a0572,#b5173a);
+      margin:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
+      color:#fff;
+      text-align:center;
+    }
+    .container {
+      background: rgba(0,0,0,0.5);
+      padding: 30px;
+      border-radius: 15px;
+      width: 350px;
+      box-shadow:0 4px 25px rgba(0,0,0,0.4);
+    }
+    h1 { margin-bottom: 20px; }
+    img {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 10px auto;
+      display: block;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(135deg,#b5173a,#6a0572);
+      color: white;
+      transition:0.3s;
+    }
+    button:hover { opacity:0.9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="welcome">جاري التحميل...</h1>
+    <img id="avatar" src="" alt="صورة البروفايل" style="display:none;">
+    <button onclick="logout()">تسجيل خروج</button>
+  </div>
+
+  <script>
+    const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    async function loadHome() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username, avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      const welcome = document.getElementById("welcome");
+      const avatar = document.getElementById("avatar");
+
+      if (profile) {
+        welcome.textContent = profile.username
+          ? `مرحباً بك، ${profile.username} 🎉`
+          : "مرحباً بك، مستخدم 🎉";
+
+        if (profile.avatar_url) {
+          avatar.src = profile.avatar_url;
+          avatar.style.display = "block";
+        }
+      } else {
+        welcome.textContent = "مرحباً بك، مستخدم 🎉";
+      }
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = "index.html";
+    }
+
+    loadHome();
+  </script>
+</body>
+    </html>
