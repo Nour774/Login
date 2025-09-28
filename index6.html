@@ -6,7 +6,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family:"Tahoma",sans-serif; background: linear-gradient(135deg,#6a0572,#b5173a); margin:0; padding:20px; color:white; }
-    table { width:100%; border-collapse: collapse; margin-top:20px; }
+    input { padding:6px; margin-bottom:10px; width:300px; border-radius:5px; border:none; }
+    table { width:100%; border-collapse: collapse; margin-top:10px; }
     th, td { padding:8px 12px; border:1px solid white; text-align:center; }
     th { background: rgba(0,0,0,0.5); }
     button { margin:2px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; color:white; }
@@ -21,6 +22,9 @@
 <body>
   <h1>لوحة التحكم</h1>
   <button onclick="logout()">تسجيل خروج</button>
+  <br>
+  <input type="text" id="searchInput" placeholder="ابحث باسم المستخدم أو البريد" oninput="filterTable()">
+
   <table id="usersTable">
     <thead>
       <tr>
@@ -39,9 +43,10 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; // للقراءة فقط
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // تم تحديث رابط الـ API إلى الرابط الذي أرسلته
-    const ADMIN_API_URL = "https://script.google.com/macros/s/AKfycbwYjVlu-qtZ1HG5N8E365uasWzRroODyPr2km9NRZgXNTED9exFsgpsp287A1p_FKxI/exec";
+    const ADMIN_API_URL = "https://script.google.com/macros/s/AKfycbyGBPwjicNrbvlzV03TukVKAghXQsnxR1PDuoXK_udPGEHEMDRBPvp-E8x7rEFRRjiS/exec";
     const ADMIN_SECRET = "mySecret123";
+
+    let allUsers = [];
 
     async function loadUsers() {
       try {
@@ -51,38 +56,51 @@
         const { data: users, error } = await supabase.from("profiles").select("*");
         if(error) { alert("خطأ في جلب الأعضاء"); return; }
 
-        const tbody = document.querySelector("#usersTable tbody");
-        tbody.innerHTML = "";
-
-        users.forEach(u => {
-          const tr = document.createElement("tr");
-
-          tr.innerHTML = `
-            <td>${u.username}</td>
-            <td>${u.email || "-"}</td>
-            <td>${u.role}</td>
-            <td>${u.status || "active"}</td>
-            <td>
-              ${u.role !== "admin" ? `
-                <button class="ban" onclick="adminAction('${u.id}','ban')">طرد</button>
-                <button class="block" onclick="adminAction('${u.id}','block')">حظر</button>
-                <button class="unblock" onclick="adminAction('${u.id}','unblock')">رفع الحظر</button>
-                <button class="delete" onclick="adminAction('${u.id}','delete_account')">حذف الحساب</button>
-              ` : ""}
-              ${u.role !== "admin" ? `
-                <button class="promote" onclick="adminAction('${u.id}','promote')">ترقية</button>
-              ` : `
-                <button class="demote" onclick="adminAction('${u.id}','demote')">تخفيض</button>
-              `}
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
+        allUsers = users;
+        renderTable(users);
 
       } catch(err) {
         console.error(err);
-        alert("حدث خطأ غير متوقع");
+        alert("حدث خطأ في الاتصال بالسيرفر. حاول إعادة تحميل الصفحة.");
       }
+    }
+
+    function renderTable(users) {
+      const tbody = document.querySelector("#usersTable tbody");
+      tbody.innerHTML = "";
+      users.forEach(u => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${u.username}</td>
+          <td>${u.email || "-"}</td>
+          <td>${u.role}</td>
+          <td>${u.status || "active"}</td>
+          <td>
+            ${u.role !== "admin" ? `
+              <button class="ban" onclick="adminAction('${u.id}','ban')">طرد</button>
+              <button class="block" onclick="adminAction('${u.id}','block')">حظر</button>
+              <button class="unblock" onclick="adminAction('${u.id}','unblock')">رفع الحظر</button>
+              <button class="delete" onclick="adminAction('${u.id}','delete_account')">حذف الحساب</button>
+            ` : ""}
+            ${u.role !== "admin" ? `
+              <button class="promote" onclick="adminAction('${u.id}','promote')">ترقية</button>
+            ` : `
+              <button class="demote" onclick="adminAction('${u.id}','demote')">تخفيض</button>
+            `}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterTable() {
+      const keyword = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allUsers.filter(u => 
+        (u.username && u.username.toLowerCase().includes(keyword)) || 
+        (u.email && u.email.toLowerCase().includes(keyword))
+      );
+      renderTable(filtered);
     }
 
     async function adminAction(userId, action) {
@@ -100,7 +118,7 @@
         }
       } catch(err) {
         console.error(err);
-        alert("خطأ في الاتصال بالـ API");
+        alert("خطأ في الاتصال بالـ API. تحقق من الاتصال بالإنترنت أو رابط الـ API.");
       }
     }
 
@@ -109,16 +127,20 @@
       window.location.href="index.html";
     }
 
-    // منع المستخدم المحظور من الدخول
     async function checkBlocked() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if(error || !user) { window.location.href="index.html"; return; }
-      const { data: profile } = await supabase.from("profiles").select("status").eq("id", user.id).single();
-      if(profile?.status === "blocked") {
-        alert("تم حظرك من الوصول.");
-        await supabase.auth.signOut();
-        window.location.href="index.html";
-        return;
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if(error || !user) { window.location.href="index.html"; return; }
+        const { data: profile } = await supabase.from("profiles").select("status").eq("id", user.id).single();
+        if(profile?.status === "blocked") {
+          alert("تم حظرك من الوصول.");
+          await supabase.auth.signOut();
+          window.location.href="index.html";
+          return;
+        }
+      } catch(err) {
+        console.error(err);
+        alert("فشل التحقق من الحالة. حاول إعادة تحميل الصفحة.");
       }
     }
 
