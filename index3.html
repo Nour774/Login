@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>لوحة التحكم</title>
+  <title>إعداد الحساب</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
@@ -10,90 +10,160 @@
       font-family: "Tahoma", sans-serif;
       background: linear-gradient(135deg,#6a0572,#b5173a);
       margin:0;
-      padding:20px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
       color:#fff;
       text-align:center;
     }
-    h2 { margin-bottom: 20px; }
-    ul { list-style:none; padding:0; }
-    li {
+    .container {
       background: rgba(0,0,0,0.5);
-      margin: 10px 0;
+      padding: 30px;
+      border-radius: 15px;
+      width: 350px;
+      box-shadow:0 4px 25px rgba(0,0,0,0.4);
+    }
+    h2 { margin-bottom: 20px; }
+    input {
+      width: 100%;
       padding: 10px;
-      border-radius: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
     }
     button {
-      padding: 6px 12px;
-      border:none;
-      border-radius:8px;
-      cursor:pointer;
-      font-weight:bold;
-      background:linear-gradient(135deg,#b5173a,#6a0572);
-      color:#fff;
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(135deg,#b5173a,#6a0572);
+      color: white;
+      transition:0.3s;
+    }
+    button:hover { opacity:0.9; }
+    .avatar-preview {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 10px auto;
+      display: none;
     }
   </style>
 </head>
 <body>
-  <h2>لوحة تحكم المشرف</h2>
-  <ul id="users"></ul>
+  <div class="container">
+    <h2>إعداد حسابك</h2>
+    <input type="text" id="username" placeholder="اسم المستخدم">
+    <input type="file" id="avatar" accept="image/*">
+    <img id="preview" class="avatar-preview" alt="Avatar Preview">
+    <button onclick="saveProfile()">تأكيد</button>
+    <button id="skipBtn" style="display:none;" onclick="skip()">تخطي</button>
+  </div>
 
   <script>
-    // إعداد Supabase
+    // إعداد supabase
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    async function loadUsers() {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, username, is_admin");
+    const usernameInput = document.getElementById("username");
+    const avatarInput = document.getElementById("avatar");
+    const preview = document.getElementById("preview");
+    const skipBtn = document.getElementById("skipBtn");
 
-      if (error) {
-        alert("خطأ في جلب المستخدمين: " + error.message);
+    // معاينة الصورة
+    avatarInput.addEventListener("change", () => {
+      const file = avatarInput.files[0];
+      if(file){
+        const reader = new FileReader();
+        reader.onload = e => {
+          preview.src = e.target.result;
+          preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // تحميل بيانات البروفايل
+    async function loadProfile(){
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if(error || !user){ window.location.href="index.html"; return; }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username, avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      if(profile){
+        if(profile.username){
+          usernameInput.value = profile.username;
+          skipBtn.style.display = "block"; // يظهر زر التخطي فقط لو فيه اسم
+        } else {
+          skipBtn.style.display = "none"; // إجباري إدخال اسم جديد
+        }
+        if(profile.avatar_url){
+          preview.src = profile.avatar_url;
+          preview.style.display = "block";
+        }
+      }
+    }
+
+    // حفظ البيانات
+    async function saveProfile(){
+      const { data: { user } } = await supabase.auth.getUser();
+      if(!user) return;
+
+      const username = usernameInput.value.trim();
+      if(!username){
+        alert("اسم المستخدم إجباري!");
         return;
       }
 
-      const usersList = document.getElementById("users");
-      usersList.innerHTML = "";
-
-      data.forEach(user => {
-        const li = document.createElement("li");
-        li.textContent = user.username || "مستخدم بدون اسم";
-
-        if (!user.is_admin) {
-          const btn = document.createElement("button");
-          btn.textContent = "طرد";
-          btn.onclick = () => banUser(user.id);
-          li.appendChild(btn);
-        } else {
-          const span = document.createElement("span");
-          span.textContent = "👑 مشرف";
-          li.appendChild(span);
+      let avatarUrl = null;
+      const file = avatarInput.files[0];
+      if(file){
+        const fileName = `${user.id}/${Date.now()}_${file.name}`;
+        let { error: uploadErr } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, file, { upsert: true });
+        if(uploadErr){
+          alert("خطأ في رفع الصورة: " + uploadErr.message);
+          return;
         }
+        const { data: { publicUrl } } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(fileName);
+        avatarUrl = publicUrl;
+      }
 
-        usersList.appendChild(li);
-      });
-    }
+      const updates = { id: user.id, username };
+      if(avatarUrl) updates.avatar_url = avatarUrl;
 
-    async function banUser(userId) {
       const { error } = await supabase
         .from("profiles")
-        .delete()
-        .eq("id", userId);
+        .upsert(updates, { onConflict: "id" });
 
-      if (error) {
-        alert("خطأ في الطرد: " + error.message);
+      if(error){
+        alert("خطأ: " + error.message);
         return;
       }
 
-      alert("تم طرد المستخدم بنجاح 🚫");
-      loadUsers();
+      alert("تم حفظ البيانات!");
+      window.location.href="index5.html";
     }
 
-    loadUsers();
+    function skip(){
+      window.location.href="index5.html";
+    }
+
+    loadProfile();
   </script>
 </body>
 </html>
