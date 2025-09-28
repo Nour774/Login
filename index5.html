@@ -5,23 +5,9 @@
   <title>الرئيسية</title>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
-    body {
-      font-family:"Tahoma",sans-serif;
-      background: linear-gradient(135deg,#6a0572,#b5173a);
-      display:flex; justify-content:center; align-items:center;
-      height:100vh; margin:0; color:white;
-    }
-    .container {
-      background: rgba(0,0,0,0.4);
-      padding:30px; border-radius:15px;
-      width:350px; text-align:center;
-    }
-    button {
-      width:100%; padding:12px; margin-top:12px;
-      border-radius:8px; border:none;
-      font-weight:bold; background: linear-gradient(135deg,#b5173a,#6a0572);
-      color:white; cursor:pointer; transition:0.3s;
-    }
+    body { font-family:"Tahoma",sans-serif; background: linear-gradient(135deg,#6a0572,#b5173a); display:flex; justify-content:center; align-items:center; height:100vh; margin:0; color:white; }
+    .container { background: rgba(0,0,0,0.4); padding:30px; border-radius:15px; width:350px; text-align:center; }
+    button { width:100%; padding:12px; margin-top:12px; border-radius:8px; border:none; font-weight:bold; background: linear-gradient(135deg,#b5173a,#6a0572); color:white; cursor:pointer; transition:0.3s; }
     button:hover { opacity:0.9; transform:scale(1.02); }
   </style>
 </head>
@@ -34,7 +20,6 @@
   </div>
 
   <script>
-    // ---------- إعداد Supabase ----------
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -43,6 +28,7 @@
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
         if(error || !user){
+          console.log("No user session, redirecting...");
           window.location.href = "index.html";
           return;
         }
@@ -58,32 +44,34 @@
           return;
         }
 
-        // عرض الترحيب مع اسم المستخدم أو قيمة افتراضية
+        console.log("Profile fetched:", profile);
+
         const username = profile?.username || "مستخدم";
         document.getElementById("welcome").textContent = `مرحباً بك، ${username} 👋`;
 
-        // إظهار زر لوحة التحكم للمشرفين فقط
-        if(profile?.role?.toLowerCase() === "admin"){
+        // تحقق من role واظهار زر المشرف فقط إذا كان admin
+        const role = profile?.role?.toLowerCase() || "";
+        if(role === "admin"){
           document.getElementById("adminBtn").style.display = "block";
+          console.log("User is admin, button shown.");
         } else {
           document.getElementById("adminBtn").style.display = "none";
-          localStorage.removeItem("isAdmin");
+          console.log("User is not admin.");
         }
+
       } catch(err){
         alert("حدث خطأ غير متوقع: " + (err.message || err));
       }
     }
 
     async function logout(){
-      try { await supabase.auth.signOut(); } catch(err) { console.warn("Supabase signOut failed:", err); }
-      localStorage.removeItem("isAdmin");
+      try { await supabase.auth.signOut(); } catch(err){ console.warn(err); }
       window.location.href = "index.html";
     }
 
     function goToMembers(){ window.location.href = "index3.html"; }
     function goToAdmin(){ window.location.href = "index6.html"; }
 
-    // تحميل البيانات عند فتح الصفحة
     loadUser();
   </script>
 </body>
