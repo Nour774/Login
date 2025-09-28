@@ -9,7 +9,7 @@
     input { padding:6px; margin-bottom:10px; width:300px; border-radius:5px; border:none; }
     table { width:100%; border-collapse: collapse; margin-top:10px; }
     th, td { padding:8px 12px; border:1px solid white; text-align:center; }
-    th { background: rgba(0,0,0,0.5); }
+    th { background: rgba(0,0,0,0.5); cursor:pointer; }
     button { margin:2px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; color:white; }
     .ban { background:#e63946; }
     .block { background:#f4a261; }
@@ -28,10 +28,10 @@
   <table id="usersTable">
     <thead>
       <tr>
-        <th>الاسم</th>
-        <th>البريد</th>
-        <th>الدور</th>
-        <th>الحالة</th>
+        <th onclick="sortTable('username')">الاسم</th>
+        <th onclick="sortTable('email')">البريد</th>
+        <th onclick="sortTable('role')">الدور</th>
+        <th onclick="sortTable('status')">الحالة</th>
         <th>إجراءات</th>
       </tr>
     </thead>
@@ -40,13 +40,31 @@
 
   <script>
     const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; // للقراءة فقط
+    const SUPABASE_KEY = "https://script.google.com/macros/s/AKfycbyI8PaVuX6LMB1wg_up3vHjbi_Y46keZWKuDFnLDN8qKqjdAjY0PnHZVF9-FFKO8k5J/exec"; // للقراءة فقط
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const ADMIN_API_URL = "https://script.google.com/macros/s/AKfycbyGBPwjicNrbvlzV03TukVKAghXQsnxR1PDuoXK_udPGEHEMDRBPvp-E8x7rEFRRjiS/exec";
+    const ADMIN_API_URL = "https://script.google.com/macros/s/AKfycbyiGTetT9UYiuh_wREYOSQnxL1YB45zAU8WyVan5bRBAGF8LMT5DEGRpc1LaV5HaZJx/exec";
     const ADMIN_SECRET = "mySecret123";
 
     let allUsers = [];
+    let sortOrder = { column: null, asc: true };
+
+    async function checkBlocked() {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if(error || !user) { window.location.href="index.html"; return; }
+        const { data: profile } = await supabase.from("profiles").select("status").eq("id", user.id).single();
+        if(profile?.status === "blocked") {
+          alert("تم حظرك من الوصول.");
+          await supabase.auth.signOut();
+          window.location.href="index.html";
+          return;
+        }
+      } catch(err) {
+        console.error(err);
+        alert("فشل التحقق من الحالة. حاول إعادة تحميل الصفحة.");
+      }
+    }
 
     async function loadUsers() {
       try {
@@ -70,7 +88,6 @@
       tbody.innerHTML = "";
       users.forEach(u => {
         const tr = document.createElement("tr");
-
         tr.innerHTML = `
           <td>${u.username}</td>
           <td>${u.email || "-"}</td>
@@ -82,8 +99,6 @@
               <button class="block" onclick="adminAction('${u.id}','block')">حظر</button>
               <button class="unblock" onclick="adminAction('${u.id}','unblock')">رفع الحظر</button>
               <button class="delete" onclick="adminAction('${u.id}','delete_account')">حذف الحساب</button>
-            ` : ""}
-            ${u.role !== "admin" ? `
               <button class="promote" onclick="adminAction('${u.id}','promote')">ترقية</button>
             ` : `
               <button class="demote" onclick="adminAction('${u.id}','demote')">تخفيض</button>
@@ -114,7 +129,7 @@
         if(data.error) alert("خطأ: " + data.error);
         else {
           alert("تم تنفيذ: " + action);
-          loadUsers(); // إعادة تحميل الجدول
+          loadUsers();
         }
       } catch(err) {
         console.error(err);
@@ -122,26 +137,21 @@
       }
     }
 
-    async function logout() {
-      await supabase.auth.signOut();
-      window.location.href="index.html";
+    function logout() {
+      supabase.auth.signOut().then(()=> window.location.href="index.html");
     }
 
-    async function checkBlocked() {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if(error || !user) { window.location.href="index.html"; return; }
-        const { data: profile } = await supabase.from("profiles").select("status").eq("id", user.id).single();
-        if(profile?.status === "blocked") {
-          alert("تم حظرك من الوصول.");
-          await supabase.auth.signOut();
-          window.location.href="index.html";
-          return;
-        }
-      } catch(err) {
-        console.error(err);
-        alert("فشل التحقق من الحالة. حاول إعادة تحميل الصفحة.");
-      }
+    function sortTable(column) {
+      sortOrder.asc = sortOrder.column === column ? !sortOrder.asc : true;
+      sortOrder.column = column;
+      const sorted = [...allUsers].sort((a,b)=>{
+        const valA = (a[column]||"").toString().toLowerCase();
+        const valB = (b[column]||"").toString().toLowerCase();
+        if(valA < valB) return sortOrder.asc ? -1 : 1;
+        if(valA > valB) return sortOrder.asc ? 1 : -1;
+        return 0;
+      });
+      renderTable(sorted);
     }
 
     checkBlocked().then(loadUsers);
