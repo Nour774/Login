@@ -8,36 +8,21 @@
     body {
       font-family:"Tahoma",sans-serif;
       background: linear-gradient(135deg,#6a0572,#b5173a);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      height:100vh;
-      margin:0;
-      color:white;
+      display:flex; justify-content:center; align-items:center;
+      height:100vh; margin:0; color:white;
     }
     .container {
       background: rgba(0,0,0,0.4);
-      padding:30px;
-      border-radius:15px;
-      width:350px;
-      text-align:center;
+      padding:30px; border-radius:15px;
+      width:350px; text-align:center;
     }
     button {
-      width:100%;
-      padding:12px;
-      margin-top:12px;
-      border-radius:8px;
-      border:none;
-      font-weight:bold;
-      background: linear-gradient(135deg,#b5173a,#6a0572);
-      color:white;
-      cursor:pointer;
-      transition:0.3s;
+      width:100%; padding:12px; margin-top:12px;
+      border-radius:8px; border:none;
+      font-weight:bold; background: linear-gradient(135deg,#b5173a,#6a0572);
+      color:white; cursor:pointer; transition:0.3s;
     }
-    button:hover{
-      opacity:0.9;
-      transform:scale(1.02);
-    }
+    button:hover { opacity:0.9; transform:scale(1.02); }
   </style>
 </head>
 <body>
@@ -68,18 +53,20 @@
           .eq("id", user.id)
           .single();
 
-        if(profileErr && profileErr.code !== "PGRST116"){ 
+        if(profileErr && profileErr.code !== "PGRST116"){
           alert("خطأ في جلب البروفايل: " + profileErr.message);
           return;
         }
 
-        document.getElementById("welcome").textContent = profile && profile.username 
-          ? `مرحباً بك، ${profile.username} 👋`
-          : "مرحباً بك 👋";
+        // عرض الترحيب مع اسم المستخدم أو قيمة افتراضية
+        const username = profile?.username || "مستخدم";
+        document.getElementById("welcome").textContent = `مرحباً بك، ${username} 👋`;
 
-        if(profile && profile.role === "admin"){
+        // إظهار زر لوحة التحكم للمشرفين فقط
+        if(profile?.role?.toLowerCase() === "admin"){
           document.getElementById("adminBtn").style.display = "block";
         } else {
+          document.getElementById("adminBtn").style.display = "none";
           localStorage.removeItem("isAdmin");
         }
       } catch(err){
@@ -88,7 +75,7 @@
     }
 
     async function logout(){
-      await supabase.auth.signOut();
+      try { await supabase.auth.signOut(); } catch(err) { console.warn("Supabase signOut failed:", err); }
       localStorage.removeItem("isAdmin");
       window.location.href = "index.html";
     }
@@ -96,6 +83,7 @@
     function goToMembers(){ window.location.href = "index3.html"; }
     function goToAdmin(){ window.location.href = "index6.html"; }
 
+    // تحميل البيانات عند فتح الصفحة
     loadUser();
   </script>
 </body>
