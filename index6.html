@@ -3,85 +3,130 @@
 <head>
   <meta charset="UTF-8">
   <title>لوحة تحكم المشرف</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
-    body { font-family:"Tahoma",sans-serif; background:#222; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
-    .container { width:650px; background: rgba(0,0,0,0.6); padding:20px; border-radius:12px; }
-    h1 { text-align:center; margin-bottom:20px; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { border:1px solid #555; padding:8px; text-align:center; }
-    button { padding:6px 10px; border:none; border-radius:5px; color:#fff; cursor:pointer; margin:2px; }
-    .kick { background:darkorange; } .ban { background:crimson; }
+    body {
+      font-family: "Tahoma", sans-serif;
+      background: #222; color: white;
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; margin: 0;
+    }
+    .container {
+      width: 700px; background: rgba(0,0,0,0.6); padding: 20px;
+      border-radius: 12px;
+    }
+    h1 { text-align: center; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      border: 1px solid #555; padding: 8px; text-align: center;
+    }
+    button {
+      padding: 6px 10px; border: none; border-radius: 5px;
+      color: white; cursor: pointer; margin: 2px;
+    }
+    .kick { background: darkorange; }
+    .kick:hover { background: orange; }
+    .ban { background: crimson; }
+    .ban:hover { background: darkred; }
+    .toggle { background: mediumseagreen; }
+    .toggle:hover { background: seagreen; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>لوحة تحكم المشرف</h1>
     <table id="usersTable">
-      <thead><tr><th>المعرف</th><th>الاسم</th><th>الدور</th><th>الإجراءات</th></tr></thead>
+      <thead>
+        <tr><th>المعرف</th><th>الاسم</th><th>الدور</th><th>الإجراءات</th></tr>
+      </thead>
       <tbody></tbody>
     </table>
   </div>
 
   <script>
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-    const { createClient } = supabase;
-    const client = createClient(supabaseUrl, supabaseKey);
+    const supabaseKey = "YOUR_ANON_KEY_HERE"; // ضع المفتاح العمومي الحقيقي
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // مفتاح الخدمة يتم تركه قيمته الافتراضية هنا كما طلبت
-    const serviceKey = "SERVICE_ROLE_KEY_HERE";
+    const serviceKey = "SERVICE_ROLE_KEY_HERE"; // مفتاح الخدمة الافتراضي
 
     async function loadUsers() {
-      if (localStorage.getItem("isAdmin") !== "true") {
+      if(localStorage.getItem("isAdmin") !== "true") {
         alert("غير مسموح بالدخول!");
         window.location.href = "index5.html";
         return;
       }
 
-      const { data: users, error } = await client.from("profiles").select("id, username, role");
-      if (error) { alert("خطأ في جلب المستخدمين: " + error.message); return; }
+      const { data: users, error } = await supabase.from("profiles").select("id, username, role");
+      if(error){ alert("خطأ في جلب المستخدمين"); return; }
 
       const tbody = document.querySelector("#usersTable tbody");
       tbody.innerHTML = "";
+
       users.forEach(user => {
         const tr = document.createElement("tr");
-        let actions = `<button class="kick" onclick="deleteFromProfiles('${user.id}')">طرد من البروفايل</button>`;
-        if (user.role !== "admin") {
-          actions += `<button class="ban" onclick="deleteCompletely('${user.id}','${user.role}')">طرد كامل</button>`;
+
+        let actions = '';
+
+        // زر الطرد من جدول profiles فقط
+        actions += `<button class="kick" onclick="deleteFromProfiles('${user.id}')">طرد من البروفايل</button>`;
+
+        // زر الحذف الكامل مع منع حذف المشرفين
+        if(user.role !== "admin"){
+          actions += `<button class="ban" onclick="deleteCompletely('${user.id}', '${user.role}')">طرد كامل</button>`;
         }
-        tr.innerHTML = `<td>${user.id}</td><td>${user.username||'-'}</td><td>${user.role||'-'}</td><td>${actions}</td>`;
+
+        // زر تبديل الدور (نسخة تجريبية)
+        if(user.role){
+          actions += `<button class="toggle" onclick="toggleRole('${user.id}', '${user.role}')">تبديل الدور</button>`;
+        }
+
+        tr.innerHTML = `<td>${user.id}</td>
+                        <td>${user.username || "-"}</td>
+                        <td>${user.role || "-"}</td>
+                        <td>${actions}</td>`;
         tbody.appendChild(tr);
       });
     }
 
-    async function deleteFromProfiles(userId) {
-      if (!confirm("هل تريد حذف هذا المستخدم من جدول البروفايل فقط؟")) return;
-      const { error } = await client.from("profiles").delete().eq("id", userId);
-      if (error) { alert("فشل الحذف: " + error.message); } else { alert("تم حذف المستخدم من البروفايل."); loadUsers(); }
+    async function deleteFromProfiles(userId){
+      const { data: user } = await supabase.from("profiles").select("role").eq("id", userId).single();
+      if(user.role === "admin"){ alert("❌ لا يمكن حذف مشرف من جدول البروفايل!"); return; }
+      if(!confirm("هل تريد حذف هذا المستخدم من جدول البروفايل فقط؟")) return;
+
+      const { error } = await supabase.from("profiles").delete().eq("id", userId);
+      if(error){ alert("فشل الحذف: " + error.message); }
+      else{ alert("تم حذف المستخدم من البروفايل."); loadUsers(); }
     }
 
-    async function deleteCompletely(userId, role) {
-      if (role === "admin") { alert("❌ لا يمكن حذف مشرفين بالطرد الكامل."); return; }
-      if (!confirm("تحذير: هذا سيحذف المستخدم بالكامل من النظام. هل أنت متأكد؟")) return;
+    async function deleteCompletely(userId, role){
+      if(role === "admin"){ alert("❌ لا يمكن حذف مشرفين بالطرد الكامل."); return; }
+      if(!confirm("تحذير: هذا سيحذف المستخدم بالكامل. هل أنت متأكد؟")) return;
 
-      // حذف من profiles
-      await client.from("profiles").delete().eq("id", userId);
+      await supabase.from("profiles").delete().eq("id", userId);
 
-      // محاولة طلب حذف من Auth (يتطلب service role key على السيرفر عادة)
-      try {
+      try{
         const res = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
           method: "DELETE",
           headers: { "apikey": serviceKey, "Authorization": `Bearer ${serviceKey}` }
         });
-        if (res.ok) { alert("تم حذف المستخدم بالكامل."); } else { alert("فشل حذف المستخدم من Auth. تحقق من serviceKey."); }
-      } catch (err) { alert("خطأ: " + err.message); }
+        if(res.ok){ alert("تم حذف المستخدم بالكامل."); }
+        else{ alert("فشل حذف المستخدم من Auth."); }
+      }catch(err){ alert("خطأ: " + err.message); }
 
       loadUsers();
+    }
+
+    async function toggleRole(userId, currentRole){
+      let newRole = currentRole === "admin" ? "user" : "admin";
+      if(!confirm(`هل تريد تغيير الدور إلى ${newRole}?`)) return;
+
+      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", userId);
+      if(error){ alert("فشل تبديل الدور: " + error.message); }
+      else{ alert(`تم تغيير الدور إلى ${newRole}`); loadUsers(); }
     }
 
     loadUsers();
   </script>
 </body>
-  </html>
+</html>
