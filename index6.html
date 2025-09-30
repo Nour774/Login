@@ -3,158 +3,84 @@
 <head>
   <meta charset="UTF-8">
   <title>لوحة التحكم</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family:"Tahoma",sans-serif; background: linear-gradient(135deg,#6a0572,#b5173a); margin:0; padding:20px; color:white; }
-    input { padding:6px; margin-bottom:10px; width:300px; border-radius:5px; border:none; }
-    table { width:100%; border-collapse: collapse; margin-top:10px; }
-    th, td { padding:8px 12px; border:1px solid white; text-align:center; }
-    th { background: rgba(0,0,0,0.5); cursor:pointer; }
-    button { margin:2px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; color:white; }
-    .ban { background:#e63946; }
-    .block { background:#f4a261; }
-    .unblock { background:#2a9d8f; }
-    .delete { background:#d00000; }
-    .promote { background:#264653; }
-    .demote { background:#6a0572; }
+    body { font-family:"Tahoma",sans-serif; background: #1e1e2f; color:white; margin:0; padding:20px; }
+    table { width:100%; border-collapse: collapse; margin-top:20px; }
+    th, td { border:1px solid #555; padding:8px; text-align:center; }
+    th { background:#444; }
+    button { padding:6px 10px; margin:2px; border:none; border-radius:5px; cursor:pointer; }
+    .block { background:red; color:white; }
+    .unblock { background:green; color:white; }
+    .promote { background:orange; color:white; }
+    .demote { background:blue; color:white; }
+    .delete { background:#555; color:white; }
   </style>
 </head>
 <body>
   <h1>لوحة التحكم</h1>
-  <button onclick="logout()">تسجيل خروج</button>
-  <br>
-  <input type="text" id="searchInput" placeholder="ابحث باسم المستخدم أو البريد" oninput="filterTable()">
-
   <table id="usersTable">
     <thead>
       <tr>
-        <th onclick="sortTable('username')">الاسم</th>
-        <th onclick="sortTable('email')">البريد</th>
-        <th onclick="sortTable('role')">الدور</th>
-        <th onclick="sortTable('status')">الحالة</th>
-        <th>إجراءات</th>
+        <th>الاسم</th>
+        <th>البريد</th>
+        <th>الحالة</th>
+        <th>الدور</th>
+        <th>الإجراءات</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
   <script>
-    const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; // للقراءة فقط
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const ADMIN_API_URL = "https://script.google.com/macros/s/AKfycbxFXRO4WQqpSQ5w6fx7xIHv0UR5khO7qhHggPOkywWv5rU76azIW-d-x3FdSD3jAywS/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvTRR8Im9j_WAoHfVTktuWQB7qPymzj7Kxl1ihEjLxXXnmK6sqhJdwTl3MXFF_lL2Gmg/exec"; // ضع هنا رابط الـ deployment
     const ADMIN_SECRET = "mySecret123";
 
-    let allUsers = [];
-    let sortOrder = { column: null, asc: true };
-
-    async function checkBlocked() {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if(error || !user) { window.location.href="index.html"; return; }
-        const { data: profile } = await supabase.from("profiles").select("status").eq("id", user.id).single();
-        if(profile?.status === "blocked") {
-          alert("تم حظرك من الوصول.");
-          await supabase.auth.signOut();
-          window.location.href="index.html";
-          return;
-        }
-      } catch(err) {
-        console.error(err);
-        alert("فشل التحقق من الحالة. حاول إعادة تحميل الصفحة.");
-      }
+    async function fetchUsers() {
+      const res = await fetch(`${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=list_users`);
+      const data = await res.json();
+      populateTable(data.users || []);
     }
 
-    async function loadUsers() {
-      try {
-        const { data: { user }, error: userErr } = await supabase.auth.getUser();
-        if(userErr || !user) { window.location.href="index.html"; return; }
-
-        const { data: users, error } = await supabase.from("profiles").select("*");
-        if(error) { alert("خطأ في جلب الأعضاء"); return; }
-
-        allUsers = users;
-        renderTable(users);
-
-      } catch(err) {
-        console.error(err);
-        alert("حدث خطأ في الاتصال بالسيرفر. حاول إعادة تحميل الصفحة.");
-      }
-    }
-
-    function renderTable(users) {
+    function populateTable(users) {
       const tbody = document.querySelector("#usersTable tbody");
       tbody.innerHTML = "";
-      users.forEach(u => {
+      users.forEach(user => {
         const tr = document.createElement("tr");
+
         tr.innerHTML = `
-          <td>${u.username}</td>
-          <td>${u.email || "-"}</td>
-          <td>${u.role}</td>
-          <td>${u.status || "active"}</td>
+          <td>${user.username}</td>
+          <td>${user.email || ""}</td>
+          <td>${user.status}</td>
+          <td>${user.role}</td>
           <td>
-            ${u.role !== "admin" ? `
-              <button class="ban" onclick="adminAction('${u.id}','ban')">طرد</button>
-              <button class="block" onclick="adminAction('${u.id}','block')">حظر</button>
-              <button class="unblock" onclick="adminAction('${u.id}','unblock')">رفع الحظر</button>
-              <button class="delete" onclick="adminAction('${u.id}','delete_account')">حذف الحساب</button>
-              <button class="promote" onclick="adminAction('${u.id}','promote')">ترقية</button>
-            ` : `
-              <button class="demote" onclick="adminAction('${u.id}','demote')">تخفيض</button>
-            `}
+            ${user.role !== "admin" ? `
+              <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
+              <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
+              <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
+              <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
+              <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
+            ` : `<span>مسؤول</span>`}
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    function filterTable() {
-      const keyword = document.getElementById("searchInput").value.toLowerCase();
-      const filtered = allUsers.filter(u => 
-        (u.username && u.username.toLowerCase().includes(keyword)) || 
-        (u.email && u.email.toLowerCase().includes(keyword))
-      );
-      renderTable(filtered);
-    }
-
-    async function adminAction(userId, action) {
+    async function adminAction(action, userId) {
       try {
-        const res = await fetch(ADMIN_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ secret: ADMIN_SECRET, userId, action })
-        });
+        const url = `${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=${action}&userId=${userId}`;
+        const res = await fetch(url);
         const data = await res.json();
-        if(data.error) alert("خطأ: " + data.error);
-        else {
-          alert("تم تنفيذ: " + action);
-          loadUsers();
-        }
+        console.log(data);
+        alert(data.error || "تم الإجراء بنجاح!");
+        fetchUsers(); // تحديث الجدول بعد الإجراء
       } catch(err) {
         console.error(err);
-        alert("خطأ في الاتصال بالـ API. تحقق من الاتصال بالإنترنت أو رابط الـ API.");
+        alert("فشل الاتصال بالخدمة");
       }
     }
 
-    function logout() {
-      supabase.auth.signOut().then(()=> window.location.href="index.html");
-    }
-
-    function sortTable(column) {
-      sortOrder.asc = sortOrder.column === column ? !sortOrder.asc : true;
-      sortOrder.column = column;
-      const sorted = [...allUsers].sort((a,b)=>{
-        const valA = (a[column]||"").toString().toLowerCase();
-        const valB = (b[column]||"").toString().toLowerCase();
-        if(valA < valB) return sortOrder.asc ? -1 : 1;
-        if(valA > valB) return sortOrder.asc ? 1 : -1;
-        return 0;
-      });
-      renderTable(sorted);
-    }
-
-    checkBlocked().then(loadUsers);
+    fetchUsers();
   </script>
 </body>
 </html>
