@@ -54,13 +54,17 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1stkrkD8PclkVjWDI8
 const ADMIN_SECRET = "mySecret123";
 
 const urlParams = new URLSearchParams(window.location.search);
-const currentUserId = urlParams.get('uid') || localStorage.getItem('currentUserId') || "current_user_id";
+const currentUserId = urlParams.get('uid') || localStorage.getItem('currentUserId') || null;
 let currentUserRole = "";
-
-let lastUsersSnapshot = null;
 
 // ==================== Fetch & Render ====================
 async function fetchUsersAndRender(){
+  if(!currentUserId){
+    alert("لا يوجد معرف مستخدم صالح. سيتم إعادة التوجيه.");
+    window.location.href="index5.html";
+    return;
+  }
+
   try{
     const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=username`,{
       headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`}
@@ -70,7 +74,20 @@ async function fetchUsersAndRender(){
 
     // تحديد الدور الحالي فورًا
     const me = users.find(u=>u.id===currentUserId);
-    currentUserRole = me?.role || "user";
+    if(!me){
+      alert("المستخدم الحالي غير موجود في قاعدة البيانات.");
+      window.location.href="index5.html";
+      return;
+    }
+
+    currentUserRole = me.role?.toLowerCase() || "user";
+
+    // إذا المستخدم مجرد user يطرد فورًا
+    if(currentUserRole==="user"){
+      alert("ليس لديك صلاحية الدخول!");
+      window.location.href="index5.html";
+      return;
+    }
 
     renderUsers(users);
   }catch(err){console.error("Fetch users error:",err);}
@@ -102,12 +119,7 @@ function renderUsers(users){
   const tbody = document.querySelector("#usersTable tbody");
   tbody.innerHTML = "";
 
-  // تجاهل owner في الجدول
   const visibleUsers = users.filter(u=>u.role!=="owner");
-
-  const snapshot = JSON.stringify(visibleUsers.map(u=>({id:u.id,role:u.role,username:u.username,email:u.email,status:u.status})));
-  if(snapshot===lastUsersSnapshot) return;
-  lastUsersSnapshot = snapshot;
 
   visibleUsers.forEach(user=>{
     const isSelf = user.id===currentUserId;
@@ -137,9 +149,10 @@ async function adminAction(action,userId){
   }catch(err){console.error("adminAction error:",err); alert("فشل الاتصال بالخدمة");}
 }
 
-// ==================== تحقق مستمر ====================
+// ==================== Role Check دوري ====================
 async function checkUserRole(){
   try{
+    if(!currentUserId) return;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(currentUserId)}&select=role`,{
       headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`}
     });
@@ -151,7 +164,6 @@ async function checkUserRole(){
       window.location.href="index5.html";
       return;
     }
-    if(user.role==="owner") window.location.href="index7.html";
     fetchUsersAndRender();
   }catch(err){console.error("Role check error:",err);}
 }
@@ -161,19 +173,4 @@ setInterval(checkUserRole,2000);
 const searchInput = document.getElementById("searchInput");
 searchInput.addEventListener("input",applySearchFilter);
 function applySearchFilter(){
-  const filter = searchInput.value.trim().toLowerCase();
-  document.querySelectorAll("#usersTable tbody tr").forEach(row=>{
-    const text=row.textContent.toLowerCase();
-    row.style.display=text.includes(filter)?"":"none";
-  });
-}
-
-function escapeHtml(unsafe){if(!unsafe) return ""; return String(unsafe).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
-
-// ==================== بدء التشغيل ====================
-fetchUsersAndRender();
-checkUserRole();
-if(urlParams.get('uid')){ try{ localStorage.setItem('currentUserId',urlParams.get('uid')); }catch(e){} }
-</script>
-</body>
-  </html>
+  const filter = searchInput.value
