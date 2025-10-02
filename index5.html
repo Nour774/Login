@@ -51,7 +51,8 @@
         document.getElementById("welcome").textContent = `مرحباً بك، ${username} 👋`;
 
         const role = profile?.role?.toLowerCase() || "";
-        if(role === "admin"){
+        // تعديل: زر لوحة التحكم يظهر لكل من admin و owner
+        if(role === "admin" || role === "owner"){
           document.getElementById("adminBtn").style.display = "block";
         } else {
           document.getElementById("adminBtn").style.display = "none";
