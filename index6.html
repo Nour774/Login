@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>لوحة التحكم</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 <style>
 body { font-family:"Tahoma",sans-serif; background:#1e1e2f; color:white; margin:0; padding:20px; }
-input[type="text"] { padding:8px; width:320px; border-radius:6px; border:0; outline:none; }
+input[type="text"] { padding:8px; width:320px; border-radius:6px; border:0; outline:none; margin-bottom:10px; }
 table { width:100%; border-collapse:collapse; margin-top:12px; }
 th, td { border:1px solid #444; padding:8px; text-align:center; font-size:14px; }
 th { background:#2a2a3d; }
@@ -18,7 +18,6 @@ button { padding:5px 8px; margin:2px; border:none; border-radius:5px; cursor:poi
 
 <h1>لوحة التحكم</h1>
 <input type="text" id="searchInput" placeholder="ابحث باسم المستخدم أو البريد..." autocomplete="off">
-
 <table id="usersTable">
 <thead>
 <tr>
@@ -34,8 +33,8 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1stkrkD8PclkVjWDI8-Ge5f4ibR-HlyOkHxeE_CUH0k4wLC21ISoa91r4hxaVTzSQrw/exec";
 const ADMIN_SECRET = "mySecret123";
 
-// إنشاء العميل بالشكل الصحيح
-const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// إنشاء العميل
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUserId = null;
 let currentUserRole = "";
@@ -44,64 +43,69 @@ let currentUserRole = "";
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
-    // جلب الجلسة
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if(error || !session) {
-        alert("لم يتم تسجيل الدخول. إعادة التوجيه...");
-        window.location.href = "index5.html";
-        return;
-    }
-    currentUserId = session.user.id;
+    try {
+        // جلب الجلسة
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if(error || !session) throw new Error("لم يتم تسجيل الدخول");
 
-    // جلب دور المستخدم الحالي
-    const { data: profile, error: profileErr } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentUserId)
-        .single();
+        currentUserId = session.user.id;
 
-    if(profileErr || !profile) {
-        alert("لم يتم العثور على المستخدم. إعادة التوجيه...");
-        window.location.href = "index5.html";
-        return;
-    }
+        // جلب الدور
+        const { data: profile, error: profileErr } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUserId)
+            .single();
 
-    currentUserRole = (profile.role || "user").toLowerCase();
+        if(profileErr || !profile) throw new Error("لم يتم العثور على المستخدم");
 
-    if(currentUserRole === "user") {
-        alert("ليس لديك صلاحية الدخول!");
-        window.location.href = "index5.html";
-        return;
-    }
+        currentUserRole = (profile.role || "user").toLowerCase();
 
-    fetchAndRenderUsers();
+        if(currentUserRole === "user") throw new Error("ليس لديك صلاحية الدخول");
 
-    // تحقق دوري من الدور لتحديث الجدول أو طرد المستخدم إذا تم تخفيضه
-    setInterval(async () => {
+        // عرض المستخدمين
         await fetchAndRenderUsers();
-        await checkRole();
-    }, 3000);
+
+        // تحقق دوري من الدور وتحديث الجدول
+        setInterval(async ()=>{
+            await fetchAndRenderUsers();
+            await checkRole();
+        }, 3000);
+
+    } catch(e) {
+        alert(e.message);
+        window.location.href = "index5.html";
+    }
 }
 
 // جلب المستخدمين وعرضهم
 async function fetchAndRenderUsers() {
-    const { data: users, error } = await supabase.from('profiles').select('*').order('username');
-    if(error || !users) { console.error("Fetch users error:", error); return; }
+    try {
+        const { data: users, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('username');
 
-    const tbody = document.querySelector("#usersTable tbody");
-    tbody.innerHTML = "";
+        if(error) throw error;
 
-    users.forEach(u=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${escapeHtml(u.username || "")}${u.id===currentUserId?" ⇽ أنت":""}</td>
-            <td>${escapeHtml(u.email || "")}</td>
-            <td>${escapeHtml(u.status || "active")}</td>
-            <td>${escapeHtml(u.role || "user")}</td>
-            <td>${getActionButtons(currentUserRole,u)}</td>
-        `;
-        tbody.appendChild(tr);
-    });
+        const tbody = document.querySelector("#usersTable tbody");
+        tbody.innerHTML = "";
+
+        users.forEach(u=>{
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${escapeHtml(u.username || "")}${u.id===currentUserId?" ⇽ أنت":""}</td>
+                <td>${escapeHtml(u.email || "")}</td>
+                <td>${escapeHtml(u.status || "active")}</td>
+                <td>${escapeHtml(u.role || "user")}</td>
+                <td>${getActionButtons(currentUserRole,u)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+    } catch(e) {
+        console.error("Fetch users error:", e);
+    }
 }
 
 // أزرار الإدارة حسب الدور
@@ -109,11 +113,11 @@ function getActionButtons(role, user){
     if(user.id===currentUserId) return `<span class="badge">أنت (${role})</span>`;
     if(role==="owner" || (role==="admin" && user.role==="user")) {
         return `
-          <button onclick="adminAction('block','${user.id}')">حظر</button>
-          <button onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
-          <button onclick="adminAction('promote','${user.id}')">ترقية</button>
-          <button onclick="adminAction('demote','${user.id}')">تخفيض</button>
-          <button onclick="adminAction('delete_account','${user.id}')">حذف</button>
+            <button onclick="adminAction('block','${user.id}')">حظر</button>
+            <button onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
+            <button onclick="adminAction('promote','${user.id}')">ترقية</button>
+            <button onclick="adminAction('demote','${user.id}')">تخفيض</button>
+            <button onclick="adminAction('delete_account','${user.id}')">حذف</button>
         `;
     }
     return `<span class="badge">---</span>`;
@@ -126,17 +130,26 @@ async function adminAction(action,userId){
         const data = await res.json().catch(()=>({}));
         alert(data.error || data.message || "تم الإجراء بنجاح!");
         fetchAndRenderUsers();
-    } catch(e) { console.error(e); alert("فشل الاتصال"); }
+    } catch(e) {
+        console.error(e);
+        alert("فشل الاتصال بالخدمة");
+    }
 }
 
 // تحقق دوري من الدور
 async function checkRole() {
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', currentUserId).single();
-    const role = (profile?.role || "user").toLowerCase();
-    if(!["admin","owner"].includes(role)) {
-        alert("تم تخفيض رتبك أو ليس لديك صلاحية!");
-        window.location.href = "index5.html";
-    }
+    try{
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUserId)
+            .single();
+        const role = (profile?.role || "user").toLowerCase();
+        if(!["admin","owner"].includes(role)) {
+            alert("تم تخفيض رتبك أو ليس لديك صلاحية!");
+            window.location.href = "index5.html";
+        }
+    } catch(e){ console.error(e); }
 }
 
 // البحث في الجدول
@@ -148,7 +161,7 @@ searchInput.addEventListener("input",()=> {
     });
 });
 
-// حماية HTML من injection
+// حماية HTML
 function escapeHtml(text){
     return text.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 }
