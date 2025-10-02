@@ -1,109 +1,74 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8" />
-<title>لوحة التحكم - index6</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
-<style>
-body { font-family:"Tahoma",sans-serif; background:#1e1e2f; color:white; margin:0; padding:20px; }
-h1 { margin:0 0 10px 0; }
-.top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-input[type="text"] { padding:8px; width:320px; border-radius:6px; border:0; outline:none; }
-table { width:100%; border-collapse:collapse; margin-top:12px; }
-th, td { border:1px solid #444; padding:8px; text-align:center; font-size:14px; }
-th { background:#2a2a3d; }
-button { padding:6px 10px; margin:2px; border:none; border-radius:5px; cursor:pointer; font-size:13px; }
-.block { background:#c0392b; color:white; }
-.unblock { background:#27ae60; color:white; }
-.promote { background:#e67e22; color:white; }
-.demote { background:#2980b9; color:white; }
-.delete { background:#7f8c8d; color:white; }
-.badge { padding:4px 8px; border-radius:6px; background:#34495e; display:inline-block; }
-.small { font-size:12px; padding:4px 6px; }
-@media (max-width:700px){
-  input[type="text"]{ width:100%; }
-  table, th, td { font-size:12px; }
-  button{ padding:5px 8px; font-size:12px; }
-}
-</style>
-</head>
-<body>
-<h1>لوحة التحكم</h1>
-<div class="top">
-<input type="text" id="searchInput" placeholder="ابحث باسم المستخدم أو البريد..." autocomplete="off">
-<div class="badge small">تحديث تلقائي: مُفعل (ثانيتين)</div>
-</div>
-
-<table id="usersTable" aria-live="polite">
-<thead>
-<tr>
-<th>الاسم</th>
-<th>البريد</th>
-<th>الحالة</th>
-<th>الدور</th>
-<th>الإجراءات</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
 <script>
 const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1stkrkD8PclkVjWDI8-Ge5f4ibR-HlyOkHxeE_CUH0k4wLC21ISoa91r4hxaVTzSQrw/exec";
-const ADMIN_SECRET = "mySecret123";
-
 const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUserId = null;
 let currentUserRole = "";
 
-// ==================== التحقق من الجلسة ====================
-async function checkSessionAndRole() {
+// ✅ الحصول على UUID من الجلسة والتحقق من الدور
+async function init() {
     const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session) {
-        alert("لم يتم تسجيل الدخول. سيتم إعادة التوجيه.");
+    if(error || !session) {
+        alert("لم يتم تسجيل الدخول. إعادة التوجيه...");
         window.location.href = "index5.html";
         return;
     }
     currentUserId = session.user.id;
 
-    const { data: user, error: userErr } = await supabase
+    const { data: profile, error: profileErr } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', currentUserId)
         .single();
 
-    if (userErr || !user || !['admin','owner'].includes(user.role)) {
+    if(profileErr || !profile) {
+        alert("لم يتم العثور على المستخدم. إعادة التوجيه...");
+        window.location.href = "index5.html";
+        return;
+    }
+
+    currentUserRole = (profile.role || "user").toLowerCase();
+
+    // طرد المستخدم العادي فقط
+    if(currentUserRole === "user") {
         alert("ليس لديك صلاحية الدخول!");
         window.location.href = "index5.html";
         return;
     }
 
-    currentUserRole = user.role.toLowerCase();
-    fetchUsersAndRender();
+    fetchAndRenderUsers();
 }
 
-// ==================== Fetch & Render ====================
-async function fetchUsersAndRender() {
-    try {
-        const { data: users, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('username');
+// ✅ جلب وعرض المستخدمين
+async function fetchAndRenderUsers() {
+    const { data: users, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('username');
 
-        if (error || !users) throw new Error(error?.message || "فشل جلب المستخدمين");
+    if(error || !users) { console.error(error); return; }
 
-        renderUsers(users);
-    } catch(err) { console.error("Fetch users error:",err); }
+    const tbody = document.querySelector("#usersTable tbody");
+    tbody.innerHTML = "";
+    users.forEach(u => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(u.username || "")}${u.id===currentUserId?" ⇽ أنت":""}</td>
+          <td>${escapeHtml(u.email || "")}</td>
+          <td>${escapeHtml(u.status || "active")}</td>
+          <td>${escapeHtml(u.role || "user")}</td>
+          <td>${getActionButtons(currentUserRole,u)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
-function getActionButtons(currentUserRole,user){
-    if(user.id === currentUserId) {
-        return `<span class="badge">أنت (${currentUserRole})</span>`;
-    }
-    if(currentUserRole==="owner"){
+// ✅ أزرار الإدارة حسب الدور
+function getActionButtons(role, user){
+    if(user.id === currentUserId) return `<span class="badge">أنت (${role})</span>`;
+    if(role==="owner" || (role==="admin" && user.role==="user")) {
         return `
           <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
           <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
@@ -111,84 +76,48 @@ function getActionButtons(currentUserRole,user){
           <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
           <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
         `;
-    } else if(currentUserRole==="admin"){
-        return user.role==="user" ? `
-          <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
-          <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
-          <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
-          <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
-          <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
-        ` : `<span class="badge">---</span>`;
-    } else {
-        return `<span class="badge">---</span>`;
     }
+    return `<span class="badge">---</span>`;
 }
 
-function renderUsers(users){
-    const tbody = document.querySelector("#usersTable tbody");
-    tbody.innerHTML = "";
-    users.forEach(user=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${escapeHtml(user.username||"")}${user.id===currentUserId ? " ⇽ أنت" : ""}</td>
-          <td>${escapeHtml(user.email||"")}</td>
-          <td>${escapeHtml(user.status||"active")}</td>
-          <td>${escapeHtml(user.role||"user")}</td>
-          <td>${getActionButtons(currentUserRole,user)}</td>
-        `;
-        tbody.appendChild(tr);
-    });
-    applySearchFilter();
-}
-
-// ==================== Admin Actions ====================
+// ✅ تنفيذ الإجراءات عبر Google Script
 async function adminAction(action,userId){
     try{
-        const url = `${SCRIPT_URL}?secret=${encodeURIComponent(ADMIN_SECRET)}&action=${encodeURIComponent(action)}&userId=${encodeURIComponent(userId)}`;
-        const res = await fetch(url);
+        const res = await fetch(`${SCRIPT_URL}?secret=${encodeURIComponent("mySecret123")}&action=${encodeURIComponent(action)}&userId=${encodeURIComponent(userId)}`);
         const data = await res.json().catch(()=>({}));
-        alert(data.error||data.message||"تم الإجراء بنجاح!");
-        fetchUsersAndRender();
-    } catch(err){console.error("adminAction error:",err); alert("فشل الاتصال بالخدمة");}
+        alert(data.error || data.message || "تم الإجراء بنجاح!");
+        fetchAndRenderUsers();
+    } catch(e) { console.error(e); alert("فشل الاتصال"); }
 }
 
-// ==================== Role Check دوري ====================
-async function checkUserRole(){
-    try{
-        if(!currentUserId) return;
-        const { data: arr } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', currentUserId)
-            .single();
-        const roleLower = (arr?.role || "").toLowerCase();
-        if(!["admin","owner"].includes(roleLower)){
-            alert("تم تخفيض رتبك أو ليس لديك صلاحية الدخول!");
-            window.location.href="index5.html";
-        }
-    } catch(err){ console.error("Role check error:",err); }
-}
-setInterval(checkUserRole,2000);
+// ✅ تحقق دوري من الدور (طرد المستخدم العادي فورًا)
+setInterval(async ()=>{
+    if(!currentUserId) return;
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', currentUserId)
+        .single();
+    const role = (profile?.role || "user").toLowerCase();
+    if(!["admin","owner"].includes(role)) {
+        alert("تم تخفيض رتبك أو ليس لديك صلاحية!");
+        window.location.href = "index5.html";
+    }
+}, 2000);
 
-// ==================== البحث ====================
+// البحث
 const searchInput = document.getElementById("searchInput");
-searchInput.addEventListener("input",applySearchFilter);
-function applySearchFilter(){
+searchInput.addEventListener("input",()=>{
     const filter = searchInput.value.toLowerCase();
-    const rows = document.querySelectorAll("#usersTable tbody tr");
-    rows.forEach(row=>{
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(filter) ? "" : "none";
+    document.querySelectorAll("#usersTable tbody tr").forEach(r=>{
+        r.style.display = r.innerText.toLowerCase().includes(filter) ? "" : "none";
     });
-}
+});
 
-// ==================== Escape HTML ====================
 function escapeHtml(text){
     return text.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 }
 
 // بدء العملية
-checkSessionAndRole();
+init();
 </script>
-</body>
-</html>
