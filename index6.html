@@ -1,93 +1,176 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>لوحة التحكم</title>
-  <style>
-    body { font-family:"Tahoma",sans-serif; background: #1e1e2f; color:white; margin:0; padding:20px; }
-    table { width:100%; border-collapse: collapse; margin-top:20px; }
-    th, td { border:1px solid #555; padding:8px; text-align:center; }
-    th { background:#444; }
-    button { padding:6px 10px; margin:2px; border:none; border-radius:5px; cursor:pointer; }
-    .block { background:red; color:white; }
-    .unblock { background:green; color:white; }
-    .promote { background:orange; color:white; }
-    .demote { background:blue; color:white; }
-    .delete { background:#555; color:white; }
-  </style>
+<meta charset="UTF-8" />
+<title>لوحة التحكم - index6</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+body { font-family:"Tahoma",sans-serif; background:#1e1e2f; color:white; margin:0; padding:20px; }
+h1 { margin:0 0 10px 0; }
+.top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+input[type="text"] { padding:8px; width:320px; border-radius:6px; border:0; outline:none; }
+table { width:100%; border-collapse:collapse; margin-top:12px; }
+th, td { border:1px solid #444; padding:8px; text-align:center; font-size:14px; }
+th { background:#2a2a3d; }
+button { padding:6px 10px; margin:2px; border:none; border-radius:5px; cursor:pointer; font-size:13px; }
+.block { background:#c0392b; color:white; }
+.unblock { background:#27ae60; color:white; }
+.promote { background:#e67e22; color:white; }
+.demote { background:#2980b9; color:white; }
+.delete { background:#7f8c8d; color:white; }
+.badge { padding:4px 8px; border-radius:6px; background:#34495e; display:inline-block; }
+.small { font-size:12px; padding:4px 6px; }
+.center { text-align:center; }
+@media (max-width:700px){
+  input[type="text"]{ width:100%; }
+  table, th, td { font-size:12px; }
+  button{ padding:5px 8px; font-size:12px; }
+}
+</style>
 </head>
 <body>
-  <h1>لوحة التحكم</h1>
-  <table id="usersTable">
-    <thead>
-      <tr>
-        <th>الاسم</th>
-        <th>البريد</th>
-        <th>الحالة</th>
-        <th>الدور</th>
-        <th>الإجراءات</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<h1>لوحة التحكم</h1>
+<div class="top">
+<input type="text" id="searchInput" placeholder="ابحث باسم المستخدم أو البريد..." autocomplete="off">
+<div class="badge small">تحديث تلقائي: مُفعل (ثانيتين)</div>
+</div>
 
-  <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1stkrkD8PclkVjWDI8-Ge5f4ibR-HlyOkHxeE_CUH0k4wLC21ISoa91r4hxaVTzSQrw/exec";
-    const ADMIN_SECRET = "mySecret123";
+<table id="usersTable" aria-live="polite">
+<thead>
+<tr>
+<th>الاسم</th>
+<th>البريد</th>
+<th>الحالة</th>
+<th>الدور</th>
+<th>الإجراءات</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
 
-    async function fetchUsers() {
-      const res = await fetch(`${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=list_users`);
-      const data = await res.json();
-      populateTable(data.users || []);
+<script>
+const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1stkrkD8PclkVjWDI8-Ge5f4ibR-HlyOkHxeE_CUH0k4wLC21ISoa91r4hxaVTzSQrw/exec";
+const ADMIN_SECRET = "mySecret123";
+
+const urlParams = new URLSearchParams(window.location.search);
+const currentUserId = urlParams.get('uid') || localStorage.getItem('currentUserId') || "current_user_id";
+let currentUserRole = "";
+
+let lastUsersSnapshot = null;
+
+async function fetchUsersAndRender() {
+try {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=username`, {
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
     }
+  });
+  if(!res.ok) throw new Error('Fetch failed: '+res.status);
+  const users = await res.json();
 
-    function populateTable(users) {
-      const tbody = document.querySelector("#usersTable tbody");
-      tbody.innerHTML = "";
-      users.forEach(user => {
-        const tr = document.createElement("tr");
+  // تحديث دور المستخدم الحالي
+  const me = users.find(u=>u.id===currentUserId);
+  currentUserRole = me?.role || "user";
 
-        tr.innerHTML = `
-          <td>${user.username}</td>
-          <td>${user.email || ""}</td>
-          <td>${user.status}</td>
-          <td>${user.role}</td>
-          <td>
-            ${user.role !== "admin" ? `
-              <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
-              <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
-              <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
-              <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
-              <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
-            ` : `<span>مسؤول</span>`}
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
+  renderUsers(users);
+} catch(err) { console.error("Fetch users error:", err); }
+}
 
-    async function adminAction(action, userId) {
-      try {
-        const url = `${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=${action}&userId=${userId}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        console.log(data);
+function getActionButtons(currentUserRole, user){
+if(currentUserRole==="owner"){
+  return `
+  <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
+  <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
+  <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
+  <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
+  <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
+  `;
+} else if(currentUserRole==="admin"){
+  return user.role==="user" ? `
+  <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
+  <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
+  <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
+  <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
+  <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
+  ` : `<span class="badge">---</span>`;
+}else{
+  return `<span class="badge">---</span>`;
+}
+}
 
-        if(action === "demote") {
-          alert("تم تخفيض الرتبة. سيتم إعادة توجيهك.");
-          window.location.href = "index5.html"; // إعادة التوجيه بعد تخفيض الرتبة
-          return;
-        }
+function renderUsers(users){
+const tbody = document.querySelector("#usersTable tbody");
+tbody.innerHTML = "";
+const visibleUsers = users.filter(u=>u.role!=="owner");
 
-        alert(data.error || "تم الإجراء بنجاح!");
-        fetchUsers(); // تحديث الجدول لباقي الإجراءات
-      } catch(err) {
-        console.error(err);
-        alert("فشل الاتصال بالخدمة");
-      }
-    }
+const snapshot = JSON.stringify(visibleUsers.map(u=>({id:u.id,role:u.role,username:u.username,email:u.email,status:u.status})));
+if(snapshot===lastUsersSnapshot) return;
+lastUsersSnapshot = snapshot;
 
-    fetchUsers();
-  </script>
+visibleUsers.forEach(user=>{
+  const isSelf = user.id===currentUserId;
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+  <td>${escapeHtml(user.username||"")}${isSelf?" ⇽ أنت":""}</td>
+  <td>${escapeHtml(user.email||"")}</td>
+  <td>${escapeHtml(user.status||"active")}</td>
+  <td>${escapeHtml(user.role||"user")}</td>
+  <td>${getActionButtons(currentUserRole,user)}</td>
+  `;
+  tbody.appendChild(tr);
+});
+
+applySearchFilter();
+}
+
+async function adminAction(action,userId){
+try{
+  const url = `${SCRIPT_URL}?secret=${encodeURIComponent(ADMIN_SECRET)}&action=${encodeURIComponent(action)}&userId=${encodeURIComponent(userId)}`;
+  const res = await fetch(url);
+  const data = await res.json().catch(()=>({}));
+  console.log("AppScript response:",data);
+  alert(data.error||data.message||"تم الإجراء بنجاح!");
+  fetchUsersAndRender();
+}catch(err){console.error("adminAction error:",err); alert("فشل الاتصال بالخدمة");}
+}
+
+async function checkUserRole(){
+try{
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(currentUserId)}&select=role`,{
+    headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`}
+  });
+  if(!res.ok) return;
+  const arr = await res.json();
+  const user = arr && arr[0];
+  if(!user || !["admin","owner"].includes(user.role)){
+    alert("تم تخفيض رتبك أو ليس لديك صلاحية الدخول!");
+    window.location.href="index5.html";
+    return;
+  }
+  if(user.role==="owner") window.location.href="index7.html";
+  fetchUsersAndRender();
+}catch(err){console.error("Role check error:",err);}
+}
+setInterval(checkUserRole,2000);
+
+const searchInput = document.getElementById("searchInput");
+searchInput.addEventListener("input",applySearchFilter);
+function applySearchFilter(){
+  const filter = searchInput.value.trim().toLowerCase();
+  document.querySelectorAll("#usersTable tbody tr").forEach(row=>{
+    const text=row.textContent.toLowerCase();
+    row.style.display=text.includes(filter)?"":"none";
+  });
+}
+
+function escapeHtml(unsafe){if(!unsafe) return ""; return String(unsafe).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
+
+fetchUsersAndRender();
+checkUserRole();
+if(urlParams.get('uid')){ try{ localStorage.setItem('currentUserId',urlParams.get('uid')); }catch(e){} }
+</script>
 </body>
 </html>
