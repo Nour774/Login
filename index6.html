@@ -1,93 +1,119 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>لوحة التحكم</title>
-  <style>
-    body { font-family:"Tahoma",sans-serif; background: #1e1e2f; color:white; margin:0; padding:20px; }
-    table { width:100%; border-collapse: collapse; margin-top:20px; }
-    th, td { border:1px solid #555; padding:8px; text-align:center; }
-    th { background:#444; }
-    button { padding:6px 10px; margin:2px; border:none; border-radius:5px; cursor:pointer; }
-    .block { background:red; color:white; }
-    .unblock { background:green; color:white; }
-    .promote { background:orange; color:white; }
-    .demote { background:blue; color:white; }
-    .delete { background:#555; color:white; }
-  </style>
+<meta charset="UTF-8">
+<title>لوحة التحكم</title>
+<style>
+  body { font-family:"Tahoma",sans-serif; background: #1e1e2f; color:white; margin:0; padding:20px; }
+  input[type="text"] { padding:8px; width:300px; border-radius:6px; border:0; margin-bottom:10px; }
+  table { width:100%; border-collapse: collapse; margin-top:10px; }
+  th, td { border:1px solid #555; padding:8px; text-align:center; }
+  th { background:#444; }
+  button { padding:5px 8px; margin:2px; border:none; border-radius:5px; cursor:pointer; font-size:12px; }
+  .block { background:red; color:white; }
+  .unblock { background:green; color:white; }
+  .promote { background:orange; color:white; }
+  .demote { background:blue; color:white; }
+  .delete { background:#555; color:white; }
+  .badge { padding:2px 6px; border-radius:4px; background:#666; color:white; }
+</style>
 </head>
 <body>
-  <h1>لوحة التحكم</h1>
-  <table id="usersTable">
-    <thead>
-      <tr>
-        <th>الاسم</th>
-        <th>البريد</th>
-        <th>الحالة</th>
-        <th>الدور</th>
-        <th>الإجراءات</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<h1>لوحة التحكم</h1>
+<input type="text" id="searchInput" placeholder="ابحث باسم المستخدم أو البريد..." autocomplete="off">
+<table id="usersTable">
+<thead>
+<tr>
+  <th>الاسم</th>
+  <th>البريد</th>
+  <th>الحالة</th>
+  <th>الدور</th>
+  <th>الإجراءات</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
 
-  <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1stkrkD8PclkVjWDI8-Ge5f4ibR-HlyOkHxeE_CUH0k4wLC21ISoa91r4hxaVTzSQrw/exec";
-    const ADMIN_SECRET = "mySecret123";
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzmVjAvD44sEtREQvDFXzf8fP3GWE7RbYwVNzuGUjS432ZwxEDpBvOEr61_wt7toKtK/exec";
+const ADMIN_SECRET = "mySecret123";
 
-    async function fetchUsers() {
-      const res = await fetch(`${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=list_users`);
-      const data = await res.json();
-      populateTable(data.users || []);
+// ضع هنا معرفك الحالي لتحديد الدور
+const CURRENT_USER_ID = "PUT_CURRENT_USER_ID_HERE";
+
+async function fetchUsers() {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=list_users&currentUserId=${CURRENT_USER_ID}`);
+    const data = await res.json();
+    populateTable(data.users || []);
+  } catch (err) {
+    console.error(err);
+    alert("فشل جلب البيانات");
+  }
+}
+
+function populateTable(users) {
+  const tbody = document.querySelector("#usersTable tbody");
+  tbody.innerHTML = "";
+  users.forEach(user => {
+    const tr = document.createElement("tr");
+
+    const isCurrent = user.id === CURRENT_USER_ID;
+    const role = user.role || "user";
+
+    tr.innerHTML = `
+      <td>${user.username}${isCurrent ? " ⇽ أنت" : ""}</td>
+      <td>${user.email || ""}</td>
+      <td>${user.status || "active"}</td>
+      <td>${role}</td>
+      <td>
+        ${!isCurrent ? getActionButtons(role, user) : `<span class="badge">أنت (${role})</span>`}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function getActionButtons(role, user) {
+  const actions = [];
+  // Owner يمكنه كل شيء، Admin على المستخدمين العاديين
+  if(role === "owner" || (role === "admin" && user.role === "user")) {
+    actions.push(`<button class="block" onclick="adminAction('block','${user.id}')">حظر</button>`);
+    actions.push(`<button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>`);
+    if(role === "owner") {
+      actions.push(`<button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>`);
+      actions.push(`<button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>`);
     }
+    actions.push(`<button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>`);
+  } else {
+    actions.push(`<span class="badge">---</span>`);
+  }
+  return actions.join(" ");
+}
 
-    function populateTable(users) {
-      const tbody = document.querySelector("#usersTable tbody");
-      tbody.innerHTML = "";
-      users.forEach(user => {
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td>${user.username}</td>
-          <td>${user.email || ""}</td>
-          <td>${user.status}</td>
-          <td>${user.role}</td>
-          <td>
-            ${user.role !== "admin" ? `
-              <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
-              <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
-              <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
-              <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
-              <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
-            ` : `<span>مسؤول</span>`}
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    async function adminAction(action, userId) {
-      try {
-        const url = `${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=${action}&userId=${userId}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        console.log(data);
-
-        if(action === "demote") {
-          alert("تم تخفيض الرتبة. سيتم إعادة توجيهك.");
-          window.location.href = "index5.html"; // إعادة التوجيه بعد تخفيض الرتبة
-          return;
-        }
-
-        alert(data.error || "تم الإجراء بنجاح!");
-        fetchUsers(); // تحديث الجدول لباقي الإجراءات
-      } catch(err) {
-        console.error(err);
-        alert("فشل الاتصال بالخدمة");
-      }
-    }
-
+async function adminAction(action, userId) {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=${action}&userId=${userId}&currentUserId=${CURRENT_USER_ID}`);
+    const data = await res.json();
+    console.log(data);
+    alert(data.error || data.result || "تم الإجراء بنجاح!");
     fetchUsers();
-  </script>
+  } catch(err) {
+    console.error(err);
+    alert("فشل الاتصال بالخدمة");
+  }
+}
+
+// البحث في الجدول
+document.getElementById("searchInput").addEventListener("input",()=> {
+  const filter = document.getElementById("searchInput").value.toLowerCase();
+  document.querySelectorAll("#usersTable tbody tr").forEach(r=>{
+    r.style.display = r.innerText.toLowerCase().includes(filter) ? "" : "none";
+  });
+});
+
+// جلب البيانات أول مرة
+fetchUsers();
+</script>
 </body>
 </html>
