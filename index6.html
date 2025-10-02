@@ -31,7 +31,7 @@ button { padding:6px 10px; margin:2px; border:none; border-radius:5px; cursor:po
 <h1>لوحة التحكم</h1>
 <div class="top">
 <input type="text" id="searchInput" placeholder="ابحث باسم المستخدم أو البريد..." autocomplete="off">
-<div class="badge small">تحديث تلقائي: مُفعل (ثانيتين)</div>
+<div class="badge small">تحديث تلقائي: مُفعل (2 ثواني)</div>
 </div>
 
 <table id="usersTable" aria-live="polite">
@@ -74,14 +74,14 @@ async function fetchUsersAndRender(){
 
     const me = users.find(u=>u.id===currentUserId);
     if(!me){
-      alert("المستخدم الحالي غير موجود في قاعدة البيانات.");
+      alert("المستخدم الحالي غير موجود.");
       window.location.href="index5.html";
       return;
     }
 
     currentUserRole = (me.role || "user").toLowerCase();
 
-    // ✅ طرد المستخدم العادي مباشرة
+    // طرد المستخدم العادي فورًا
     if(currentUserRole==="user"){
       alert("ليس لديك صلاحية الدخول!");
       window.location.href="index5.html";
@@ -92,6 +92,7 @@ async function fetchUsersAndRender(){
   }catch(err){console.error("Fetch users error:",err);}
 }
 
+// ==================== Action Buttons ====================
 function getActionButtons(currentUserRole,user){
   if(currentUserRole==="owner"){
     if(user.id === currentUserId) return `<span class="badge">أنت (مالك)</span>`;
@@ -104,6 +105,7 @@ function getActionButtons(currentUserRole,user){
     `;
   }
   else if(currentUserRole==="admin"){
+    if(user.role==="owner") return `<span class="badge">---</span>`;
     return user.role==="user" ? `
       <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
       <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
@@ -117,10 +119,18 @@ function getActionButtons(currentUserRole,user){
   }
 }
 
+// ==================== Render Users ====================
 function renderUsers(users){
   const tbody = document.querySelector("#usersTable tbody");
   tbody.innerHTML = "";
-  users.forEach(user=>{
+
+  const visibleUsers = users.filter(u=>{
+    if(u.id===currentUserId) return true;
+    if(currentUserRole==="admin" && u.role==="owner") return false;
+    return true;
+  });
+
+  visibleUsers.forEach(user=>{
     const isSelf = user.id===currentUserId;
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -150,22 +160,22 @@ async function adminAction(action,userId){
 
 // ==================== Role Check دوري ====================
 async function checkUserRole(){
+  if(!currentUserId) return;
   try{
-    if(!currentUserId) return;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(currentUserId)}&select=role`,{
       headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`}
     });
     if(!res.ok) return;
     const arr = await res.json();
-    const user = arr && arr[0];
-    const roleLower = (user?.role || "").toLowerCase();
+    const roleLower = (arr?.[0]?.role || "").toLowerCase();
     if(!["admin","owner"].includes(roleLower)){
       alert("تم تخفيض رتبك أو ليس لديك صلاحية الدخول!");
       window.location.href="index5.html";
       return;
     }
+    currentUserRole = roleLower;
     fetchUsersAndRender();
-  }catch(err){console.error("Role check error:",err);}
+  }catch(err){console.error(err);}
 }
 setInterval(checkUserRole,2000);
 
