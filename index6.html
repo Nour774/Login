@@ -79,9 +79,9 @@ async function fetchUsersAndRender(){
       return;
     }
 
-    currentUserRole = me.role?.toLowerCase() || "user";
+    currentUserRole = (me.role || "user").toLowerCase();
 
-    // ✅ طرد الـ user مباشرة
+    // ✅ طرد المستخدم العادي مباشرة
     if(currentUserRole==="user"){
       alert("ليس لديك صلاحية الدخول!");
       window.location.href="index5.html";
@@ -93,7 +93,6 @@ async function fetchUsersAndRender(){
 }
 
 function getActionButtons(currentUserRole,user){
-  // ✅ الأونر يتحكم في الجميع (عدا نفسه)
   if(currentUserRole==="owner"){
     if(user.id === currentUserId) return `<span class="badge">أنت (مالك)</span>`;
     return `
@@ -104,8 +103,6 @@ function getActionButtons(currentUserRole,user){
       <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
     `;
   }
-
-  // ✅ المسؤول يتصرف فقط على user
   else if(currentUserRole==="admin"){
     return user.role==="user" ? `
       <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
@@ -115,8 +112,6 @@ function getActionButtons(currentUserRole,user){
       <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
     ` : `<span class="badge">---</span>`;
   }
-
-  // ✅ البقية بلا صلاحيات
   else{
     return `<span class="badge">---</span>`;
   }
@@ -125,7 +120,6 @@ function getActionButtons(currentUserRole,user){
 function renderUsers(users){
   const tbody = document.querySelector("#usersTable tbody");
   tbody.innerHTML = "";
-
   users.forEach(user=>{
     const isSelf = user.id===currentUserId;
     const tr = document.createElement("tr");
@@ -164,7 +158,8 @@ async function checkUserRole(){
     if(!res.ok) return;
     const arr = await res.json();
     const user = arr && arr[0];
-    if(!user || !["admin","owner"].includes(user.role)){
+    const roleLower = (user?.role || "").toLowerCase();
+    if(!["admin","owner"].includes(roleLower)){
       alert("تم تخفيض رتبك أو ليس لديك صلاحية الدخول!");
       window.location.href="index5.html";
       return;
