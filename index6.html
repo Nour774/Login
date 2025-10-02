@@ -31,7 +31,7 @@ button { padding:6px 10px; margin:2px; border:none; border-radius:5px; cursor:po
 <h1>لوحة التحكم</h1>
 <div class="top">
 <input type="text" id="searchInput" placeholder="ابحث باسم المستخدم أو البريد..." autocomplete="off">
-<div class="badge small">تحديث تلقائي: مُفعل (2 ثواني)</div>
+<div class="badge small">تحديث تلقائي: مُفعل (ثانيتين)</div>
 </div>
 
 <table id="usersTable" aria-live="polite">
@@ -53,35 +53,40 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1stkrkD8PclkVjWDI8-Ge5f4ibR-HlyOkHxeE_CUH0k4wLC21ISoa91r4hxaVTzSQrw/exec";
 const ADMIN_SECRET = "mySecret123";
 
-const urlParams = new URLSearchParams(window.location.search);
-const currentUserId = urlParams.get('uid') || localStorage.getItem('currentUserId') || null;
+let currentUserId = null;
 let currentUserRole = "";
+
+// ==================== الحصول على المستخدم الحالي ====================
+async function getCurrentUser() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {"apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}`}
+    });
+    if(!res.ok) throw new Error("فشل الحصول على المستخدم الحالي");
+    const user = await res.json();
+    return user.id || null;
+  } catch(err) { console.error(err); return null; }
+}
 
 // ==================== Fetch & Render ====================
 async function fetchUsersAndRender(){
-  if(!currentUserId){
-    alert("لا يوجد معرف مستخدم صالح. سيتم إعادة التوجيه.");
-    window.location.href="index5.html";
-    return;
-  }
-
   try{
     const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=username`,{
-      headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`}
+      headers: {"apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}`}
     });
-    if(!res.ok) throw new Error('Fetch failed: '+res.status);
+    if(!res.ok) throw new Error("Fetch users failed");
     const users = await res.json();
 
     const me = users.find(u=>u.id===currentUserId);
     if(!me){
-      alert("المستخدم الحالي غير موجود.");
+      alert("المستخدم الحالي غير موجود في قاعدة البيانات.");
       window.location.href="index5.html";
       return;
     }
 
     currentUserRole = (me.role || "user").toLowerCase();
 
-    // طرد المستخدم العادي فورًا
+    // ✅ طرد المستخدم العادي مباشرة
     if(currentUserRole==="user"){
       alert("ليس لديك صلاحية الدخول!");
       window.location.href="index5.html";
@@ -92,10 +97,14 @@ async function fetchUsersAndRender(){
   }catch(err){console.error("Fetch users error:",err);}
 }
 
-// ==================== Action Buttons ====================
+// ==================== Render المستخدمين ====================
 function getActionButtons(currentUserRole,user){
+  // الأونر لا يرى نفسه
+  if(user.id===currentUserId && currentUserRole==="owner"){
+    return `<span class="badge">أنت (مالك)</span>`;
+  }
+
   if(currentUserRole==="owner"){
-    if(user.id === currentUserId) return `<span class="badge">أنت (مالك)</span>`;
     return `
       <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
       <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
@@ -103,9 +112,7 @@ function getActionButtons(currentUserRole,user){
       <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
       <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
     `;
-  }
-  else if(currentUserRole==="admin"){
-    if(user.role==="owner") return `<span class="badge">---</span>`;
+  } else if(currentUserRole==="admin"){
     return user.role==="user" ? `
       <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
       <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
@@ -113,22 +120,16 @@ function getActionButtons(currentUserRole,user){
       <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
       <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
     ` : `<span class="badge">---</span>`;
-  }
-  else{
+  } else{
     return `<span class="badge">---</span>`;
   }
 }
 
-// ==================== Render Users ====================
 function renderUsers(users){
   const tbody = document.querySelector("#usersTable tbody");
   tbody.innerHTML = "";
 
-  const visibleUsers = users.filter(u=>{
-    if(u.id===currentUserId) return true;
-    if(currentUserRole==="admin" && u.role==="owner") return false;
-    return true;
-  });
+  const visibleUsers = users.filter(u=>u.role!=="owner");
 
   visibleUsers.forEach(user=>{
     const isSelf = user.id===currentUserId;
@@ -160,22 +161,22 @@ async function adminAction(action,userId){
 
 // ==================== Role Check دوري ====================
 async function checkUserRole(){
-  if(!currentUserId) return;
   try{
+    if(!currentUserId) return;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(currentUserId)}&select=role`,{
       headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`}
     });
     if(!res.ok) return;
     const arr = await res.json();
-    const roleLower = (arr?.[0]?.role || "").toLowerCase();
+    const user = arr && arr[0];
+    const roleLower = (user?.role || "").toLowerCase();
     if(!["admin","owner"].includes(roleLower)){
       alert("تم تخفيض رتبك أو ليس لديك صلاحية الدخول!");
       window.location.href="index5.html";
       return;
     }
-    currentUserRole = roleLower;
     fetchUsersAndRender();
-  }catch(err){console.error(err);}
+  }catch(err){console.error("Role check error:",err);}
 }
 setInterval(checkUserRole,2000);
 
@@ -196,7 +197,16 @@ function escapeHtml(text){
   return text.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 }
 
-fetchUsersAndRender();
+// ==================== التنفيذ ====================
+(async () => {
+  currentUserId = await getCurrentUser();
+  if(!currentUserId){
+    alert("لا يوجد مستخدم مسجّل. سيتم إعادة التوجيه.");
+    window.location.href="index5.html";
+    return;
+  }
+  fetchUsersAndRender();
+})();
 </script>
 </body>
 </html>
