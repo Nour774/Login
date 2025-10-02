@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>لوحة التحكم</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 <style>
@@ -34,14 +34,17 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1stkrkD8PclkVjWDI8-Ge5f4ibR-HlyOkHxeE_CUH0k4wLC21ISoa91r4hxaVTzSQrw/exec";
 const ADMIN_SECRET = "mySecret123";
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// إنشاء العميل بالشكل الصحيح
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUserId = null;
 let currentUserRole = "";
 
+// بدء العملية عند تحميل الصفحة
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
+    // جلب الجلسة
     const { data: { session }, error } = await supabase.auth.getSession();
     if(error || !session) {
         alert("لم يتم تسجيل الدخول. إعادة التوجيه...");
@@ -50,6 +53,7 @@ async function init() {
     }
     currentUserId = session.user.id;
 
+    // جلب دور المستخدم الحالي
     const { data: profile, error: profileErr } = await supabase
         .from('profiles')
         .select('role')
@@ -72,28 +76,17 @@ async function init() {
 
     fetchAndRenderUsers();
 
+    // تحقق دوري من الدور لتحديث الجدول أو طرد المستخدم إذا تم تخفيضه
     setInterval(async () => {
         await fetchAndRenderUsers();
         await checkRole();
-    }, 2000);
+    }, 3000);
 }
 
-async function checkRole() {
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentUserId)
-        .single();
-    const role = (profile?.role || "user").toLowerCase();
-    if(!["admin","owner"].includes(role)) {
-        alert("تم تخفيض رتبك أو ليس لديك صلاحية!");
-        window.location.href = "index5.html";
-    }
-}
-
+// جلب المستخدمين وعرضهم
 async function fetchAndRenderUsers() {
     const { data: users, error } = await supabase.from('profiles').select('*').order('username');
-    if(error || !users) { console.error(error); return; }
+    if(error || !users) { console.error("Fetch users error:", error); return; }
 
     const tbody = document.querySelector("#usersTable tbody");
     tbody.innerHTML = "";
@@ -111,6 +104,7 @@ async function fetchAndRenderUsers() {
     });
 }
 
+// أزرار الإدارة حسب الدور
 function getActionButtons(role, user){
     if(user.id===currentUserId) return `<span class="badge">أنت (${role})</span>`;
     if(role==="owner" || (role==="admin" && user.role==="user")) {
@@ -125,18 +119,27 @@ function getActionButtons(role, user){
     return `<span class="badge">---</span>`;
 }
 
-// ✅ تنفيذ الإجراءات عبر Google Script
+// تنفيذ الإجراءات عبر Google Script
 async function adminAction(action,userId){
     try{
-        const url = `${SCRIPT_URL}?secret=${encodeURIComponent(ADMIN_SECRET)}&action=${encodeURIComponent(action)}&userId=${encodeURIComponent(userId)}`;
-        const res = await fetch(url);
+        const res = await fetch(`${SCRIPT_URL}?secret=${encodeURIComponent(ADMIN_SECRET)}&action=${encodeURIComponent(action)}&userId=${encodeURIComponent(userId)}`);
         const data = await res.json().catch(()=>({}));
         alert(data.error || data.message || "تم الإجراء بنجاح!");
         fetchAndRenderUsers();
     } catch(e) { console.error(e); alert("فشل الاتصال"); }
 }
 
-// البحث
+// تحقق دوري من الدور
+async function checkRole() {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', currentUserId).single();
+    const role = (profile?.role || "user").toLowerCase();
+    if(!["admin","owner"].includes(role)) {
+        alert("تم تخفيض رتبك أو ليس لديك صلاحية!");
+        window.location.href = "index5.html";
+    }
+}
+
+// البحث في الجدول
 const searchInput = document.getElementById("searchInput");
 searchInput.addEventListener("input",()=> {
     const filter = searchInput.value.toLowerCase();
@@ -145,6 +148,7 @@ searchInput.addEventListener("input",()=> {
     });
 });
 
+// حماية HTML من injection
 function escapeHtml(text){
     return text.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 }
