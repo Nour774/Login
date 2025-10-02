@@ -20,7 +20,6 @@ button { padding:6px 10px; margin:2px; border:none; border-radius:5px; cursor:po
 .delete { background:#7f8c8d; color:white; }
 .badge { padding:4px 8px; border-radius:6px; background:#34495e; display:inline-block; }
 .small { font-size:12px; padding:4px 6px; }
-.center { text-align:center; }
 @media (max-width:700px){
   input[type="text"]{ width:100%; }
   table, th, td { font-size:12px; }
@@ -60,102 +59,105 @@ let currentUserRole = "";
 
 let lastUsersSnapshot = null;
 
-async function fetchUsersAndRender() {
-try {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=username`, {
-    headers: {
-      "apikey": SUPABASE_ANON_KEY,
-      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-    }
-  });
-  if(!res.ok) throw new Error('Fetch failed: '+res.status);
-  const users = await res.json();
+// ==================== Fetch & Render ====================
+async function fetchUsersAndRender(){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=username`,{
+      headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`}
+    });
+    if(!res.ok) throw new Error('Fetch failed: '+res.status);
+    const users = await res.json();
 
-  // تحديث دور المستخدم الحالي
-  const me = users.find(u=>u.id===currentUserId);
-  currentUserRole = me?.role || "user";
+    // تحديد الدور الحالي فورًا
+    const me = users.find(u=>u.id===currentUserId);
+    currentUserRole = me?.role || "user";
 
-  renderUsers(users);
-} catch(err) { console.error("Fetch users error:", err); }
+    renderUsers(users);
+  }catch(err){console.error("Fetch users error:",err);}
 }
 
-function getActionButtons(currentUserRole, user){
-if(currentUserRole==="owner"){
-  return `
-  <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
-  <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
-  <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
-  <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
-  <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
-  `;
-} else if(currentUserRole==="admin"){
-  return user.role==="user" ? `
-  <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
-  <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
-  <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
-  <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
-  <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
-  ` : `<span class="badge">---</span>`;
-}else{
-  return `<span class="badge">---</span>`;
-}
+function getActionButtons(currentUserRole,user){
+  if(currentUserRole==="owner"){
+    return `
+      <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
+      <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
+      <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
+      <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
+      <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
+    `;
+  } else if(currentUserRole==="admin"){
+    return user.role==="user" ? `
+      <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
+      <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
+      <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
+      <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
+      <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
+    ` : `<span class="badge">---</span>`;
+  } else{
+    return `<span class="badge">---</span>`;
+  }
 }
 
 function renderUsers(users){
-const tbody = document.querySelector("#usersTable tbody");
-tbody.innerHTML = "";
-const visibleUsers = users.filter(u=>u.role!=="owner");
+  const tbody = document.querySelector("#usersTable tbody");
+  tbody.innerHTML = "";
 
-const snapshot = JSON.stringify(visibleUsers.map(u=>({id:u.id,role:u.role,username:u.username,email:u.email,status:u.status})));
-if(snapshot===lastUsersSnapshot) return;
-lastUsersSnapshot = snapshot;
+  // تجاهل owner في الجدول
+  const visibleUsers = users.filter(u=>u.role!=="owner");
 
-visibleUsers.forEach(user=>{
-  const isSelf = user.id===currentUserId;
-  const tr = document.createElement("tr");
-  tr.innerHTML = `
-  <td>${escapeHtml(user.username||"")}${isSelf?" ⇽ أنت":""}</td>
-  <td>${escapeHtml(user.email||"")}</td>
-  <td>${escapeHtml(user.status||"active")}</td>
-  <td>${escapeHtml(user.role||"user")}</td>
-  <td>${getActionButtons(currentUserRole,user)}</td>
-  `;
-  tbody.appendChild(tr);
-});
+  const snapshot = JSON.stringify(visibleUsers.map(u=>({id:u.id,role:u.role,username:u.username,email:u.email,status:u.status})));
+  if(snapshot===lastUsersSnapshot) return;
+  lastUsersSnapshot = snapshot;
 
-applySearchFilter();
-}
-
-async function adminAction(action,userId){
-try{
-  const url = `${SCRIPT_URL}?secret=${encodeURIComponent(ADMIN_SECRET)}&action=${encodeURIComponent(action)}&userId=${encodeURIComponent(userId)}`;
-  const res = await fetch(url);
-  const data = await res.json().catch(()=>({}));
-  console.log("AppScript response:",data);
-  alert(data.error||data.message||"تم الإجراء بنجاح!");
-  fetchUsersAndRender();
-}catch(err){console.error("adminAction error:",err); alert("فشل الاتصال بالخدمة");}
-}
-
-async function checkUserRole(){
-try{
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(currentUserId)}&select=role`,{
-    headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`}
+  visibleUsers.forEach(user=>{
+    const isSelf = user.id===currentUserId;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(user.username||"")}${isSelf?" ⇽ أنت":""}</td>
+      <td>${escapeHtml(user.email||"")}</td>
+      <td>${escapeHtml(user.status||"active")}</td>
+      <td>${escapeHtml(user.role||"user")}</td>
+      <td>${getActionButtons(currentUserRole,user)}</td>
+    `;
+    tbody.appendChild(tr);
   });
-  if(!res.ok) return;
-  const arr = await res.json();
-  const user = arr && arr[0];
-  if(!user || !["admin","owner"].includes(user.role)){
-    alert("تم تخفيض رتبك أو ليس لديك صلاحية الدخول!");
-    window.location.href="index5.html";
-    return;
-  }
-  if(user.role==="owner") window.location.href="index7.html";
-  fetchUsersAndRender();
-}catch(err){console.error("Role check error:",err);}
+
+  applySearchFilter();
+}
+
+// ==================== Admin Actions ====================
+async function adminAction(action,userId){
+  try{
+    const url = `${SCRIPT_URL}?secret=${encodeURIComponent(ADMIN_SECRET)}&action=${encodeURIComponent(action)}&userId=${encodeURIComponent(userId)}`;
+    const res = await fetch(url);
+    const data = await res.json().catch(()=>({}));
+    console.log("AppScript response:",data);
+    alert(data.error||data.message||"تم الإجراء بنجاح!");
+    fetchUsersAndRender();
+  }catch(err){console.error("adminAction error:",err); alert("فشل الاتصال بالخدمة");}
+}
+
+// ==================== تحقق مستمر ====================
+async function checkUserRole(){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(currentUserId)}&select=role`,{
+      headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`}
+    });
+    if(!res.ok) return;
+    const arr = await res.json();
+    const user = arr && arr[0];
+    if(!user || !["admin","owner"].includes(user.role)){
+      alert("تم تخفيض رتبك أو ليس لديك صلاحية الدخول!");
+      window.location.href="index5.html";
+      return;
+    }
+    if(user.role==="owner") window.location.href="index7.html";
+    fetchUsersAndRender();
+  }catch(err){console.error("Role check error:",err);}
 }
 setInterval(checkUserRole,2000);
 
+// ==================== بحث ====================
 const searchInput = document.getElementById("searchInput");
 searchInput.addEventListener("input",applySearchFilter);
 function applySearchFilter(){
@@ -168,9 +170,10 @@ function applySearchFilter(){
 
 function escapeHtml(unsafe){if(!unsafe) return ""; return String(unsafe).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
 
+// ==================== بدء التشغيل ====================
 fetchUsersAndRender();
 checkUserRole();
 if(urlParams.get('uid')){ try{ localStorage.setItem('currentUserId',urlParams.get('uid')); }catch(e){} }
 </script>
 </body>
-</html>
+  </html>
