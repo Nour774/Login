@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>لوحة التحكم</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
   <style>
     body { font-family:"Tahoma",sans-serif; background: #1e1e2f; color:white; margin:0; padding:20px; }
     table { width:100%; border-collapse: collapse; margin-top:20px; }
@@ -15,7 +14,6 @@
     .promote { background:orange; color:white; }
     .demote { background:blue; color:white; }
     .delete { background:#555; color:white; }
-    .badge { padding:3px 7px; border-radius:4px; background:#333; }
   </style>
 </head>
 <body>
@@ -34,133 +32,67 @@
   </table>
 
   <script>
-    // إعدادات
+    // رابط Google Apps Script الخاص بك
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzmVjAvD44sEtREQvDFXzf8fP3GWE7RbYwVNzuGUjS432ZwxEDpBvOEr61_wt7toKtK/exec";
-    const ADMIN_SECRET = "mySecret123";
-    const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+    const ADMIN_SECRET = "mySecret123"; // لو عندك كلمة سر API
 
-    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    let currentUserId = null;
-    let currentUserRole = null;
-
-    // بدء التشغيل
-    document.addEventListener("DOMContentLoaded", async () => {
-      await checkCurrentUser();
-      if (!currentUserId) return;
-      await fetchUsers();
-      setInterval(fetchUsers, 4000); // تحديث دوري
-    });
-
-    // التحقق من هوية المستخدم ودوره
-    async function checkCurrentUser() {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error || !session) {
-        alert("لا يوجد مستخدم مسجل. سيتم إعادة التوجيه.");
-        window.location.href = "index5.html";
-        return;
-      }
-      currentUserId = session.user.id;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", currentUserId)
-        .single();
-
-      currentUserRole = profile?.role || "user";
-
-      if (currentUserRole === "user") {
-        alert("ليس لديك صلاحية!");
-        window.location.href = "index5.html";
-      }
-    }
-
-    // جلب المستخدمين من App Script
     async function fetchUsers() {
       try {
         const res = await fetch(`${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=list_users`);
         const data = await res.json();
-        populateTable(data.users || []);
+
+        if (!data || !data.users) {
+          alert("لم يتم جلب المستخدمين");
+          return;
+        }
+
+        populateTable(data.users);
       } catch (err) {
         console.error(err);
-        alert("فشل جلب البيانات");
+        alert("فشل جلب البيانات من Google Apps Script");
       }
     }
 
-    // ملء الجدول
     function populateTable(users) {
       const tbody = document.querySelector("#usersTable tbody");
       tbody.innerHTML = "";
-
       users.forEach(user => {
         const tr = document.createElement("tr");
-
         tr.innerHTML = `
-          <td>${user.username || ""}${user.id === currentUserId ? " ⇽ أنت" : ""}</td>
-          <td>${user.email || ""}</td>
-          <td>${user.status || "active"}</td>
-          <td>${user.role || "user"}</td>
-          <td>${getActionButtons(user)}</td>
+          <td>${user.username || "-"}</td>
+          <td>${user.email || "-"}</td>
+          <td>${user.status || "-"}</td>
+          <td>${user.role || "-"}</td>
+          <td>
+            ${user.role !== "owner" ? `
+              <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
+              <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
+              <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
+              <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
+              <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
+            ` : `<span>أونر</span>`}
+          </td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    // تحديد الأزرار حسب الدور
-    function getActionButtons(user) {
-      if (user.id === currentUserId) {
-        return `<span class="badge">أنت (${currentUserRole})</span>`;
-      }
-
-      // الأونر يشوف الكل ويتحكم
-      if (currentUserRole === "owner") {
-        return `
-          <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
-          <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
-          <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
-          <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
-          <button class="delete" onclick="adminAction('delete_account','${user.id}')">حذف</button>
-        `;
-      }
-
-      // الأدمن لا يقدر يلمس الأونر
-      if (currentUserRole === "admin") {
-        if (user.role === "owner") {
-          return `<span class="badge">لا يمكن تعديل الأونر</span>`;
-        }
-        return `
-          <button class="block" onclick="adminAction('block','${user.id}')">حظر</button>
-          <button class="unblock" onclick="adminAction('unblock','${user.id}')">رفع الحظر</button>
-          <button class="promote" onclick="adminAction('promote','${user.id}')">ترقية</button>
-          <button class="demote" onclick="adminAction('demote','${user.id}')">تخفيض</button>
-        `;
-      }
-
-      return `<span class="badge">---</span>`;
-    }
-
-    // إرسال أوامر للإدارة
     async function adminAction(action, userId) {
       try {
         const url = `${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=${action}&userId=${userId}`;
         const res = await fetch(url);
         const data = await res.json();
 
-        if (action === "demote" && userId === currentUserId) {
-          alert("تم تخفيضك. سيتم طردك!");
-          window.location.href = "index5.html";
-          return;
-        }
-
         alert(data.error || "تم الإجراء بنجاح!");
-        fetchUsers();
+        fetchUsers(); // تحديث الجدول
       } catch (err) {
         console.error(err);
         alert("فشل الاتصال بالخدمة");
       }
     }
+
+    // تحميل البيانات عند فتح الصفحة
+    fetchUsers();
   </script>
 </body>
 </html>
