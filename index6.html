@@ -31,59 +31,62 @@
 
   <table class="table table-bordered text-center align-middle">
     <thead>
-      <tr>
-        <th>ID</th>
-        <th>البريد</th>
-        <th>الحالة</th>
-        <th>الدور</th>
-        <th>الإجراءات</th>
-      </tr>
+      <tr><th>ID</th><th>الاسم</th><th>البريد</th><th>الحالة</th><th>الدور</th><th>الإجراءات</th></tr>
     </thead>
     <tbody id="usersTable"></tbody>
   </table>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6XprJUeziZbtWaKGvX3-xfveFUDBwrYmibPkJ-dlvinicFeSFYimCKnwqCTP1_fhqaA/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUX8kJKkBODX9859rLcxTH6RKrdiRmCzfPxXVDgGp3ixFSOvMwz8iI2SpWQNaGJ1tmiQ/exec";
 const ADMIN_SECRET = "mySecret123";
-const CURRENT_ROLE = "admin"; // "admin" أو "owner"
+const CURRENT_ROLE = "owner"; // "admin" أو "owner"
 
 const statusBox = document.getElementById("statusBox");
 const tbody = document.getElementById("usersTable");
 
-function setStatus(message, isError=false) {
+function setStatus(message, isError=false){
   statusBox.textContent = message;
-  statusBox.className = 'status-box ' + (isError ? 'status-error':'status-info');
+  statusBox.className = "status-box "+(isError?"status-error":"status-info");
 }
 
-async function fetchUsers() {
+async function fetchUsers(){
   setStatus("جارٍ تحميل البيانات...");
-  try {
+  try{
     const res = await fetch(`${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=list_users&currentRole=${CURRENT_ROLE}`);
     const data = await res.json();
     if(data.error) throw new Error(data.error);
 
     tbody.innerHTML = "";
     if(!data.users || data.users.length === 0){
-      tbody.innerHTML = `<tr><td colspan="5">لا توجد بيانات.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6">لا توجد بيانات.</td></tr>`;
       setStatus("لا توجد بيانات.", true);
       return;
     }
 
     data.users.forEach(user=>{
       const tr = document.createElement("tr");
+
+      // إذا كان أونر، أظهر 👑 فقط بدل الاسم
+      const displayName = user.role?.toLowerCase() === "owner" ? "👑" : (user.username || "-");
+
       tr.innerHTML = `
         <td>${user.id}</td>
-        <td>${user.email||"-"}</td>
-        <td>${user.status||"-"}</td>
-        <td>${user.role||"-"}</td>
+        <td>${displayName}</td>
+        <td>${user.email || "-"}</td>
+        <td>${user.status || "-"}</td>
+        <td>${user.role || "-"}</td>
         <td></td>
       `;
+
       const actionsCell = tr.querySelector("td:last-child");
 
-      if(user.role && user.role.toLowerCase() === "owner"){
+      const targetRole = (user.role||"user").toLowerCase();
+      const canEdit = CURRENT_ROLE.toLowerCase() === "owner" || (CURRENT_ROLE.toLowerCase() === "admin" && targetRole === "user");
+
+      if(!canEdit){
         const span = document.createElement("span");
-        span.textContent = "أونر";
+        span.textContent = targetRole === "owner" ? "أونر" : targetRole === "admin" ? "مسؤول" : "";
         span.style.background="#11121a";
         span.style.color="#f97316";
         span.style.padding="4px 8px";
@@ -91,35 +94,30 @@ async function fetchUsers() {
         span.style.fontWeight="bold";
         actionsCell.appendChild(span);
       } else {
-        // إظهار الأزرار فقط إذا كان المسؤول الحالي يملك الصلاحية
-        const canEdit = CURRENT_ROLE === "owner" || (CURRENT_ROLE === "admin" && (!user.role || user.role.toLowerCase() === "user"));
-        if(canEdit){
-          const btn = (text, cls, icon, action)=>{
-            const b = document.createElement("button");
-            b.className = `btn-action ${cls}`;
-            b.innerHTML = `${icon} ${text}`;
-            b.onclick = ()=>{
-              if(confirm(`هل أنت متأكد من ${text} لهذا المستخدم؟`)){
-                b.classList.add("shake");
-                setTimeout(()=>b.classList.remove("shake"), 300);
-                adminAction(action, user.id);
-              }
-            };
-            return b;
+        const btn = (text, cls, icon, action)=> {
+          const b = document.createElement("button");
+          b.className = `btn-action ${cls}`;
+          b.innerHTML = `${icon} ${text}`;
+          b.onclick = ()=>{
+            if(confirm(`هل أنت متأكد من ${text} لهذا المستخدم؟`)){
+              b.classList.add("shake");
+              setTimeout(()=>b.classList.remove("shake"), 300);
+              adminAction(action, user.id);
+            }
           };
-          actionsCell.appendChild(btn("حظر","block","🔒","block"));
-          actionsCell.appendChild(btn("رفع الحظر","unblock","🔓","unblock"));
-          actionsCell.appendChild(btn("ترقية","promote","⭐","promote"));
-          actionsCell.appendChild(btn("تخفيض","demote","🔽","demote"));
-          actionsCell.appendChild(btn("حذف بروفايل","ban","⚔️","ban"));
-          actionsCell.appendChild(btn("حذف الحساب","delete","❌","delete_account"));
-        } else {
-          actionsCell.textContent = "-";
-        }
+          return b;
+        };
+        actionsCell.appendChild(btn("حظر","block","🔒","block"));
+        actionsCell.appendChild(btn("رفع الحظر","unblock","🔓","unblock"));
+        actionsCell.appendChild(btn("ترقية","promote","⭐","promote"));
+        actionsCell.appendChild(btn("تخفيض","demote","🔽","demote"));
+        actionsCell.appendChild(btn("حذف بروفايل","ban","⚔️","ban"));
+        actionsCell.appendChild(btn("حذف الحساب","delete","❌","delete_account"));
       }
 
       tbody.appendChild(tr);
     });
+
     setStatus("تم تحميل المستخدمين بنجاح.");
   } catch(err){
     setStatus("فشل جلب البيانات: " + (err.message||err), true);
