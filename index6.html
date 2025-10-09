@@ -1,184 +1,309 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة التحكم المهيبة</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>
-  body {
-    background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
-    color: #e0e0e0;
-    font-family: "Tahoma", sans-serif;
-  }
-  .container { margin-top: 40px; }
-  h2 {
-    text-align: center;
-    color: #f97316;
-    margin-bottom: 20px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    text-shadow: 1px 1px 5px #000;
-  }
-  table {
-    background-color: #2b2b3d;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
-  }
-  th {
-    background: linear-gradient(90deg,#11121a,#1b1b2f);
-    color: #f97316;
-    font-weight: bold;
-    font-size: 14px;
-    text-shadow: 1px 1px 2px #000;
-  }
-  td { font-size: 13px; vertical-align: middle; }
-  .btn-action {
-    margin: 2px;
-    font-size: 12px;
-    border-radius: 6px;
-    font-weight: bold;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-    transition: transform 0.15s, box-shadow 0.15s;
-  }
-  .btn-action:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 6px 12px rgba(0,0,0,0.7); }
-  .shake { animation: shake 0.3s; }
-  @keyframes shake { 0%{transform:translateX(0);}25%{transform:translateX(-4px);}50%{transform:translateX(4px);}75%{transform:translateX(-4px);}100%{transform:translateX(0);} }
-  .block { background: #dc2626; color:white; }
-  .unblock { background: #16a34a; color:white; }
-  .promote { background: #f97316; color:white; }
-  .demote { background: #2563eb; color:white; }
-  .delete { background: #4b5563; color:white; }
-  .ban { background: #7c2d12; color:white; }
-  .status-box {
-    text-align:center;
-    padding:10px;
-    border-radius:6px;
-    margin-bottom:15px;
-    font-weight: bold;
-    text-shadow: 1px 1px 3px #000;
-  }
-  .status-info { background-color: #27273d; color:#cbd5e1; }
-  .status-error { background-color: #7f1d1d; color:#fee2e2; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المستخدمين - القدس</title>
+    <style>
+        /* الأنماط الأساسية */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212; /* خلفية داكنة */
+            color: #E0E0E0; /* نص فاتح */
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+            text-align: right;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #1e1e1e; /* حاوية أغمق قليلاً */
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* ظل أنيق */
+        }
+        h1 {
+            color: #BB86FC; /* لون بنفسجي لإحساس القوة */
+            text-align: center;
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+
+        /* حقول الإدخال والأزرار */
+        .controls, .secret-input {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #2c2c2c;
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        input[type="text"], input[type="password"] {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #444;
+            background-color: #333;
+            color: #E0E0E0;
+            border-radius: 6px;
+            transition: border-color 0.3s;
+            min-width: 200px;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: #BB86FC;
+            outline: none;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        /* أزرار الإجراءات */
+        .action-button {
+            background-color: #03DAC6; /* سماوي للأزرار الرئيسية */
+            color: #121212;
+        }
+        .action-button.danger {
+            background-color: #CF6679; /* أحمر داكن للحذف/الحظر */
+        }
+        .action-button.promote {
+             background-color: #BB86FC; /* بنفسجي للترقية */
+        }
+
+        /* جدول المستخدمين */
+        #usersTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #usersTable th, #usersTable td {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            text-align: right;
+        }
+        #usersTable th {
+            background-color: #333333;
+            color: #E0E0E0;
+            text-transform: uppercase;
+        }
+        #usersTable tr:hover {
+            background-color: #2c2c2c;
+        }
+
+        /* الرسائل والحالة */
+        #statusMessage {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+        .success {
+            background-color: #03DAC633; /* شفافية بسيطة */
+            color: #03DAC6;
+            border: 1px solid #03DAC6;
+        }
+        .error {
+            background-color: #CF667933;
+            color: #CF6679;
+            border: 1px solid #CF6679;
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
-  <h2>لوحة التحكم المهيبة</h2>
-  <div id="statusBox" class="status-box status-info">جارٍ تحميل المستخدمين...</div>
+    <h1>🏛️ لوحة تحكم الإدارة العليا للمستخدمين 🏛️</h1>
 
-  <table class="table table-bordered text-center align-middle">
-    <thead>
-      <tr><th>ID</th><th>الاسم</th><th>البريد</th><th>الحالة</th><th>الدور</th><th>الإجراءات</th></tr>
-    </thead>
-    <tbody id="usersTable"></tbody>
-  </table>
+    <div class="secret-input">
+        <label for="adminSecret">المفتاح السري (Admin Secret):</label>
+        <input type="password" id="adminSecret" placeholder="أدخل المفتاح السري هنا" value="mySecret123">
+        <label for="currentRole">دوري الحالي:</label>
+        <select id="currentRole">
+            <option value="admin">Admin (مشرف)</option>
+            <option value="owner">Owner (مالك)</option>
+            <option value="user">User (مستخدم)</option>
+        </select>
+        <button class="action-button" onclick="listUsers()">جلب قائمة المستخدمين</button>
+    </div>
+
+    <div id="statusMessage"></div>
+
+    <h2>أدوات التحكم الفردية</h2>
+    <div class="controls">
+        <input type="text" id="targetUserId" placeholder="ID المستخدم المستهدف (UUID)">
+        
+        <button class="action-button promote" onclick="performAction('promote')">ترقية ⬆️</button>
+        <button class="action-button" onclick="performAction('demote')">تخفيض ⬇️</button>
+        <button class="action-button" onclick="performAction('block')">حظر مؤقت 🚫</button>
+        <button class="action-button" onclick="performAction('unblock')">إلغاء الحظر ✅</button>
+        <button class="action-button danger" onclick="performAction('ban')">حظر دائم ⛔</button>
+        <button class="action-button danger" onclick="performAction('delete_account')">حذف الحساب 🗑️</button>
+    </div>
+
+    <h2>قائمة المستخدمين في النظام</h2>
+    <table id="usersTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>الدور</th>
+                <th>الحالة</th>
+                <th>تاريخ الإنشاء</th>
+                <th>الإجراءات السريعة</th>
+            </tr>
+        </thead>
+        <tbody id="usersListBody">
+            <tr><td colspan="5" style="text-align: center;">اضغط على "جلب قائمة المستخدمين" لتحميل البيانات.</td></tr>
+        </tbody>
+    </table>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPUJ_4-T7aNcWmxVsrZhp5cGYn3I3EWYiGHMM5UQzzT1v26uvbhT8aFb6rW7gkPKmtDw/exec";
-const ADMIN_SECRET = "mySecret123";
-const CURRENT_ROLE = "owner"; // يمكن تغييره إلى "admin" حسب الحساب
+    // **يرجى استبدال هذا الرابط بالرابط المنشور الفعلي الخاص بك**
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxcwhm_9cRQ6XGd2x_fe7s25zK-DdYRtbhV_VPErTF0Hk-63ZkGnCEWCfSNCJVxGbur/exec";
+    
+    // العناصر الأساسية
+    const statusMessage = document.getElementById('statusMessage');
+    const usersListBody = document.getElementById('usersListBody');
+    const targetUserIdInput = document.getElementById('targetUserId');
 
-const statusBox = document.getElementById("statusBox");
-const tbody = document.getElementById("usersTable");
-
-function setStatus(message, isError=false){
-  statusBox.textContent = message;
-  statusBox.className = "status-box "+(isError?"status-error":"status-info");
-}
-
-async function fetchUsers(){
-  setStatus("جارٍ تحميل البيانات...");
-  try{
-    const res = await fetch(`${SCRIPT_URL}?secret=${ADMIN_SECRET}&action=list_users&currentRole=${CURRENT_ROLE}`);
-    const data = await res.json();
-    if(data.error) throw new Error(data.error);
-
-    tbody.innerHTML = "";
-    if(!data.users || data.users.length === 0){
-      tbody.innerHTML = `<tr><td colspan="6">لا توجد بيانات.</td></tr>`;
-      setStatus("لا توجد بيانات.", true);
-      return;
+    /**
+     * عرض رسالة حالة في واجهة المستخدم
+     * @param {string} message - الرسالة المراد عرضها.
+     * @param {boolean} isSuccess - هل هي رسالة نجاح (true) أم خطأ (false).
+     */
+    function displayStatus(message, isSuccess) {
+        statusMessage.textContent = message;
+        statusMessage.className = isSuccess ? 'success' : 'error';
+        statusMessage.style.display = 'block';
+        setTimeout(() => {
+            statusMessage.style.display = 'none';
+        }, 5000);
     }
 
-    data.users.forEach(user=>{
-      const tr = document.createElement("tr");
+    /**
+     * إرسال الطلب إلى Google Apps Script
+     * @param {Object} params - المعلمات (action, userId, secret, currentRole)
+     * @returns {Promise<Object>} - وعد بالاستجابة
+     */
+    async function sendRequest(params) {
+        const adminSecret = document.getElementById('adminSecret').value;
+        const currentRole = document.getElementById('currentRole').value;
 
-      const displayName = user.role?.toLowerCase() === "owner" ? "👑" : (user.username || "-");
-      tr.innerHTML = `
-        <td>${user.id}</td>
-        <td>${displayName}</td>
-        <td>${user.email || "-"}</td>
-        <td>${user.status || "-"}</td>
-        <td>${user.role || "-"}</td>
-        <td></td>
-      `;
-
-      const actionsCell = tr.querySelector("td:last-child");
-      const targetRole = (user.role || "user").toLowerCase();
-      const canEdit = CURRENT_ROLE.toLowerCase() === "owner" || (CURRENT_ROLE.toLowerCase() === "admin" && targetRole === "user");
-
-      if(!canEdit){
-        const span = document.createElement("span");
-        span.textContent = targetRole === "owner" ? "أونر" : targetRole === "admin" ? "مسؤول" : "";
-        span.style.background="#11121a";
-        span.style.color="#f97316";
-        span.style.padding="4px 8px";
-        span.style.borderRadius="6px";
-        span.style.fontWeight="bold";
-        actionsCell.appendChild(span);
-      } else {
-        const btn = (text, cls, icon, action)=> {
-          const b = document.createElement("button");
-          b.className = `btn-action ${cls}`;
-          b.innerHTML = `${icon} ${text}`;
-          b.onclick = ()=>{
-            if(confirm(`هل أنت متأكد من ${text} لهذا المستخدم؟`)){
-              b.classList.add("shake");
-              setTimeout(()=>b.classList.remove("shake"), 300);
-              adminAction(action, user.id);
-            }
-          };
-          return b;
+        const body = {
+            ...params,
+            secret: adminSecret,
+            currentRole: currentRole
         };
-        actionsCell.appendChild(btn("حظر","block","🔒","block"));
-        actionsCell.appendChild(btn("رفع الحظر","unblock","🔓","unblock"));
-        actionsCell.appendChild(btn("ترقية","promote","⭐","promote"));
-        actionsCell.appendChild(btn("تخفيض","demote","🔽","demote"));
-        actionsCell.appendChild(btn("حظر دائم","ban","⛔","ban"));
-        actionsCell.appendChild(btn("حذف الحساب","delete","❌","delete_account"));
-      }
 
-      tbody.appendChild(tr);
-    });
+        try {
+            const response = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
 
-    setStatus("تم تحميل المستخدمين بنجاح.");
-  } catch(err){
-    setStatus("فشل جلب البيانات: " + (err.message||err), true);
-  }
-}
+            if (!response.ok) {
+                throw new Error(`خطأ في الشبكة (Status: ${response.status})`);
+            }
 
-async function adminAction(action, userId){
-  setStatus(`جارٍ تنفيذ ${action} على ${userId}...`);
-  try{
-    const res = await fetch(SCRIPT_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({secret:ADMIN_SECRET, action, userId, currentRole: CURRENT_ROLE})
-    });
-    const data = await res.json();
-    alert(data.result || data.error || "حدث خطأ غير متوقع");
-    fetchUsers();
-  } catch(err){
-    alert("فشل الإجراء: "+(err.message||err));
-  }
-}
+            return await response.json();
+        } catch (error) {
+            console.error("خطأ في الاتصال بالخادم:", error);
+            displayStatus(`فشل الاتصال: ${error.message}`, false);
+            return { success: false, error: "فشل في الاتصال بالخادم." };
+        }
+    }
 
-fetchUsers();
+    /**
+     * جلب قائمة المستخدمين وعرضها
+     */
+    async function listUsers() {
+        usersListBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">جاري التحميل...</td></tr>';
+        
+        const result = await sendRequest({ action: 'list_users' });
+
+        if (result.success) {
+            displayStatus(`تم جلب ${result.count} مستخدم بنجاح.`, true);
+            renderUsers(result.users);
+        } else {
+            displayStatus(`فشل جلب المستخدمين: ${result.error}`, false);
+            usersListBody.innerHTML = `<tr><td colspan="5" style="color: #CF6679; text-align: center;">${result.error}</td></tr>`;
+        }
+    }
+
+    /**
+     * عرض بيانات المستخدمين في الجدول
+     * @param {Array<Object>} users - قائمة المستخدمين.
+     */
+    function renderUsers(users) {
+        usersListBody.innerHTML = ''; // تفريغ الجدول
+        if (users.length === 0) {
+            usersListBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">لا يوجد مستخدمون لعرضهم.</td></tr>';
+            return;
+        }
+
+        users.forEach(user => {
+            const row = usersListBody.insertRow();
+            row.insertCell().textContent = user.id.substring(0, 8) + '...'; // عرض مختصر لـ ID
+            row.insertCell().textContent = user.role || 'user';
+            row.insertCell().textContent = user.status || 'active';
+            row.insertCell().textContent = new Date(user.created_at).toLocaleDateString('ar-EG');
+
+            const actionsCell = row.insertCell();
+            actionsCell.innerHTML = `
+                <button class="action-button promote" onclick="performAction('promote', '${user.id}')" title="ترقية">⬆️</button>
+                <button class="action-button" onclick="performAction('block', '${user.id}')" title="حظر">🚫</button>
+                <button class="action-button danger" onclick="performAction('delete_account', '${user.id}')" title="حذف">🗑️</button>
+            `;
+        });
+    }
+
+    /**
+     * تنفيذ إجراء إداري على مستخدم واحد
+     * @param {string} action - نوع الإجراء (مثلاً: 'block', 'promote').
+     * @param {string} [id=null] - الـ ID للمستخدم.
+     */
+    async function performAction(action, id = null) {
+        const userId = id || targetUserIdInput.value;
+        if (!userId) {
+            displayStatus("يرجى إدخال ID المستخدم المستهدف أولاً.", false);
+            return;
+        }
+
+        const confirmMessage = `هل أنت متأكد من تنفيذ إجراء '${action}' على المستخدم ذو ID: ${userId.substring(0, 8)}...؟`;
+        if (!confirm(confirmMessage)) return;
+
+        displayStatus(`جاري تنفيذ الإجراء ${action}...`, true);
+
+        const result = await sendRequest({ action: action, userId: userId });
+
+        if (result.success) {
+            displayStatus(`نجاح: ${result.result}`, true);
+            listUsers(); // إعادة تحميل القائمة لتحديث الحالة
+        } else {
+            displayStatus(`فشل تنفيذ الإجراء (${action}): ${result.error}. التفاصيل: ${result.details || result.supabase_response || 'لا يوجد'}`, false);
+        }
+    }
+
+    // تحميل القائمة عند تشغيل الصفحة
+    document.addEventListener('DOMContentLoaded', listUsers);
 </script>
 
 </body>
-                                                              </html>
+          </html>
+          
