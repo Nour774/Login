@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم المستخدمين - القدس</title>
     <style>
+        /* (الأكواد الخاصة بالستايل CSS لم تتغير وهي نفس الأكواد السابقة) */
         /* الأنماط الأساسية */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -127,15 +128,12 @@
 <div class="container">
     <h1>🏛️ لوحة تحكم الإدارة العليا للمستخدمين 🏛️</h1>
 
+    <h2>بيانات المُنفِّذ (للتدقيق الأمني)</h2>
     <div class="secret-input">
         <label for="adminSecret">المفتاح السري (Admin Secret):</label>
         <input type="password" id="adminSecret" placeholder="أدخل المفتاح السري هنا" value="mySecret123">
-        <label for="currentRole">دوري الحالي:</label>
-        <select id="currentRole">
-            <option value="admin">Admin (مشرف)</option>
-            <option value="owner">Owner (مالك)</option>
-            <option value="user">User (مستخدم)</option>
-        </select>
+        <label for="currentUserId">مُعرِّفي (ID) المُنفِّذ:</label>
+        <input type="text" id="currentUserId" placeholder="UUID خاص بك (المُنفِّذ)">
         <button class="action-button" onclick="listUsers()">جلب قائمة المستخدمين</button>
     </div>
 
@@ -157,7 +155,7 @@
     <table id="usersTable">
         <thead>
             <tr>
-                <th>ID</th>
+                <th>ID (مختصر)</th>
                 <th>الدور</th>
                 <th>الحالة</th>
                 <th>تاريخ الإنشاء</th>
@@ -171,13 +169,14 @@
 </div>
 
 <script>
-    // **يرجى استبدال هذا الرابط بالرابط المنشور الفعلي الخاص بك**
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxcwhm_9cRQ6XGd2x_fe7s25zK-DdYRtbhV_VPErTF0Hk-63ZkGnCEWCfSNCJVxGbur/exec";
+    // **رابط النشر الجديد**
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyoLpHFrF-yU4jcE2llwFKlFsMNELioau17G9MNvwU1brSse-0tSKF63BTuSoCuvaQveA/exec";
     
     // العناصر الأساسية
     const statusMessage = document.getElementById('statusMessage');
     const usersListBody = document.getElementById('usersListBody');
     const targetUserIdInput = document.getElementById('targetUserId');
+    const currentUserIdInput = document.getElementById('currentUserId'); // تم إضافة هذا الحقل
 
     /**
      * عرض رسالة حالة في واجهة المستخدم
@@ -195,17 +194,22 @@
 
     /**
      * إرسال الطلب إلى Google Apps Script
-     * @param {Object} params - المعلمات (action, userId, secret, currentRole)
+     * @param {Object} params - المعلمات (action, userId, currentUserId, secret)
      * @returns {Promise<Object>} - وعد بالاستجابة
      */
     async function sendRequest(params) {
         const adminSecret = document.getElementById('adminSecret').value;
-        const currentRole = document.getElementById('currentRole').value;
+        const currentUserId = currentUserIdInput.value; // جلب الـ ID المُنفِّذ
+
+        if (!currentUserId && params.action !== 'list_users') {
+             displayStatus("يرجى إدخال مُعرِّف المستخدم المُنفِّذ (UUID) لإجراء العمليات الإدارية.", false);
+             return { success: false, error: "مُعرِّف المُنفِّذ مفقود." };
+        }
 
         const body = {
             ...params,
             secret: adminSecret,
-            currentRole: currentRole
+            currentUserId: currentUserId // إرسال الـ ID للتحقق من الدور
         };
 
         try {
@@ -235,6 +239,7 @@
     async function listUsers() {
         usersListBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">جاري التحميل...</td></tr>';
         
+        // لا نحتاج currentUserId أو userId لجلب القائمة
         const result = await sendRequest({ action: 'list_users' });
 
         if (result.success) {
@@ -259,7 +264,7 @@
 
         users.forEach(user => {
             const row = usersListBody.insertRow();
-            row.insertCell().textContent = user.id.substring(0, 8) + '...'; // عرض مختصر لـ ID
+            row.insertCell().textContent = user.id.substring(0, 8) + '...'; 
             row.insertCell().textContent = user.role || 'user';
             row.insertCell().textContent = user.status || 'active';
             row.insertCell().textContent = new Date(user.created_at).toLocaleDateString('ar-EG');
@@ -276,21 +281,28 @@
     /**
      * تنفيذ إجراء إداري على مستخدم واحد
      * @param {string} action - نوع الإجراء (مثلاً: 'block', 'promote').
-     * @param {string} [id=null] - الـ ID للمستخدم.
+     * @param {string} [id=null] - الـ ID للمستخدم المستهدف.
      */
     async function performAction(action, id = null) {
         const userId = id || targetUserIdInput.value;
+        const currentUserId = currentUserIdInput.value;
+        
+        if (!currentUserId) {
+            displayStatus("يرجى إدخال مُعرِّف المستخدم المُنفِّذ (UUID) أولاً.", false);
+            return;
+        }
+
         if (!userId) {
             displayStatus("يرجى إدخال ID المستخدم المستهدف أولاً.", false);
             return;
         }
 
-        const confirmMessage = `هل أنت متأكد من تنفيذ إجراء '${action}' على المستخدم ذو ID: ${userId.substring(0, 8)}...؟`;
+        const confirmMessage = `هل أنت متأكد من تنفيذ إجراء '${action}' على المستخدم ذو ID: ${userId.substring(0, 8)}... بواسطة ID المُنفِّذ: ${currentUserId.substring(0, 8)}...؟`;
         if (!confirm(confirmMessage)) return;
 
         displayStatus(`جاري تنفيذ الإجراء ${action}...`, true);
 
-        const result = await sendRequest({ action: action, userId: userId });
+        const result = await sendRequest({ action: action, userId: userId }); // sendRequest ترسل currentUserId تلقائيًا
 
         if (result.success) {
             displayStatus(`نجاح: ${result.result}`, true);
@@ -305,5 +317,4 @@
 </script>
 
 </body>
-          </html>
-          
+</html>
