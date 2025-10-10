@@ -2,256 +2,274 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>الرئيسية | النادي</title>
+  <title>مكتبتي</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* ------------------------------ */
-    /* التنسيقات الأساسية */
-    /* ------------------------------ */
-    body { 
-      font-family: "Tahoma", sans-serif; 
-      background: #f0f2f5; /* لون خلفية فاتح للموقع */
-      margin: 0; 
-      color: #333; /* لون نص داكن */
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh; /* تأكد أن الصفحة تغطي كامل ارتفاع الشاشة */
+    * { box-sizing: border-box; transition: 0.3s ease; }
+    body {
+      margin: 0;
+      font-family: "Cairo", "Tahoma", sans-serif;
+      background: #1a1a1d;
+      color: #f5f5f5;
+      overflow-x: hidden;
     }
 
-    /* ------------------------------ */
-    /* صورة المقدمة (Banner) */
-    /* ------------------------------ */
-    .hero-banner {
-      width: 100%;
-      height: 200px; /* تحديد الارتفاع ليتناسب مع الموقع كشريط علوي */
-      background-image: url('images/imag1.jpg'); /* افتراض امتداد الصورة .jpg */
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
+    /* الشريط العلوي */
+    header {
+      background: linear-gradient(135deg, #6a0572, #b5173a);
+      color: white;
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: white;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-    }
-    .hero-banner h1 {
-        margin: 0;
-        font-size: 2.5em;
-    }
-
-    /* ------------------------------ */
-    /* محتوى الصفحة الرئيسي */
-    /* ------------------------------ */
-    .main-content {
-        flex-grow: 1;
-        padding: 20px;
-        max-width: 1200px;
-        width: 100%;
-        margin: 0 auto;
+      justify-content: space-between;
+      padding: 12px 18px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
     }
 
-    .container { 
-      background: white; 
-      padding: 30px; 
-      border-radius: 15px; 
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
-      width: 100%;
-      max-width: 600px;
-      margin: 20px auto;
-      text-align: center; 
-    }
-
-    button { 
-      width: 100%; 
-      padding: 12px; 
-      margin-top: 12px; 
-      border-radius: 8px; 
-      border: none; 
-      font-weight: bold; 
-      background: #007bff; /* لون أساسي عصري */
-      color: white; 
-      cursor: pointer; 
-      transition: background 0.3s, transform 0.3s; 
-    }
-    button:hover { 
-      background: #0056b3; 
-      transform: scale(1.01); 
-    }
-
-    /* ------------------------------ */
-    /* شريط التنقل (Navigation Bar) - أسفل الصفحة */
-    /* ------------------------------ */
-    .nav-bar {
-      position: sticky; /* يثبت الشريط في الأسفل */
-      bottom: 0;
-      width: 100%;
-      background: #333; /* خلفية داكنة */
-      color: white;
-      display: flex;
-      justify-content: space-around;
-      padding: 10px 0;
-      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-    }
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-decoration: none;
-      color: white;
-      font-size: 0.8em;
-      transition: color 0.3s;
+    .menu-btn {
+      font-size: 26px;
       cursor: pointer;
     }
-    .nav-item:hover {
-        color: #007bff;
-    }
-    .nav-icon {
-      font-size: 1.5em; /* حجم كبير للأيقونة/الإيموجي */
-      margin-bottom: 4px;
-      line-height: 1; /* يمنع المسافات الزائدة حول الإيموجي */
+
+    header h1 {
+      font-size: 22px;
+      margin: 0;
+      font-weight: bold;
+      letter-spacing: 1px;
     }
 
-    /* ------------------------------ */
-    /* صورة البروفايل */
-    /* ------------------------------ */
-    .profile-avatar {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%; /* شكل دائري */
-        object-fit: cover;
-        border: 2px solid white;
+    .profile-pic {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #fff;
+      cursor: pointer;
     }
-    .nav-item.profile .nav-icon {
-        border-radius: 50%;
-        width: 35px;
-        height: 35px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #ccc; /* لون افتراضي في حال عدم وجود صورة */
-        font-size: 0.9em;
+
+    /* القائمة الجانبية */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: -250px;
+      width: 250px;
+      height: 100%;
+      background: #2c2c2f;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      box-shadow: -3px 0 10px rgba(0,0,0,0.5);
+      z-index: 20;
     }
+
+    .sidebar.active {
+      right: 0;
+    }
+
+    .sidebar a, .sidebar button {
+      color: #fff;
+      text-decoration: none;
+      font-size: 16px;
+      padding: 10px 15px;
+      background: rgba(255,255,255,0.08);
+      border: none;
+      border-radius: 8px;
+      text-align: right;
+      cursor: pointer;
+    }
+
+    .sidebar a:hover, .sidebar button:hover {
+      background: linear-gradient(135deg, #b5173a, #6a0572);
+    }
+
+    /* صورة الغلاف */
+    .hero {
+      width: 100%;
+      max-height: 300px;
+      overflow: hidden;
+      border-bottom: 3px solid #b5173a;
+    }
+
+    .hero img {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* المحتوى */
+    .content {
+      padding: 20px;
+    }
+
+    .welcome {
+      font-size: 20px;
+      font-weight: bold;
+      color: #b5173a;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* بطاقات الروايات */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: #2a2a2d;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+    }
+
+    .card img {
+      width: 100%;
+      height: 230px;
+      object-fit: cover;
+    }
+
+    .card-content {
+      padding: 10px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: #bbb;
+      line-height: 1.4;
+    }
+
+    /* تظليل للخلف عند فتح القائمة */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      z-index: 15;
+    }
+    .overlay.active { display: block; }
   </style>
 </head>
 <body>
-  
-  <div class="hero-banner">
-      <h1>👋 مرحباً بك في النادي!</h1>
+  <header>
+    <span class="menu-btn" onclick="toggleMenu()">☰</span>
+    <h1>مكتبتي</h1>
+    <img id="profileImage" class="profile-pic" src="images/imag2.jpg" alt="بروفايل">
+  </header>
+
+  <div class="hero">
+    <img src="images/imag1.jpg" alt="صورة المقدمة">
   </div>
 
-  <div class="main-content">
-      <div class="container">
-          <h2 id="welcome">جاري التحميل...</h2> 
+  <div class="content">
+    <div id="welcome" class="welcome">جار التحميل...</div>
 
-          <button id="adminBtn" style="display:none;" onclick="goToAdmin()">لوحة التحكم</button>
-          
-          <button onclick="goToMembers()">أعضاء النادي</button>
-          <button onclick="logout()">تسجيل خروج</button>
+    <div class="card-grid">
+      <div class="card">
+        <img src="images/imag3.jpg" alt="رواية">
+        <div class="card-content">
+          <div class="card-title">عهد الدم</div>
+          <div class="card-desc">في مدينة تبتلعها الأسرار، يقوم عهد بين النور والظلام.</div>
+        </div>
       </div>
 
-      <div style="margin-top: 30px; text-align: center;">
-          <p>اكتشف آخر تحديثات وأنشطة النادي هنا...</p>
+      <div class="card">
+        <img src="images/imag4.jpg" alt="رواية">
+        <div class="card-content">
+          <div class="card-title">سيدة الرماد</div>
+          <div class="card-desc">حين ينهار كل شيء، تخرج الحقيقة من بين الرماد.</div>
+        </div>
       </div>
+
+      <div class="card">
+        <img src="images/imag5.jpg" alt="رواية">
+        <div class="card-content">
+          <div class="card-title">قصر الأبدية</div>
+          <div class="card-desc">قصر لا يفتح بابه إلا لمن فقد كل شيء.</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="nav-bar">
-      <a href="#" class="nav-item">
-          <span class="nav-icon">🏠</span>
-          <span>الرئيسية</span>
-      </a>
-
-      <a href="#" class="nav-item">
-          <span class="nav-icon">💬</span>
-          <span>الدردشة</span>
-      </a>
-
-      <a href="#" class="nav-item">
-          <span class="nav-icon">🧭</span>
-          <span>التصفح</span>
-      </a>
-
-      <a href="#" class="nav-item">
-          <span class="nav-icon">📚</span>
-          <span>المكتبة</span>
-      </a>
-
-      <a href="#" class="nav-item profile" id="profileNav">
-          <span class="nav-icon">
-             <img id="avatarImage" class="profile-avatar" src="images/imag2.png" alt="الصورة">
-          </span>
-          <span>بروفايلي</span>
-      </a>
+  <!-- القائمة الجانبية -->
+  <div class="sidebar" id="sidebar">
+    <a href="#" onclick="goHome()">🏠 الرئيسية</a>
+    <a href="#" onclick="goChat()">💬 الدردشة</a>
+    <a href="#" onclick="goBrowse()">🔎 التصفح</a>
+    <a href="#" onclick="goLibrary()">📚 المكتبة</a>
+    <a href="#" onclick="goToMembers()">👥 الأعضاء</a>
+    <button id="adminBtn" onclick="goToAdmin()" style="display:none;">⚙️ لوحة التحكم</button>
+    <button onclick="logout()">🚪 تسجيل الخروج</button>
   </div>
 
+  <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
   <script>
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    async function loadUser(){
+    async function loadUser() {
       try {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-
-        if(userError || !userData.user){
-          console.log("No user session, redirecting...");
+        const { data, error } = await supabase.auth.getUser();
+        if (error || !data.user) {
           window.location.href = "index.html";
           return;
         }
-
-        const user = userData.user;
-
-        // 1. جلب معلومات البروفايل من جدول 'profiles'
+        const user = data.user;
         const { data: profile, error: profileErr } = await supabase
           .from("profiles")
-          .select("username, role")
+          .select("username, role, avatar_url")
           .eq("id", user.id)
           .single();
-
-        if(profileErr && profileErr.code !== "PGRST116"){
-          console.error("خطأ في جلب البروفايل:", profileErr.message);
-          return;
-        }
 
         const username = profile?.username || "مستخدم";
         document.getElementById("welcome").textContent = `مرحباً بك، ${username} 👋`;
 
+        const profileImage = document.getElementById("profileImage");
+        if (profile?.avatar_url) profileImage.src = profile.avatar_url;
+
         const role = profile?.role?.toLowerCase() || "";
-        if(role === "admin" || role === "owner"){
+        if (role === "admin" || role === "owner") {
           document.getElementById("adminBtn").style.display = "block";
-        } else {
-          document.getElementById("adminBtn").style.display = "none";
         }
-        
-        // 2. تحديث صورة البروفايل من الـ user_metadata
-        const avatarImage = document.getElementById("avatarImage");
-        // نفترض أن رابط الصورة مخزّن في حقل avatar_url ضمن user_metadata
-        const avatarUrl = user.user_metadata?.avatar_url; 
-        
-        if (avatarUrl) {
-           avatarImage.src = avatarUrl;
-        } else {
-           // في حال عدم وجود صورة بروفايل في قاعدة البيانات، نستخدم الصورة الافتراضية imag2
-           avatarImage.src = "images/imag2.png"; 
-        }
-
-
-      } catch(err){
-        console.error("حدث خطأ غير متوقع:", err);
-        alert("حدث خطأ غير متوقع: " + (err.message || err));
+      } catch (err) {
+        console.error("خطأ:", err);
       }
     }
 
-    async function logout(){
-      try { await supabase.auth.signOut(); } catch(err){ console.warn(err); }
-      window.location.href = "index.html";
+    function toggleMenu() {
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("overlay");
+      sidebar.classList.toggle("active");
+      overlay.classList.toggle("active");
     }
 
-    function goToMembers(){ window.location.href = "index3.html"; }
-    function goToAdmin(){ window.location.href = "index6.html"; }
+    function logout(){ supabase.auth.signOut().then(()=>window.location.href="index.html"); }
+    function goHome(){ window.location.href="index2.html"; }
+    function goChat(){ window.location.href="chat.html"; }
+    function goBrowse(){ window.location.href="browse.html"; }
+    function goLibrary(){ window.location.href="library.html"; }
+    function goToMembers(){ window.location.href="index3.html"; }
+    function goToAdmin(){ window.location.href="index6.html"; }
 
     loadUser();
   </script>
 </body>
-</html>
+  </html>
