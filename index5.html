@@ -2,23 +2,188 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>الرئيسية</title>
-  <!-- مكتبة supabase الصحيحة للمتصفح -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الرئيسية | النادي</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family:"Tahoma",sans-serif; background: linear-gradient(135deg,#6a0572,#b5173a); display:flex; justify-content:center; align-items:center; height:100vh; margin:0; color:white; }
-    .container { background: rgba(0,0,0,0.4); padding:30px; border-radius:15px; width:350px; text-align:center; }
-    button { width:100%; padding:12px; margin-top:12px; border-radius:8px; border:none; font-weight:bold; background: linear-gradient(135deg,#b5173a,#6a0572); color:white; cursor:pointer; transition:0.3s; }
-    button:hover { opacity:0.9; transform:scale(1.02); }
+    /* ------------------------------ */
+    /* التنسيقات الأساسية */
+    /* ------------------------------ */
+    body { 
+      font-family: "Tahoma", sans-serif; 
+      background: #f0f2f5; /* لون خلفية فاتح للموقع */
+      margin: 0; 
+      color: #333; /* لون نص داكن */
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh; /* تأكد أن الصفحة تغطي كامل ارتفاع الشاشة */
+    }
+
+    /* ------------------------------ */
+    /* صورة المقدمة (Banner) */
+    /* ------------------------------ */
+    .hero-banner {
+      width: 100%;
+      height: 200px; /* تحديد الارتفاع ليتناسب مع الموقع كشريط علوي */
+      background-image: url('images/imag1.jpg'); /* افتراض امتداد الصورة .jpg */
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
+    .hero-banner h1 {
+        margin: 0;
+        font-size: 2.5em;
+    }
+
+    /* ------------------------------ */
+    /* محتوى الصفحة الرئيسي */
+    /* ------------------------------ */
+    .main-content {
+        flex-grow: 1;
+        padding: 20px;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    .container { 
+      background: white; 
+      padding: 30px; 
+      border-radius: 15px; 
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      text-align: center; 
+    }
+
+    button { 
+      width: 100%; 
+      padding: 12px; 
+      margin-top: 12px; 
+      border-radius: 8px; 
+      border: none; 
+      font-weight: bold; 
+      background: #007bff; /* لون أساسي عصري */
+      color: white; 
+      cursor: pointer; 
+      transition: background 0.3s, transform 0.3s; 
+    }
+    button:hover { 
+      background: #0056b3; 
+      transform: scale(1.01); 
+    }
+
+    /* ------------------------------ */
+    /* شريط التنقل (Navigation Bar) - أسفل الصفحة */
+    /* ------------------------------ */
+    .nav-bar {
+      position: sticky; /* يثبت الشريط في الأسفل */
+      bottom: 0;
+      width: 100%;
+      background: #333; /* خلفية داكنة */
+      color: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      color: white;
+      font-size: 0.8em;
+      transition: color 0.3s;
+      cursor: pointer;
+    }
+    .nav-item:hover {
+        color: #007bff;
+    }
+    .nav-icon {
+      font-size: 1.5em; /* حجم كبير للأيقونة/الإيموجي */
+      margin-bottom: 4px;
+      line-height: 1; /* يمنع المسافات الزائدة حول الإيموجي */
+    }
+
+    /* ------------------------------ */
+    /* صورة البروفايل */
+    /* ------------------------------ */
+    .profile-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%; /* شكل دائري */
+        object-fit: cover;
+        border: 2px solid white;
+    }
+    .nav-item.profile .nav-icon {
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ccc; /* لون افتراضي في حال عدم وجود صورة */
+        font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1 id="welcome">جاري التحميل...</h1>
-    <button onclick="logout()">تسجيل خروج</button>
-    <button onclick="goToMembers()">أعضاء النادي</button>
-    <button id="adminBtn" style="display:none;" onclick="goToAdmin()">لوحة التحكم</button>
+  
+  <div class="hero-banner">
+      <h1>👋 مرحباً بك في النادي!</h1>
   </div>
+
+  <div class="main-content">
+      <div class="container">
+          <h2 id="welcome">جاري التحميل...</h2> 
+
+          <button id="adminBtn" style="display:none;" onclick="goToAdmin()">لوحة التحكم</button>
+          
+          <button onclick="goToMembers()">أعضاء النادي</button>
+          <button onclick="logout()">تسجيل خروج</button>
+      </div>
+
+      <div style="margin-top: 30px; text-align: center;">
+          <p>اكتشف آخر تحديثات وأنشطة النادي هنا...</p>
+      </div>
+  </div>
+
+  <div class="nav-bar">
+      <a href="#" class="nav-item">
+          <span class="nav-icon">🏠</span>
+          <span>الرئيسية</span>
+      </a>
+
+      <a href="#" class="nav-item">
+          <span class="nav-icon">💬</span>
+          <span>الدردشة</span>
+      </a>
+
+      <a href="#" class="nav-item">
+          <span class="nav-icon">🧭</span>
+          <span>التصفح</span>
+      </a>
+
+      <a href="#" class="nav-item">
+          <span class="nav-icon">📚</span>
+          <span>المكتبة</span>
+      </a>
+
+      <a href="#" class="nav-item profile" id="profileNav">
+          <span class="nav-icon">
+             <img id="avatarImage" class="profile-avatar" src="images/imag2.png" alt="الصورة">
+          </span>
+          <span>بروفايلي</span>
+      </a>
+  </div>
+
 
   <script>
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
@@ -27,15 +192,17 @@
 
     async function loadUser(){
       try {
-        const { data, error } = await supabase.auth.getUser();
-        if(error || !data.user){
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+
+        if(userError || !userData.user){
           console.log("No user session, redirecting...");
           window.location.href = "index.html";
           return;
         }
 
-        const user = data.user;
+        const user = userData.user;
 
+        // 1. جلب معلومات البروفايل من جدول 'profiles'
         const { data: profile, error: profileErr } = await supabase
           .from("profiles")
           .select("username, role")
@@ -43,7 +210,7 @@
           .single();
 
         if(profileErr && profileErr.code !== "PGRST116"){
-          alert("خطأ في جلب البروفايل: " + profileErr.message);
+          console.error("خطأ في جلب البروفايل:", profileErr.message);
           return;
         }
 
@@ -51,14 +218,27 @@
         document.getElementById("welcome").textContent = `مرحباً بك، ${username} 👋`;
 
         const role = profile?.role?.toLowerCase() || "";
-        // تعديل: زر لوحة التحكم يظهر لكل من admin و owner
         if(role === "admin" || role === "owner"){
           document.getElementById("adminBtn").style.display = "block";
         } else {
           document.getElementById("adminBtn").style.display = "none";
         }
+        
+        // 2. تحديث صورة البروفايل من الـ user_metadata
+        const avatarImage = document.getElementById("avatarImage");
+        // نفترض أن رابط الصورة مخزّن في حقل avatar_url ضمن user_metadata
+        const avatarUrl = user.user_metadata?.avatar_url; 
+        
+        if (avatarUrl) {
+           avatarImage.src = avatarUrl;
+        } else {
+           // في حال عدم وجود صورة بروفايل في قاعدة البيانات، نستخدم الصورة الافتراضية imag2
+           avatarImage.src = "images/imag2.png"; 
+        }
+
 
       } catch(err){
+        console.error("حدث خطأ غير متوقع:", err);
         alert("حدث خطأ غير متوقع: " + (err.message || err));
       }
     }
