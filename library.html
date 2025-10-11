@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>مكتبتي</title>
+  <title>المكتبة</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; transition: 0.3s ease; }
@@ -14,7 +14,7 @@
       overflow-x: hidden;
     }
 
-    /* الشريط العلوي */
+    /* الشريط العلوي الأساسي */
     header {
       background: linear-gradient(135deg, #6a0572, #b5173a);
       color: white;
@@ -49,53 +49,74 @@
       cursor: pointer;
     }
 
+    /* الشريط العلوي الفرعي (مثل tachiyomi) */
+    .sub-header {
+      background: #252528;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 10px 0;
+      border-bottom: 2px solid #b5173a;
+      flex-wrap: wrap;
+    }
+
+    .sub-header a {
+      color: #f5f5f5;
+      text-decoration: none;
+      font-size: 15px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: 0.3s ease;
+    }
+
+    .sub-header a:hover {
+      background: linear-gradient(135deg, #b5173a, #6a0572);
+    }
+
     /* القائمة الجانبية */
     .sidebar {
       position: fixed;
       top: 0;
-      right: -250px;
-      width: 250px;
+      right: -240px;
+      width: 240px;
       height: 100%;
       background: #2c2c2f;
       padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 10px;
       box-shadow: -3px 0 10px rgba(0,0,0,0.5);
       z-index: 20;
     }
 
-    .sidebar.active {
-      right: 0;
-    }
+    .sidebar.active { right: 0; }
 
     .sidebar a, .sidebar button {
-      color: #fff;
-      text-decoration: none;
-      font-size: 16px;
-      padding: 10px 15px;
-      background: rgba(255,255,255,0.08);
+      color: #f5f5f5;
+      background: none;
       border: none;
-      border-radius: 8px;
+      text-decoration: none;
+      font-size: 15px;
       text-align: right;
       cursor: pointer;
+      padding: 8px 0;
     }
 
     .sidebar a:hover, .sidebar button:hover {
-      background: linear-gradient(135deg, #b5173a, #6a0572);
+      color: #b5173a;
     }
 
     /* صورة الغلاف */
     .hero {
       width: 100%;
-      max-height: 300px;
+      height: 260px;
       overflow: hidden;
       border-bottom: 3px solid #b5173a;
     }
 
     .hero img {
       width: 100%;
-      height: auto;
+      height: 100%;
       object-fit: cover;
       display: block;
     }
@@ -116,8 +137,8 @@
     /* بطاقات الروايات */
     .card-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 16px;
     }
 
     .card {
@@ -129,19 +150,17 @@
     }
 
     .card:hover {
-      transform: translateY(-5px);
+      transform: translateY(-4px);
       box-shadow: 0 8px 20px rgba(0,0,0,0.6);
     }
 
     .card img {
       width: 100%;
-      height: 230px;
+      height: 220px;
       object-fit: cover;
     }
 
-    .card-content {
-      padding: 10px;
-    }
+    .card-content { padding: 10px; }
 
     .card-title {
       font-size: 15px;
@@ -155,7 +174,7 @@
       line-height: 1.4;
     }
 
-    /* تظليل للخلف عند فتح القائمة */
+    /* خلفية القائمة */
     .overlay {
       position: fixed;
       inset: 0;
@@ -164,15 +183,31 @@
       z-index: 15;
     }
     .overlay.active { display: block; }
+
+    /* تحسين للموبايل */
+    @media (max-width: 600px) {
+      header h1 { font-size: 18px; }
+      .card img { height: 190px; }
+      .sub-header a { font-size: 14px; }
+    }
   </style>
 </head>
 <body>
   <header>
     <span class="menu-btn" onclick="toggleMenu()">☰</span>
-    <h1>مكتبتي</h1>
+    <h1>المكتبة</h1>
     <img id="profileImage" class="profile-pic" src="images/imag2.jpg" alt="بروفايل">
   </header>
 
+  <!-- الشريط الفرعي -->
+  <div class="sub-header">
+    <a href="#">التصفح</a>
+    <a href="#">المستودعات</a>
+    <a href="#">المانجا / المانهوا</a>
+    <a href="#">الروايات</a>
+  </div>
+
+  <!-- صورة المقدمة -->
   <div class="hero">
     <img src="images/imag1.jpg" alt="صورة المقدمة">
   </div>
@@ -209,68 +244,46 @@
 
   <!-- القائمة الجانبية -->
   <div class="sidebar" id="sidebar">
-    <a href="#" onclick="goHome()">🏠 الرئيسية</a>
-    <a href="#" onclick="goChat()">💬 الدردشة</a>
-    <a href="#" onclick="goBrowse()">🔎 التصفح</a>
-    <a href="#" onclick="goLibrary()">📚 المكتبة</a>
-    <a href="#" onclick="goToMembers()">👥 الأعضاء</a>
-    <button id="adminBtn" onclick="goToAdmin()" style="display:none;">⚙️ لوحة التحكم</button>
-    <button onclick="logout()">🚪 تسجيل الخروج</button>
+    <a href="#" onclick="goToMembers()">الأعضاء</a>
+    <button id="adminBtn" onclick="goToAdmin()" style="display:none;">لوحة التحكم</button>
+    <button onclick="logout()">تسجيل الخروج</button>
   </div>
 
   <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
   <script>
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     async function loadUser() {
-      try {
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data.user) {
-          window.location.href = "index.html";
-          return;
-        }
-        const user = data.user;
-        const { data: profile, error: profileErr } = await supabase
-          .from("profiles")
-          .select("username, role, avatar_url")
-          .eq("id", user.id)
-          .single();
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) return window.location.href = "index.html";
 
-        const username = profile?.username || "مستخدم";
-        document.getElementById("welcome").textContent = `مرحباً بك، ${username} 👋`;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username, role, avatar_url")
+        .eq("id", data.user.id)
+        .single();
 
-        const profileImage = document.getElementById("profileImage");
-        if (profile?.avatar_url) profileImage.src = profile.avatar_url;
+      document.getElementById("welcome").textContent = `مرحباً بك، ${profile?.username || "مستخدم"} 👋`;
+      if (profile?.avatar_url) document.getElementById("profileImage").src = profile.avatar_url;
 
-        const role = profile?.role?.toLowerCase() || "";
-        if (role === "admin" || role === "owner") {
-          document.getElementById("adminBtn").style.display = "block";
-        }
-      } catch (err) {
-        console.error("خطأ:", err);
+      if (["admin","owner"].includes((profile?.role||"").toLowerCase())) {
+        document.getElementById("adminBtn").style.display = "block";
       }
     }
 
     function toggleMenu() {
-      const sidebar = document.getElementById("sidebar");
-      const overlay = document.getElementById("overlay");
-      sidebar.classList.toggle("active");
-      overlay.classList.toggle("active");
+      document.getElementById("sidebar").classList.toggle("active");
+      document.getElementById("overlay").classList.toggle("active");
     }
 
-    function logout(){ supabase.auth.signOut().then(()=>window.location.href="index.html"); }
-    function goHome(){ window.location.href="index2.html"; }
-    function goChat(){ window.location.href="chat.html"; }
-    function goBrowse(){ window.location.href="browse.html"; }
-    function goLibrary(){ window.location.href="library.html"; }
-    function goToMembers(){ window.location.href="index3.html"; }
-    function goToAdmin(){ window.location.href="index6.html"; }
+    function logout(){ supabase.auth.signOut().then(()=>location.href="index.html"); }
+    function goToMembers(){ location.href="index3.html"; }
+    function goToAdmin(){ location.href="index6.html"; }
 
     loadUser();
   </script>
 </body>
-  </html>
-  
+    </html>
