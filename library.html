@@ -33,10 +33,8 @@
     .panel { display: none; }
     .panel.active { display: block; }
     .hint { margin-top: 12px; color: #9b8fb3; }
-    /* شبكة البطاقات مثل تاشيومي ولكن حسب ستايلك */
     .grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 14px; margin-top: 18px; }
     .card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12)); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
-    /* تصميم بطاقة شبيه بتاشيومي */
     .ext-card { display:flex; gap:10px; align-items:flex-start; cursor:pointer; }
     .ext-thumb { width:72px; height:100px; border-radius:8px; object-fit:cover; flex-shrink:0; background:#111; border:1px solid rgba(255,255,255,0.03) }
     .ext-body { flex:1; display:flex; flex-direction:column; gap:6px }
@@ -68,18 +66,15 @@
 
   <div class="hero"><img src="images/imag1.jpg" alt="صورة المقدمة"></div>
 
-  <!-- الأقسام -->
   <div id="library" class="section active">
     <div class="content">
       <div id="welcome" class="welcome">جار التحميل...</div>
     </div>
   </div>
 
-  <!-- ======= قسم المانجا/المانهوا (المُحدّث بالكامل) ======= -->
   <div id="repository" class="section">
     <div class="logo"><div>MS</div><div class="title">Manga Sanctum</div></div>
 
-    <!-- تبويبات المستودعات -->
     <div class="repo-tabs" id="repoTabs"></div>
 
     <nav>
@@ -127,16 +122,10 @@
   <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
   <script>
-    /****************** إعداد Supabase (تصحيح الاستخدام) ******************/
+    /****************** إعداد Supabase ******************/
     const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-
-    // بعض الحمايات لعدم افتراض اسم النافذة العالمية
-    const supabaseClient = (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function')
-      ? window.supabase.createClient(supabaseUrl, supabaseKey)
-      : (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function')
-        ? supabase.createClient(supabaseUrl, supabaseKey)
-        : null;
+    const supabaseClient = (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') ? window.supabase.createClient(supabaseUrl, supabaseKey) : (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') ? supabase.createClient(supabaseUrl, supabaseKey) : null;
 
     async function loadUser() {
       try {
@@ -150,7 +139,6 @@
           document.getElementById("adminBtn").style.display = "block";
         }
       } catch(e) {
-        // لو Supabase فشل لأي سبب، نسمح للمستخدم بالمتابعة محلياً
         console.warn(e);
         document.getElementById("welcome").textContent = `مرحباً بك، زائر — (Supabase غير متاح حالياً).`;
       }
@@ -159,20 +147,13 @@
 
     /****************** وظائف واجهة عامة ******************/
     function toggleMenu() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
-    function logout() {
-      if(supabaseClient && supabaseClient.auth && typeof supabaseClient.auth.signOut === 'function'){
-        supabaseClient.auth.signOut().then(()=> location.href='index.html').catch(()=> location.href='index.html');
-      } else {
-        location.href = 'index.html';
-      }
-    }
+    function logout() { if(supabaseClient && supabaseClient.auth && typeof supabaseClient.auth.signOut === 'function'){ supabaseClient.auth.signOut().then(()=> location.href='index.html').catch(()=> location.href='index.html'); } else { location.href = 'index.html'; } }
     function goToMembers(){ location.href='index3.html' }
     function goToAdmin(){ location.href='index5.html' }
     function showSection(id){ document.querySelectorAll('.section').forEach(sec=>sec.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id==='repository') { switchPanel('extensions'); } }
 
-    /****************** حالة التطبيق (state) ******************/
+    /****************** حالة التطبيق ******************/
     const state = { repos: [], currentRepoIndex: null, sources: [] };
-
     const PREPOPULATED_REPOS = [
       { name: "Keiyoushi", url: "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json" },
       { name: "ThePBone (revived)", url: "https://raw.githubusercontent.com/ThePBone/tachiyomi-extensions-revived/repo/index.min.json" },
@@ -192,207 +173,91 @@
 
     function selectRepo(idx){ state.currentRepoIndex = idx; renderRepoTabs(); if(!state.repos[idx].loaded) fetchRepo(idx); else renderExtensionsGrid(state.repos[idx].items || []); }
 
-    /****************** جلب وتحليل مستودع (مرن) ******************/
+    /****************** جلب وتحليل مستودع مرن مع دعم APK ******************/
     async function fetchRepo(idx){
-      const repo = state.repos[idx]; if(!repo) return; setDetails(`جاري جلب: ${repo.url}`);
+      const repo = state.repos[idx];
+      if(!repo) return;
+      setDetails(`جاري جلب: ${repo.url}`);
       try {
         const res = await fetch(repo.url);
         if(!res.ok) throw new Error('HTTP ' + res.status);
         const json = await res.json();
-        let extensions = [];
+        let items = [];
+
         if(Array.isArray(json)){
-          json.forEach(it => { if(it && (it.name || it.title)) extensions.push(normalizeExtension(it)); else extensions.push({ title: it.name||it.title||JSON.stringify(it).slice(0,40), raw: it }); });
-        } else if(json.repositories && Array.isArray(json.repositories)) { json.repositories.forEach(it=> extensions.push(normalizeExtension(it))); }
-        else if(json.extensions && Array.isArray(json.extensions)) { json.extensions.forEach(it=> extensions.push(normalizeExtension(it))); }
-        else if(json.sources && Array.isArray(json.sources)) { json.sources.forEach(it=> extensions.push(normalizeExtension(it))); }
-        else {
-          const maybe = [];
-          Object.keys(json).forEach(k=>{ if(Array.isArray(json[k])) { json[k].forEach(it => { if(it && (it.name || it.title)) maybe.push(it); }); } });
-          if(maybe.length>0){ maybe.forEach(it=>extensions.push(normalizeExtension(it))); }
-          else { extensions.push({ title: repo.name || repo.url, raw: json }); }
+          json.forEach(it => { items.push(normalizeExtension(it)); });
+        } else if(json.repositories && Array.isArray(json.repositories)) {
+          json.repositories.forEach(it => items.push(normalizeExtension(it)));
+        } else if(json.extensions && Array.isArray(json.extensions)) {
+          json.extensions.forEach(it => items.push(normalizeExtension(it)));
+        } else if(json.sources && Array.isArray(json.sources)) {
+          json.sources.forEach(it => items.push(normalizeExtension(it)));
+        } else {
+          let found = false;
+          Object.keys(json).forEach(k => {
+            if(Array.isArray(json[k])){
+              json[k].forEach(it => { items.push(normalizeExtension(it)); found = true; });
+            }
+          });
+          if(!found) { items.push({ title: repo.name || repo.url, raw: json }); }
         }
-        repo.items = extensions; repo.loaded = true; renderRepoTabs(); if(state.currentRepoIndex === idx) renderExtensionsGrid(extensions); setDetails(`تم تحميل المستودع: ${repo.name} — ${extensions.length} عناصر.`);
-      } catch(err){ console.error(err); repo.loaded = false; setDetails(`فشل تحميل repo: ${repo.url} — ${err.message}. إذا ظهر "CORS" استخدم خادم محلي أو الصق JSON يدوياً.`); alert(`فشل جلب المستودع (${repo.name}): ${err.message}\nمشكلة شائعة: CORS. شغّل الصفحة عبر سيرفر محلي أو الصق JSON.`);
+
+        repo.items = items;
+        repo.loaded = true;
+        renderRepoTabs();
+        if(state.currentRepoIndex === idx) renderExtensionsGrid(items);
+        setDetails(`تم تحميل المستودع: ${repo.name} — ${items.length} عناصر.`);
+      } catch(err) {
+        console.error(err);
+        repo.loaded = false;
+        setDetails(`فشل تحميل repo: ${repo.url} — ${err.message}. إذا ظهر "CORS" استخدم خادم محلي أو الصق JSON يدوياً.`);
+        alert(`فشل جلب المستودع (${repo.name}): ${err.message}\nمشكلة شائعة: CORS. شغّل الصفحة عبر سيرفر محلي أو الصق JSON.`);
       }
     }
 
+    /****************** تطبيع العناصر لدعم البنية المرنة + APK ******************/
     function normalizeExtension(it){
       const title = it.title || it.name || it.id || it.pkg || it.apk || 'إضافة';
       const lang = it.lang || it.language || it.languages || (it.availableLanguages ? (Array.isArray(it.availableLanguages)?it.availableLanguages.join(',') : it.availableLanguages) : '');
       const description = it.description || it.desc || it.summary || '';
-      const icon = it.icon || it.logo || it.image || it.cover || (it.thumbnail || null);
-      const url = it.url || it.repo || it.index || it.apk || it.link || it.json || null;
-      return { title, lang, description, icon, url, raw: it };
+      const icon = it.icon || it.logo || it.image || it.cover || it.thumbnail || null;
+      const url = it.url || it.repo || it.index || it.apk || it.pkg || it.link || null;
+      const apk = it.apk || it.pkg || null;
+      return { title, lang, description, icon, url, apk, raw: it };
     }
 
-    /****************** رندر الإضافات (بطاقات شبيهة بتاشيومي) ******************/
     function renderExtensionsGrid(items){
       const grid = document.getElementById('extensionsGrid'); grid.innerHTML = '';
-      if(!items || items.length===0){ grid.innerHTML = '<div class="muted">لا توجد إضافات في هذا المستودع أو البنية غير مدعومة.</div>'; return; }
-      items.forEach((ex, i) => {
-        const card = document.createElement('div'); card.className = 'card';
-        const thumbUrl = ex.icon || placeholderThumb(ex.title);
-        card.innerHTML = `
-          <div class="ext-card">
-            <img class="ext-thumb" src="${escapeHtml(thumbUrl)}" onerror="this.src='${placeholderThumb(ex.title)}'"/>
-            <div class="ext-body">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                <div>
-                  <div class="ext-title">${escapeHtml(ex.title)}</div>
-                  <div class="ext-meta">${escapeHtml(ex.lang || (ex.raw && ex.raw.language) || '')}</div>
-                </div>
-                <div style="text-align:left">
-                  <button class="btn" onclick="importAsSource(${state.currentRepoIndex}, ${i})">استيراد كمصدر</button>
-                </div>
-              </div>
-              <div class="small muted" style="margin-top:6px">${escapeHtml(shorten(ex.description || (ex.raw && ex.raw.summary) || 'لا وصف متاح'))}</div>
-              <div class="small muted" style="margin-top:8px">رابط: ${escapeHtml(ex.url || (ex.raw && guessUrlFromRaw(ex.raw)) || '—')}</div>
-            </div>
-          </div>
-        `;
-        grid.appendChild(card);
+      items.forEach(it=>{
+        const card = document.createElement('div'); card.className='card ext-card';
+        const thumb = document.createElement('img'); thumb.className='ext-thumb'; thumb.src=it.icon||'images/book.png';
+        const body = document.createElement('div'); body.className='ext-body';
+        const title = document.createElement('div'); title.className='ext-title'; title.textContent=it.title;
+        const meta = document.createElement('div'); meta.className='ext-meta'; meta.textContent=it.lang || '';
+        const desc = document.createElement('div'); desc.className='small'; desc.textContent=it.description || '';
+        const btn = document.createElement('button'); btn.className='btn'; btn.textContent='استيراد كمصدر'; btn.onclick=()=>{ if(it.apk) window.open(it.apk,'_blank'); else alert('رابط غير متوفر'); };
+        body.appendChild(title); body.appendChild(meta); body.appendChild(desc); body.appendChild(btn);
+        card.appendChild(thumb); card.appendChild(body); grid.appendChild(card);
       });
     }
 
-    /****************** استيراد كـ مصدر (ينتقل إلى panelSources) ******************/
-    function importAsSource(repoIdx, extIdx){
-      const repo = state.repos[repoIdx]; if(!repo || !repo.items || !repo.items[extIdx]) return; const ex = repo.items[extIdx];
-      const sourceObj = { name: ex.title || ex.raw?.name || 'مصدر', url: ex.url || guessUrlFromRaw(ex.raw) || repo.url, raw: ex.raw || null };
-      if(state.sources.some(s => (s.url && s.url===sourceObj.url) || (s.name && s.name===sourceObj.name))){ alert('هذا المصدر موجود بالفعل في قائمة المصادر.'); return; }
-      state.sources.push(sourceObj); renderSourcesGrid(); switchPanel('sources'); setDetails(`استوردت: ${sourceObj.name}`);
+    /****************** أدوات مستودع ******************/
+    function switchPanel(name){
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById('panel'+capitalize(name)).classList.add('active');
+      document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active')); document.getElementById('tab'+capitalize(name)).classList.add('active');
     }
 
-    /****************** عرض المصادر الموحدة ******************/
-    function renderSourcesGrid(){
-      const grid = document.getElementById('sourcesGrid'); grid.innerHTML = '';
-      if(state.sources.length===0){ grid.innerHTML = '<div class="muted">لم تقم باستيراد أي مصدر بعد.</div>'; return; }
-      state.sources.forEach((s, idx) => {
-        const d = document.createElement('div'); d.className='card';
-        d.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="font-weight:800">${escapeHtml(s.name)}</div>
-              <div class="small muted" style="margin-top:6px">${escapeHtml(s.url)}</div>
-            </div>
-            <div style="display:flex;gap:8px">
-              <button class="btn" onclick="openSource(${idx})">افتح المصدر</button>
-              <button class="btn" style="background:#c94a4a" onclick="removeSource(${idx})">حذف</button>
-            </div>
-          </div>
-        `;
-        grid.appendChild(d);
-      });
-    }
+    function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 
-    async function openSource(idx){
-      const s = state.sources[idx]; if(!s) return; setDetails(`فتح المصدر: ${s.name}`);
-      if(s.raw && Array.isArray(s.raw.manga)){ showMangaList(s.raw.manga, s); return; }
-      try{
-        const res = await fetch(s.url);
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        const json = await res.json();
-        if(Array.isArray(json)) { showMangaList(json, s); return; }
-        if(json.manga && Array.isArray(json.manga)) { showMangaList(json.manga, s); return; }
-        alert('هذا المصدر لا يحتوي على قائمة مانجا بمعيارية مفهومة. راجع البنية أو الصق JSON يدوياً.');
-      }catch(e){ console.error(e); alert('فشل فتح المصدر — ربما CORS أو بنية غير متوقعة. جرب تشغيل الصفحة عبر خادم محلي أو الصق JSON يدوياً.'); setDetails('فشل فتح المصدر: ' + e.message); }
-    }
+    function addRepoFromInput(){ const val = document.getElementById('repoUrlInput').value.trim(); if(!val) return alert('أدخل رابط JSON'); state.repos.push({ name:'مستودع جديد', url:val }); selectRepo(state.repos.length-1); renderRepoTabs(); }
 
-    function showMangaList(list, source){
-      const panel = document.getElementById('extensionsGrid'); panel.innerHTML = '';
-      if(!Array.isArray(list) || list.length===0){ panel.innerHTML = '<div class="muted">لم أعثر على مانجا في هذا المصدر.</div>'; return; }
-      list.forEach(m => {
-        const card = document.createElement('div'); card.className='card';
-        const thumb = (m.image || m.thumbnail || m.cover) || placeholderThumb(m.title || m.name);
-        // نستخدم escapeJson لإرسال بيانات المانجا بطريقة آمنة داخل onclick (مرمّزة base64)
-        const payload = escapeJson(m);
-        card.innerHTML = `
-          <div style="display:flex;gap:10px;align-items:flex-start">
-            <img src="${escapeHtml(thumb)}" class="ext-thumb" onerror="this.src='${placeholderThumb(m.title||m.name)}'"/>
-            <div style="flex:1">
-              <div style="font-weight:800">${escapeHtml(m.title||m.name||'مانجا')}</div>
-              <div class="small muted" style="margin-top:6px">${escapeHtml(m.description||m.summary||'لا وصف')}</div>
-              <div style="margin-top:8px;display:flex;gap:8px">
-                <button class="btn" onclick='openManga(${JSON.stringify(payload)})'>عرض الفصول</button>
-                <a class="btn btn-ghost" href="${escapeHtml(m.url||m.link||m.page||'#')}" target="_blank">صفحة المصدر</a>
-              </div>
-            </div>
-          </div>
-        `;
-        panel.appendChild(card);
-      });
-    }
+    function loadPrepopulated(){ PREPOPULATED_REPOS.forEach(r=>state.repos.push({...r, loaded:false, items:[] })); selectRepo(0); renderRepoTabs(); }
 
-    function openManga(mB64){
-      // mB64 هو سلسلة base64 مرمّزة داخل JSON literal
-      const m = unescapeJson(mB64);
-      if(Array.isArray(m.chapters) && m.chapters.length>0){ showChaptersInPanel(m.chapters, m); return; }
-      if(m.chaptersUrl){ (async ()=>{ try{ const res = await fetch(m.chaptersUrl); if(!res.ok) throw new Error('HTTP '+res.status); const json = await res.json(); if(Array.isArray(json)) showChaptersInPanel(json, m); else alert('بنية الفصول غير متوقعة.'); }catch(e){ alert('فشل جلب الفصول: '+e.message + ' (ربما CORS)'); console.error(e); } })(); return; }
-      alert('لا يوجد رابط فصول واضح في هذا الكائن.');
-    }
+    function importFromPaste(){ try{ const json = JSON.parse(document.getElementById('repoPaste').value); if(Array.isArray(json)){ json.forEach(r=>state.repos.push({...r, loaded:false, items:[]})); } else state.repos.push({...json, loaded:false, items:[]}); selectRepo(state.repos.length-1); renderRepoTabs(); }catch(e){ alert('JSON غير صالح'); } }
 
-    function showChaptersInPanel(chapters, manga){
-      const panel = document.getElementById('extensionsGrid'); panel.innerHTML = '';
-      chapters.forEach(ch=>{ const d = document.createElement('div'); d.className='card'; d.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-weight:800">${escapeHtml(ch.title||ch.name||'فصل')}</div>
-            <div class="small muted">${escapeHtml(ch.date||'')}</div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <a class="btn" href="${escapeHtml(ch.chapterUrl||ch.url||ch.readUrl||'#')}" target="_blank">فتح</a>
-            ${Array.isArray(ch.images) ? `<button class="btn" onclick='openReader(${JSON.stringify(escapeJson(ch))})'>اقرأ</button>` : ''}
-          </div>
-        </div>
-      `; panel.appendChild(d); });
-    }
+    function clearRepos(){ state.repos=[]; state.currentRepoIndex=null; renderRepoTabs(); document.getElementById('extensionsGrid').innerHTML=''; }
 
-    function openReader(chB64){
-      const ch = unescapeJson(chB64);
-      const w = window.open('','_blank');
-      let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${escapeHtml(ch.title||'القارئ')}</title></head><body style="background:#0f0f12;color:#fff;font-family:Cairo;padding:12px">`;
-      if(Array.isArray(ch.images) && ch.images.length>0){ ch.images.forEach(img => html += `<img src="${escapeHtml(img)}" style="display:block;max-width:100%;margin:12px auto;border-radius:8px" />`); }
-      else { html += `<p class="small">لا صور متاحة. افتح الرابط الأصلي.</p><a href="${escapeHtml(ch.chapterUrl||'#')}" target="_blank" class="btn">فتح الفصل</a>`; }
-      html += '</body></html>';
-      w.document.write(html); w.document.close();
-    }
-
-    /****************** أدوات إدارة المستودعات يدوياً ******************/
-    function addRepoFromInput(){ const url = (document.getElementById('repoUrlInput').value||'').trim(); if(!url) return alert('أدخل رابط JSON للمستودع'); state.repos.push({name: url.split('/').slice(-2,-1)[0]||url, url, loaded:false, items:[]}); document.getElementById('repoUrlInput').value=''; renderRepoTabs(); }
-    function loadPrepopulated(){ PREPOPULATED_REPOS.forEach(r=> state.repos.push({name:r.name,url:r.url, loaded:false, items:[]})); renderRepoTabs(); if(state.repos.length>0) selectRepo(0); }
-    function importFromPaste(){ const txt = document.getElementById('repoPaste').value.trim(); if(!txt) return alert('ألصق JSON أولاً'); try{ const json = JSON.parse(txt); if(Array.isArray(json)) { json.forEach(it=> { if(it && (it.url||it.name)) state.repos.push({name: it.name||it.title||'repo', url: it.url||it.repo||it.index, loaded:false, items:[]}); else state.repos.push({name:'repo-pasted', url: '', loaded:false, items:[normalizeExtension(it)]}); }); } else if(json.name && json.url){ state.repos.push({name: json.name, url: json.url, loaded:false, items:[]}); } else { state.repos.push({name:'repo-pasted', url:'(pasted)', loaded:true, items:Array.isArray(json)?json:[json]}); } document.getElementById('repoPaste').value=''; renderRepoTabs(); } catch(e){ alert('JSON غير صالح'); console.error(e); } }
-    function clearRepos(){ if(confirm('مسح كل المستودعات؟')){ state.repos=[]; state.currentRepoIndex=null; renderRepoTabs(); document.getElementById('extensionsGrid').innerHTML=''; } }
-
-    /****************** أدوات مساعدة ----------------- */
-    function placeholderThumb(text){ const t = encodeURIComponent((text||'cover').slice(0,20)); return `https://via.placeholder.com/160x240.png?text=${t}&bg=111111&fg=d9d0ff`; }
-    function shorten(s, n=120){ return s && s.length>n ? s.slice(0,n-1)+'…' : s || ''; }
-    function guessUrlFromRaw(raw){ if(!raw) return ''; return raw.url || raw.repo || raw.index || raw.apk || raw.link || ''; }
-    function setDetails(txt){ document.getElementById('repoTabs').title = txt; }
-
-    function switchPanel(p){ document.getElementById('panelSources').style.display = p==='sources' ? 'block' : 'none'; document.getElementById('panelExtensions').style.display = p==='extensions' ? 'block' : 'none'; document.getElementById('tabSources').classList.toggle('active', p==='sources'); document.getElementById('tabExtensions').classList.toggle('active', p==='extensions'); }
-    function removeSource(i){ if(confirm('حذف المصدر؟')){ state.sources.splice(i,1); renderSourcesGrid(); } }
-
-    /* ---- تحويل JSON إلى base64 وبالعكس - آمن لليونيكود ---- */
-    function escapeJson(obj){
-      // ترميز UTF-8 ثم base64
-      const utf8 = encodeURIComponent(JSON.stringify(obj)).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1));
-      return btoa(utf8);
-    }
-    function unescapeJson(b64){
-      const str = atob(b64);
-      const dec = decodeURIComponent(Array.prototype.map.call(str, c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-      try{ return JSON.parse(dec); }catch(e){ console.error('فشل فك JSON:', e); return null; }
-    }
-
-    renderRepoTabs(); renderSourcesGrid();
-
-    /****************** حماية HTML ----------------- */
-    function escapeHtml(s){ if(s === null || s === undefined) return ''; return String(s).replace(/[&<>\"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-    /*********** ملاحظة تقنية نهائية (مهمة): ***********
-      - معظم روابط raw من GitHub تعمل لكن المتصفّح يمنع fetch بسبب CORS عند تشغيل الملف محلياً (file://).
-      - لتفادي ذلك شغّل الصفحة عبر سيرفر محلي (python -m http.server أو npx serve) أو الصق JSON يدوياً في الحقل المخصص.
-      - إذا أردت، أضيف زر لإستخدام proxy (مثل https://cors.bridged.cc/) لكن هذا يعتمد على اتصال خارجي وغير آمن دائماً.
-    ***************************************************/
+    function setDetails(text){ document.getElementById('welcome').textContent = text; }
   </script>
 </body>
 </html>
