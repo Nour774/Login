@@ -18,6 +18,7 @@
   .form-control, .form-select { background-color: #333; color: #f5f5f5; border: 1px solid #555; }
   .form-control::placeholder { color: #aaa; }
   .notification { background-color: #444; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+  .intro-img { max-width: 100%; margin-top: 15px; border-radius: 10px; }
 </style>
 </head>
 <body>
@@ -45,13 +46,14 @@
 <div class="container tab-content">
 
   <!-- الرئيسية -->
-  <div id="home" class="tab-pane active">
+  <div id="home" class="tab-pane">
     <h2>مرحباً بك في عوالم الدردشة المقدسة</h2>
     <p>اختر تبويبًا للتفاعل مع المجموعات، المنتديات، أو المنشورات.</p>
+    <img src="images/imag1.jpg" alt="مقدمة" class="intro-img">
   </div>
 
   <!-- المنتديات -->
-  <div id="forums" class="tab-pane">
+  <div id="forums" class="tab-pane d-none">
     <h3>المنتديات</h3>
     <div class="mb-3">
       <input type="text" id="newForumName" class="form-control mb-2" placeholder="اسم المنتدى">
@@ -66,7 +68,7 @@
   </div>
 
   <!-- المجموعات -->
-  <div id="groups" class="tab-pane">
+  <div id="groups" class="tab-pane d-none">
     <h3>المجموعات</h3>
     <div class="mb-3">
       <input type="text" id="newGroupName" class="form-control mb-2" placeholder="اسم المجموعة">
@@ -82,7 +84,7 @@
   </div>
 
   <!-- المنشورات -->
-  <div id="posts" class="tab-pane">
+  <div id="posts" class="tab-pane d-none">
     <h3>المنشورات</h3>
     <div class="mb-3">
       <textarea id="newPostContent" class="form-control mb-2" placeholder="ماذا تريد أن تنشر؟"></textarea>
@@ -93,7 +95,7 @@
   </div>
 
   <!-- الإشعارات -->
-  <div id="notifications" class="tab-pane">
+  <div id="notifications" class="tab-pane d-none">
     <h3>الإشعارات</h3>
     <div id="notificationsList"></div>
   </div>
@@ -113,8 +115,15 @@
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
-      document.querySelectorAll('.tab-pane').forEach(tab => tab.classList.remove('active'));
-      document.getElementById(link.dataset.tab).classList.add('active');
+      const tabId = link.dataset.tab;
+
+      // إخفاء كل التبويبات
+      document.querySelectorAll('.tab-pane').forEach(tab => tab.classList.add('d-none'));
+
+      // إظهار التبويب المحدد
+      document.getElementById(tabId).classList.remove('d-none');
+
+      // تفعيل الرابط الحالي وإلغاء تفعيل البقية
       document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
       link.classList.add('active');
     });
@@ -183,7 +192,6 @@
   }
 
   async function loadNotifications() {
-    // مثال: جلب طلبات الانضمام أو الإشعارات الأخرى
     const container = document.getElementById('notificationsList');
     container.innerHTML = '';
     const { data } = await supabase.from('forum_members').select('forum_id,user_id,role').eq('role','pending');
