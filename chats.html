@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عوالم الدردشة المقدسة</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { background-color: #1a1a1a; color: #f5f5f5; font-family: 'Segoe UI', sans-serif; }
+  .navbar { background-color: #0d0d0d; }
+  .nav-link { color: #f5f5f5; }
+  .nav-link.active { color: #ffd700; font-weight: bold; }
+  .tab-content { margin-top: 20px; }
+  .card { background-color: #2a2a2a; border: none; margin-bottom: 15px; }
+  .btn-primary { background-color: #4b0082; border: none; }
+  .btn-primary:hover { background-color: #6a0dad; }
+  .form-control, .form-select { background-color: #333; color: #f5f5f5; border: 1px solid #555; }
+  .form-control::placeholder { color: #aaa; }
+  .notification { background-color: #444; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<!-- شريط علوي -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <a class="navbar-brand text-warning" href="#">عوالم الدردشة</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link active" href="#" data-tab="home">الرئيسية</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" data-tab="forums">المنتديات</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" data-tab="groups">المجموعات</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" data-tab="posts">المنشورات</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" data-tab="notifications">الإشعارات</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- المحتوى -->
+<div class="container tab-content">
+
+  <!-- الرئيسية -->
+  <div id="home" class="tab-pane active">
+    <h2>مرحباً بك في عوالم الدردشة المقدسة</h2>
+    <p>اختر تبويبًا للتفاعل مع المجموعات، المنتديات، أو المنشورات.</p>
+  </div>
+
+  <!-- المنتديات -->
+  <div id="forums" class="tab-pane">
+    <h3>المنتديات</h3>
+    <div class="mb-3">
+      <input type="text" id="newForumName" class="form-control mb-2" placeholder="اسم المنتدى">
+      <textarea id="newForumDesc" class="form-control mb-2" placeholder="وصف المنتدى"></textarea>
+      <select id="newForumPrivacy" class="form-select mb-2">
+        <option value="false">عام</option>
+        <option value="true">خاص</option>
+      </select>
+      <button class="btn btn-primary" onclick="createForum()">إنشاء المنتدى</button>
+    </div>
+    <div id="forumsList"></div>
+  </div>
+
+  <!-- المجموعات -->
+  <div id="groups" class="tab-pane">
+    <h3>المجموعات</h3>
+    <div class="mb-3">
+      <input type="text" id="newGroupName" class="form-control mb-2" placeholder="اسم المجموعة">
+      <textarea id="newGroupDesc" class="form-control mb-2" placeholder="وصف المجموعة"></textarea>
+      <input type="file" id="newGroupImage" class="form-control mb-2">
+      <select id="newGroupPrivacy" class="form-select mb-2">
+        <option value="false">عام</option>
+        <option value="true">خاص</option>
+      </select>
+      <button class="btn btn-primary" onclick="createGroup()">إنشاء المجموعة</button>
+    </div>
+    <div id="groupsList"></div>
+  </div>
+
+  <!-- المنشورات -->
+  <div id="posts" class="tab-pane">
+    <h3>المنشورات</h3>
+    <div class="mb-3">
+      <textarea id="newPostContent" class="form-control mb-2" placeholder="ماذا تريد أن تنشر؟"></textarea>
+      <input type="file" id="newPostImage" class="form-control mb-2">
+      <button class="btn btn-primary" onclick="createPost()">نشر</button>
+    </div>
+    <div id="postsList"></div>
+  </div>
+
+  <!-- الإشعارات -->
+  <div id="notifications" class="tab-pane">
+    <h3>الإشعارات</h3>
+    <div id="notificationsList"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // ================== Supabase Initialization ==================
+  const supabaseUrl = 'https://dxpqkojigblqgwqxwbmg.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg';
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  let currentUser = null;
+
+  // ================== التبويبات ==================
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelectorAll('.tab-pane').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(link.dataset.tab).classList.add('active');
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+
+  // ================== الوظائف الأساسية ==================
+  async function createForum() {
+    const name = document.getElementById('newForumName').value;
+    const desc = document.getElementById('newForumDesc').value;
+    const is_private = document.getElementById('newForumPrivacy').value === 'true';
+    if (!currentUser) return alert('سجل الدخول أولاً!');
+    const { error } = await supabase.from('forums').insert([{ name, description: desc, is_private, owner_id: currentUser.id }]);
+    if (!error) loadForums();
+  }
+
+  async function loadForums() {
+    const { data } = await supabase.from('forums').select('*').order('created_at', { ascending: false });
+    const container = document.getElementById('forumsList');
+    container.innerHTML = '';
+    data.forEach(f => {
+      const div = document.createElement('div');
+      div.className = 'card p-3';
+      div.innerHTML = `<strong>${f.name}</strong><p>${f.description || ''}</p>`;
+      container.appendChild(div);
+    });
+  }
+
+  async function createGroup() {
+    const name = document.getElementById('newGroupName').value;
+    const desc = document.getElementById('newGroupDesc').value;
+    const is_private = document.getElementById('newGroupPrivacy').value === 'true';
+    if (!currentUser) return alert('سجل الدخول أولاً!');
+    const { error } = await supabase.from('groups').insert([{ name, description: desc, owner_id: currentUser.id }]);
+    if (!error) loadGroups();
+  }
+
+  async function loadGroups() {
+    const { data } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
+    const container = document.getElementById('groupsList');
+    container.innerHTML = '';
+    data.forEach(g => {
+      const div = document.createElement('div');
+      div.className = 'card p-3';
+      div.innerHTML = `<strong>${g.name}</strong><p>${g.description || ''}</p>`;
+      container.appendChild(div);
+    });
+  }
+
+  async function createPost() {
+    const content = document.getElementById('newPostContent').value;
+    if (!currentUser) return alert('سجل الدخول أولاً!');
+    const { error } = await supabase.from('posts').insert([{ content, author_id: currentUser.id }]);
+    if (!error) loadPosts();
+  }
+
+  async function loadPosts() {
+    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    const container = document.getElementById('postsList');
+    container.innerHTML = '';
+    data.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'card p-3';
+      div.innerHTML = `<strong>منشور:</strong> <p>${p.content}</p>`;
+      container.appendChild(div);
+    });
+  }
+
+  async function loadNotifications() {
+    // مثال: جلب طلبات الانضمام أو الإشعارات الأخرى
+    const container = document.getElementById('notificationsList');
+    container.innerHTML = '';
+    const { data } = await supabase.from('forum_members').select('forum_id,user_id,role').eq('role','pending');
+    data.forEach(n => {
+      const div = document.createElement('div');
+      div.className = 'notification';
+      div.innerText = `طلب انضمام للمنتدى ${n.forum_id} من المستخدم ${n.user_id}`;
+      container.appendChild(div);
+    });
+  }
+
+  // ================== التهيئة ==================
+  async function init() {
+    const { data: { user } } = await supabase.auth.getUser();
+    currentUser = user;
+    loadForums();
+    loadGroups();
+    loadPosts();
+    loadNotifications();
+  }
+
+  init();
+</script>
+</body>
+</html>
