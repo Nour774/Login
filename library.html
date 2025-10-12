@@ -181,18 +181,7 @@
     ];
 
     /****************** رندر تبويبات المستودعات ******************/
-    function renderRepoTabs(){
-      const tabs = document.getElementById('repoTabs'); tabs.innerHTML = '';
-      state.repos.forEach((r, idx)=>{
-        const el = document.createElement('button'); el.className = 'repo-tab' + (state.currentRepoIndex===idx ? ' active' : ''); el.textContent = r.name || `repo ${idx+1}`; el.onclick = ()=> { selectRepo(idx); };
-        tabs.appendChild(el);
-      });
-      if(state.repos.length===0){ const hint = document.createElement('div'); hint.className='small muted'; hint.style.marginTop='8px'; hint.textContent = 'لم يتم إضافة مستودعات. اضغط "تحميل المستودعات المضمّنة" أو ألصق رابط JSON.'; tabs.appendChild(hint); }
-    }
-
-    function selectRepo(idx){ state.currentRepoIndex = idx; renderRepoTabs(); if(!state.repos[idx].loaded) fetchRepo(idx); else renderExtensionsGrid(state.repos[idx].items || []); }
-
-
+    <div class="repo-tabs" id="repoTabs"></div> <nav> <button id="tabSources" class="active" onclick="switchPanel('sources')">المصادر</button> <button id="tabExtensions" onclick="switchPanel('extensions')">الإضافات</button> </nav> 
     /****************** جلب وتحليل مستودع مرن مع دعم APK ******************/
     async function fetchRepo(idx){
       const repo = state.repos[idx];
