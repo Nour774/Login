@@ -1,236 +1,283 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl"><head><meta charset="UTF-8" /><title>المكتبة</title><link rel="icon" href="images/book.png"/><meta name="viewport" content="width=device-width, initial-scale=1" /><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>/* --- نسقك الأصلي محافظ عليه --- */* { box-sizing: border-box; transition: 0.3s ease; }body { margin: 0; font-family: "Cairo", "Tahoma", sans-serif; background: #1a1a1d; color: #f5f5f5; overflow-x: hidden; }header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #0f0e14; border-bottom: 1px solid rgba(255,255,255,0.05); }.menu-btn { cursor: pointer; font-size: 24px; }.profile-pic { width: 40px; height: 40px; border-radius: 50%; }.sub-header { display: flex; gap: 16px; padding: 10px 20px; background: #2a2a2d; }.sub-header a { color: #f5f5f5; text-decoration: none; font-weight: bold; cursor: pointer; }.hero img { width: 100%; max-height: 300px; object-fit: cover; }.content { padding: 20px; }.sidebar { position: fixed; top: 0; right: -250px; width: 250px; height: 100%; background: #333; padding: 20px; transition: right 0.3s ease; z-index: 1000; }.sidebar.active { right: 0; }.sidebar a, .sidebar button { display: block; margin-bottom: 10px; color: #fff; background: none; border: none; font-size: 16px; cursor: pointer; text-align: right; }.overlay { position: fixed; top: 0; right: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; }.overlay.active { display: block; }.section { display: none; padding: 20px; }.section.active { display: block; }.logo { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }.logo div:first-child { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #a88bff, #e6c07b); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #0b0710; font-size: 18px; }.logo .title { font-weight: 700; font-size: 18px; }nav { display: flex; gap: 16px; margin-bottom: 10px; }nav button { padding: 6px 12px; border: none; border-radius: 8px; background: transparent; color: #9b8fb3; cursor: pointer; font-weight: 700; }nav button.active { color: #fff; background: rgba(168,139,255,0.12); }.panel { display: none; }.panel.active { display: block; }.hint { margin-top: 12px; color: #9b8fb3; }/* شبكة البطاقات مثل تاشيومي ولكن حسب ستايلك */.grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 14px; margin-top: 18px; }.card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12)); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 8px; align-items: stretch; }/* تصميم بطاقة شبيه بتاشيومي */.ext-card { display:flex; gap:10px; align-items:flex-start; cursor:pointer; }.ext-thumb { width:72px; height:100px; border-radius:8px; object-fit:cover; flex-shrink:0; background:#111; border:1px solid rgba(255,255,255,0.03) }.ext-body { flex:1; display:flex; flex-direction:column; gap:6px }.ext-title { font-weight:800; font-size:15px }.ext-meta { color:#9b8fb3; font-size:13px }.btn { padding:8px 10px; border-radius:8px; border:0; cursor:pointer; background:#7b5cff; color:#fff; font-weight:700 }.btn-ghost { background:transparent; border:1px solid rgba(255,255,255,0.05); color:#fff }.small { font-size:13px; color:#9b8fb3 }.muted { color:#9b8fb3 }.repo-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px }.repo-tab { padding:6px 10px; border-radius:8px; cursor:pointer; background:transparent; color:#9b8fb3; font-weight:700 }.repo-tab.active { background:rgba(168,139,255,0.08); color:#fff }@media (max-width:700px){ .ext-thumb{width:60px;height:84px} .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))} }
-</style></head><body><header><span class="menu-btn" onclick="toggleMenu()">☰</span><h1>المكتبة</h1><img id="profileImage" class="profile-pic" src="images/imag2.jpg" alt="بروفايل"></header>
-<div class="sub-header"><a href="index5.html">الرئيسية</a><a onclick="showSection('library')">مكتبي</a><a onclick="showSection('repository')">المانجا/المانهوا</a><a onclick="showSection('settings')">الروايات</a></div>
-<div class="hero"><img src="images/imag1.jpg" alt="صورة المقدمة"></div>
-<!-- الأقسام -->
-<div id="library" class="section active"><div class="content"><div id="welcome" class="welcome">جار التحميل...</div></div></div>
-<!-- ======= قسم المانجا/المانهوا (المُحدّث بالكامل لقراءة بنية repo التي وصفتها) ======= -->
-<div id="repository" class="section"><div class="logo"><div>MS</div><div class="title">Manga Sanctum</div></div>
-<!-- تبويبات المستودعات -->
-<div class="repo-tabs" id="repoTabs"></div>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>المكتبة</title>
+  <link rel="icon" href="images/book.png"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* --- نسقك الأصلي محافظ عليه --- */
+    * { box-sizing: border-box; transition: 0.3s ease; }
+    body { margin: 0; font-family: "Cairo", "Tahoma", sans-serif; background: #1a1a1d; color: #f5f5f5; overflow-x: hidden; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #0f0e14; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .menu-btn { cursor: pointer; font-size: 24px; }
+    .profile-pic { width: 40px; height: 40px; border-radius: 50%; }
+    .sub-header { display: flex; gap: 16px; padding: 10px 20px; background: #2a2a2d; }
+    .sub-header a { color: #f5f5f5; text-decoration: none; font-weight: bold; cursor: pointer; }
+    .hero img { width: 100%; max-height: 300px; object-fit: cover; }
+    .content { padding: 20px; }
+    .sidebar { position: fixed; top: 0; right: -250px; width: 250px; height: 100%; background: #333; padding: 20px; transition: right 0.3s ease; z-index: 1000; }
+    .sidebar.active { right: 0; }
+    .sidebar a, .sidebar button { display: block; margin-bottom: 10px; color: #fff; background: none; border: none; font-size: 16px; cursor: pointer; text-align: right; }
+    .overlay { position: fixed; top: 0; right: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; }
+    .overlay.active { display: block; }
+    .section { display: none; padding: 20px; }
+    .section.active { display: block; }
+    .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .logo div:first-child { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #a88bff, #e6c07b); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #0b0710; font-size: 18px; }
+    .logo .title { font-weight: 700; font-size: 18px; }
+    nav { display: flex; gap: 16px; margin-bottom: 10px; }
+    nav button { padding: 6px 12px; border: none; border-radius: 8px; background: transparent; color: #9b8fb3; cursor: pointer; font-weight: 700; }
+    nav button.active { color: #fff; background: rgba(168,139,255,0.12); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .hint { margin-top: 12px; color: #9b8fb3; }
+    /* شبكة البطاقات مثل تاشيومي ولكن حسب ستايلك */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 14px; margin-top: 18px; }
+    .card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12)); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+    /* تصميم بطاقة شبيه بتاشيومي */
+    .ext-card { display:flex; gap:10px; align-items:flex-start; cursor:pointer; }
+    .ext-thumb { width:72px; height:100px; border-radius:8px; object-fit:cover; flex-shrink:0; background:#111; border:1px solid rgba(255,255,255,0.03) }
+    .ext-body { flex:1; display:flex; flex-direction:column; gap:6px }
+    .ext-title { font-weight:800; font-size:15px }
+    .ext-meta { color:#9b8fb3; font-size:13px }
+    .btn { padding:8px 10px; border-radius:8px; border:0; cursor:pointer; background:#7b5cff; color:#fff; font-weight:700 }
+    .btn-ghost { background:transparent; border:1px solid rgba(255,255,255,0.05); color:#fff }
+    .small { font-size:13px; color:#9b8fb3 }
+    .muted { color:#9b8fb3 }
+    .repo-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px }
+    .repo-tab { padding:6px 10px; border-radius:8px; cursor:pointer; background:transparent; color:#9b8fb3; font-weight:700 }
+    .repo-tab.active { background:rgba(168,139,255,0.08); color:#fff }
+    @media (max-width:700px){ .ext-thumb{width:60px;height:84px} .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))} }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="menu-btn" onclick="toggleMenu()">☰</span>
+    <h1>المكتبة</h1>
+    <img id="profileImage" class="profile-pic" src="images/imag2.jpg" alt="بروفايل">
+  </header>
 
-<nav>
-  <button id="tabSources" class="active" onclick="switchPanel('sources')">المصادر</button>
-  <button id="tabExtensions" onclick="switchPanel('extensions')">الإضافات</button>
-</nav>
-
-<div id="panelSources" class="panel active">
-  <div class="hint">المصادر المستوردة ستظهر هنا. اضغط على "استيراد" من أي مصدر في تبويب الإضافات.</div>
-  <div id="sourcesGrid" class="grid" aria-live="polite"></div>
-</div>
-
-<div id="panelExtensions" class="panel" style="display:none">
-  <div class="hint">الصيغ المدعومة: مصفوفة إضافات كما وصفت (name,pkg,apk,lang,code,version,nsfw,sources[...] ).</div>
-
-  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-    <input id="repoUrlInput" class="input" placeholder="لصق رابط JSON لمستودع (raw GitHub)"/>
-    <button class="btn" onclick="addRepoFromInput()">أضف مستودع</button>
-    <button class="btn" onclick="loadPrepopulated()">تحميل المستودعات المضمّنة</button>
+  <div class="sub-header">
+    <a href="index5.html">الرئيسية</a>
+    <a onclick="showSection('library')">مكتبتي</a>
+    <a onclick="showSection('repository')">المانجا/المانهوا</a>
+    <a onclick="showSection('settings')">الروايات</a>
   </div>
 
-  <div style="margin-top:10px">
-    <textarea id="repoPaste" rows="5" style="width:100%;border-radius:8px;padding:8px;background:#0f0f12;color:#fff" placeholder='أو ألصق JSON هنا (مصفوفة أو كائن repository).'></textarea>
-    <div style="margin-top:8px;display:flex;gap:8px">
-      <button class="btn" onclick="importFromPaste()">استيراد من النص</button>
-      <button class="btn btn-ghost" onclick="clearRepos()">مسح المستودعات</button>
+  <div class="hero"><img src="images/imag1.jpg" alt="صورة المقدمة"></div>
+
+  <!-- الأقسام -->
+  <div id="library" class="section active">
+    <div class="content">
+      <div id="welcome" class="welcome">جار التحميل...</div>
     </div>
   </div>
 
-  <div id="extensionsContainer" style="margin-top:14px">
-    <div id="extensionsGrid" class="grid"></div>
-  </div>
-</div>
+  <!-- ======= قسم المانجا/المانهوا (المُحدّث بالكامل) ======= -->
+  <div id="repository" class="section">
+    <div class="logo"><div>MS</div><div class="title">Manga Sanctum</div></div>
 
-</div>
-<div id="settings" class="section"><p>الروايات ستظهر هنا لاحقًا.</p></div>
-<div class="sidebar" id="sidebar"><a href="#" onclick="goToMembers()">الأعضاء</a><button id="adminBtn" onclick="goToAdmin()" style="display:none;">لوحة التحكم</button><button onclick="logout()">تسجيل الخروج</button></div><div class="overlay" id="overlay" onclick="toggleMenu()"></div>
-<script>
-/****************** إعداد Supabase (تصحيح الاستخدام) ******************/
-const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-const supabaseKey = "REDACTED_FOR_SAFETY"; // kept placeholder: ضع مفتاحك الحقيقي إن أردت
-const supabaseClient = (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function')? window.supabase.createClient(supabaseUrl, supabaseKey): (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function')? supabase.createClient(supabaseUrl, supabaseKey): null;
-async function loadUser() {
-  try {
-    if(!supabaseClient) throw new Error('Supabase SDK غير متاح');
-    const { data, error } = await supabaseClient.auth.getUser();
-    if (error || !data.user) return window.location.href = "index.html";
-    const { data: profile } = await supabaseClient.from("profiles").select("username, role, avatar_url").eq("id", data.user.id).single();
-    document.getElementById("welcome").textContent = `مرحباً بك، ${profile?.username || "مستخدم"} 👋`;
-    if (profile?.avatar_url) document.getElementById("profileImage").src = profile.avatar_url;
-    if ([(profile?.role||"")].some(r => String(r).toLowerCase() === 'admin' || String(r).toLowerCase() === 'owner')) {document.getElementById("adminBtn").style.display = "block";}
-  } catch(e) {
-    console.warn(e);
-    document.getElementById("welcome").textContent = `مرحباً بك، زائر — (Supabase غير متاح حالياً).`;
-  }
-}
-loadUser();
+    <!-- تبويبات المستودعات -->
+    <div class="repo-tabs" id="repoTabs"></div>
 
-/****************** وظائف واجهة عامة ******************/
-function toggleMenu() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
-function logout() { if(supabaseClient && supabaseClient.auth && typeof supabaseClient.auth.signOut === 'function'){ supabaseClient.auth.signOut().then(()=> location.href='index.html').catch(()=> location.href='index.html'); } else { location.href = 'index.html'; } }
-function goToMembers(){ location.href='index3.html' }
-function goToAdmin(){ location.href='index5.html' }
-function showSection(id){ document.querySelectorAll('.section').forEach(sec=>sec.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id==='repository') { switchPanel('extensions'); } }
+    <nav>
+      <button id="tabSources" class="active" onclick="switchPanel('sources')">المصادر</button>
+      <button id="tabExtensions" onclick="switchPanel('extensions')">الإضافات</button>
+    </nav>
 
-/****************** حالة التطبيق (state) ******************/
-const state = { repos: [], currentRepoIndex: null, sources: [] };
-const PREPOPULATED_REPOS = [{ name: "Keiyoushi", url: "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json" },{ name: "ThePBone (revived)", url: "https://raw.githubusercontent.com/ThePBone/tachiyomi-extensions-revived/repo/index.min.json" },{ name: "Mihon (chaerun)", url: "https://raw.githubusercontent.com/chaerun/mihon-extensions/repo/index.min.json" },{ name: "Kaciin (examples)", url: "https://raw.githubusercontent.com/kaciin/tachiyomi-extensions-source/repo/index.min.json" }];
+    <div id="panelSources" class="panel active">
+      <div class="hint">المصادر المستوردة ستظهر هنا. اضغط على "استيراد كمصدر" من أي إضافة في تبويب المستودع.</div>
+      <div id="sourcesGrid" class="grid" aria-live="polite"></div>
+    </div>
 
-/****************** رندر تبويبات المستودعات ******************/
-function renderRepoTabs(){const tabs = document.getElementById('repoTabs'); tabs.innerHTML = '';state.repos.forEach((r, idx)=>{const el = document.createElement('button'); el.className = 'repo-tab' + (state.currentRepoIndex===idx ? ' active' : ''); el.textContent = r.name || `repo ${idx+1}`; el.onclick = ()=> { selectRepo(idx); };tabs.appendChild(el);});if(state.repos.length===0){ const hint = document.createElement('div'); hint.className='small muted'; hint.style.marginTop='8px'; hint.textContent = 'لم يتم إضافة مستودعات. اضغط "تحميل المستودعات المضمّنة" أو ألصق رابط JSON.'; tabs.appendChild(hint); }}
-function selectRepo(idx){ state.currentRepoIndex = idx; renderRepoTabs(); if(!state.repos[idx].loaded) fetchRepo(idx); else renderExtensionsGrid(state.repos[idx].items || []); }
+    <div id="panelExtensions" class="panel" style="display:none">
+      <div class="hint">اختر تبويب مستودع أعلى لتحميل الإضافات. إذا ظهر تحذير CORS، استخدم خادم محلي أو الصق JSON يدوياً.</div>
 
-/****************** جلب وتحليل مستودع (مواكبة لبنية JSON المذكورة) ******************/
-async function fetchRepo(idx){const repo = state.repos[idx]; if(!repo) return; setDetails(`جاري جلب: ${repo.url}`);try {const res = await fetch(repo.url);if(!res.ok) throw new Error('HTTP ' + res.status);const json = await res.json();let extensions = [];
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <input id="repoUrlInput" class="input" placeholder="لصق رابط JSON لمستودع (raw GitHub)"/>
+        <button class="btn" onclick="addRepoFromInput()">أضف مستودع</button>
+        <button class="btn" onclick="loadPrepopulated()">تحميل المستودعات المضمّنة</button>
+      </div>
 
-// 1) إذا كانت القائمة مصفوفة من الإضافات وفق البنية التي وصفتها
-if(Array.isArray(json)){
-  json.forEach(it => { if(it && (it.name || it.pkg || it.apk)) extensions.push(normalizeExtensionFromRepoFormat(it)); else extensions.push(normalizeExtension(it)); });
-}
-// 2) دعم بعض صيغ المستودعات الأخرى (index.repositories, extensions, sources...)
-else if(json.repositories && Array.isArray(json.repositories)) { json.repositories.forEach(it=> extensions.push(normalizeExtensionFromRepoFormat(it))); }
-else if(json.extensions && Array.isArray(json.extensions)) { json.extensions.forEach(it=> extensions.push(normalizeExtensionFromRepoFormat(it))); }
-else if(json.sources && Array.isArray(json.sources)) { json.sources.forEach(it=> extensions.push(normalizeExtensionFromRepoFormat(it))); }
-else {
-  // حاول استخراج أي مصفوفة داخل الكائن
-  const maybe = [];
-  Object.keys(json).forEach(k=>{ if(Array.isArray(json[k])) { json[k].forEach(it => { if(it && (it.name || it.pkg || it.apk)) maybe.push(it); }); } });
-  if(maybe.length>0){ maybe.forEach(it=>extensions.push(normalizeExtensionFromRepoFormat(it))); }
-  else { extensions.push({ title: repo.name || repo.url, raw: json }); }
-}
-
-repo.items = extensions; repo.loaded = true; renderRepoTabs(); if(state.currentRepoIndex === idx) renderExtensionsGrid(extensions); setDetails(`تم تحميل المستودع: ${repo.name} — ${extensions.length} عناصر.`);
-} catch(err){ console.error(err); repo.loaded = false; setDetails(`فشل تحميل repo: ${repo.url} — ${err.message}. إذا ظهر "CORS" استخدم خادم محلي أو الصق JSON يدوياً.`); alert(`فشل جلب المستودع (${repo.name}): ${err.message}\nمشكلة شائعة: CORS. شغّل الصفحة عبر سيرفر محلي أو الصق JSON.`);}}
-
-/****************** توحيد بنية الإضافة (لبنية repo المحددة) ******************/
-function normalizeExtensionFromRepoFormat(it){
-  // البنية المتوقعة: { name, pkg, apk, lang, code, version, nsfw, sources: [{name,lang,id,baseUrl}, ...] }
-  const title = it.name || it.title || it.pkg || 'إضافة';
-  const pkg = it.pkg || '';
-  const apk = it.apk || '';
-  const lang = it.lang || '';
-  const code = it.code || null;
-  const version = it.version || '';
-  const nsfw = Number(it.nsfw || 0);
-  const sources = Array.isArray(it.sources) ? it.sources.map(s => ({ name: s.name||s.title||'مصدر', lang: s.lang||'', id: s.id||'', baseUrl: s.baseUrl||s.url||'' })) : [];
-  const icon = it.icon || it.logo || null;
-  const description = it.description || it.summary || '';
-  return { title, pkg, apk, lang, code, version, nsfw, sources, icon, description, raw: it };
-}
-
-// تحوّل احتياطية لبنى قديمة
-function normalizeExtension(it){
-  const title = it.title || it.name || it.pkg || 'إضافة';
-  const icon = it.icon || it.logo || it.image || null;
-  const description = it.description || it.desc || '';
-  return { title, icon, description, raw: it };
-}
-
-/****************** رندر الإضافات (بطاقات شبيهة بتاشيومي) ******************/
-function renderExtensionsGrid(items){const grid = document.getElementById('extensionsGrid'); grid.innerHTML = '';if(!items || items.length===0){ grid.innerHTML = '<div class="muted">لا توجد إضافات في هذا المستودع أو البنية غير مدعومة.</div>'; return; }
-
-items.forEach((ex, i) => {
-  const card = document.createElement('div'); card.className = 'card';
-  const thumbUrl = ex.icon || placeholderThumb(ex.title);
-  // nsfw badge
-  const nsfwBadge = ex.nsfw ? `<span style="background:#c94a4a;padding:4px 8px;border-radius:8px;font-weight:700;margin-left:8px">NSFW</span>` : '';
-  // sources summary
-  const srcCount = (ex.sources && ex.sources.length) ? `${ex.sources.length} مصادر` : 'لا مصادر';
-
-  card.innerHTML = `
-    <div class="ext-card">
-      <img class="ext-thumb" src="${escapeHtml(thumbUrl)}" onerror="this.src='${placeholderThumb(ex.title)}'"/>
-      <div class="ext-body">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div>
-            <div class="ext-title">${escapeHtml(ex.title)}</div>
-            <div class="ext-meta">${escapeHtml(ex.lang || '')} ${ex.version? ' · v'+escapeHtml(ex.version): ''} ${ex.pkg? ' · '+escapeHtml(ex.pkg): ''}</div>
-          </div>
-          <div style="text-align:left">
-            <button class="btn" onclick="toggleSourcesList(this, ${state.currentRepoIndex}, ${i})">عرض المصادر</button>
-          </div>
+      <div style="margin-top:10px">
+        <textarea id="repoPaste" rows="5" style="width:100%;border-radius:8px;padding:8px;background:#0f0f12;color:#fff" placeholder='أو ألصق JSON هنا (مصفوفة أو كائن repository).'></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button class="btn" onclick="importFromPaste()">استيراد من النص</button>
+          <button class="btn btn-ghost" onclick="clearRepos()">مسح المستودعات</button>
         </div>
-        <div class="small muted" style="margin-top:6px">${escapeHtml(shorten(ex.description || (ex.raw && ex.raw.summary) || 'لا وصف متاح'))}</div>
-        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;justify-content:space-between">
-          <div class="small muted">${escapeHtml(srcCount)}</div>
-          <div style="display:flex;gap:8px;align-items:center">${nsfwBadge}<button class="btn" onclick="downloadApk(${state.currentRepoIndex}, ${i})">تحميل APK</button></div>
-        </div>
-        <div class="sources-list" style="margin-top:10px;display:none"></div>
+      </div>
+
+      <div id="extensionsContainer" style="margin-top:14px">
+        <div id="extensionsGrid" class="grid"></div>
       </div>
     </div>
-  `;
-  grid.appendChild(card);
-});}
+  </div>
 
-/****************** إظهار/إخفاء قائمة المصادر الداخلية لكل إضافة وتنفيذ الاستيراد لكل مصدر */
-function toggleSourcesList(btn, repoIdx, extIdx){ const card = btn.closest('.card'); const listEl = card.querySelector('.sources-list'); if(!listEl) return; if(listEl.style.display==='block'){ listEl.style.display='none'; btn.textContent='عرض المصادر'; return; } // build list
-  listEl.innerHTML = '';
-  const ex = state.repos[repoIdx].items[extIdx]; if(!ex) return; if(!ex.sources || ex.sources.length===0){ listEl.innerHTML = '<div class="muted">لا توجد مصادر داخل هذه الإضافة.</div>'; listEl.style.display='block'; btn.textContent='إخفاء المصادر'; return; }
-  ex.sources.forEach((s, idx)=>{ const div = document.createElement('div'); div.style.display='flex'; div.style.justifyContent='space-between'; div.style.alignItems='center'; div.style.marginBottom='8px'; div.innerHTML = `<div><div style="font-weight:800">${escapeHtml(s.name)}</div><div class="small muted">${escapeHtml(s.lang || '')} · ${escapeHtml(s.baseUrl || s.id || '')}</div></div><div style="display:flex;gap:8px"><button class="btn" onclick="importSourceFromExtension(${repoIdx}, ${extIdx}, ${idx})">استيراد</button><a class="btn btn-ghost" href="${escapeHtml(s.baseUrl||'#')}" target="_blank">فتح</a></div>`; listEl.appendChild(div); }); listEl.style.display='block'; btn.textContent='إخفاء المصادر'; }
+  <div id="settings" class="section">
+    <p>الروايات ستظهر هنا لاحقًا.</p>
+  </div>
 
-function importSourceFromExtension(repoIdx, extIdx, sourceIdx){ const ex = state.repos[repoIdx].items[extIdx]; if(!ex) return; const s = ex.sources && ex.sources[sourceIdx]; if(!s) return alert('المصدر غير متاح'); const sourceObj = { name: s.name || (ex.title+' مصدر'), url: s.baseUrl || s.url || '', meta: { pkg: ex.pkg, apk: ex.apk, parent: ex.title } };
-  if(state.sources.some(x=>x.url && x.url===sourceObj.url)) { alert('هذا المصدر موجود بالفعل.'); return; }
-  state.sources.push(sourceObj); renderSourcesGrid(); switchPanel('sources'); setDetails(`استوردت: ${sourceObj.name}`);
-}
+  <div class="sidebar" id="sidebar">
+    <a href="#" onclick="goToMembers()">الأعضاء</a>
+    <button id="adminBtn" onclick="goToAdmin()" style="display:none;">لوحة التحكم</button>
+    <button onclick="logout()">تسجيل الخروج</button>
+  </div>
+  <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
-/****************** تنزيل APK (زر تحميل) — فقط فتح الرابط أو محاولة تحميل */
-function downloadApk(repoIdx, extIdx){ const ex = state.repos[repoIdx].items[extIdx]; if(!ex) return; const apk = ex.apk || (ex.raw && ex.raw.apk) || ''; if(!apk){ alert('لا يوجد ملف APK معرف لهذه الإضافة.'); return; } // إذا كان APK رابطاً نسبياً أو مجرد اسم ملف، حاول تكوين رابط
-  let url = apk;
-  if(!/^https?:\/\//.test(url)){
-    // حاول استخدام رابط المستودع كقاعدة
-    const base = state.repos[repoIdx].url || '';
-    // إذا كان base raw.githubusercontent، خذ المسار حتى آخر slash
-    try{ const u = new URL(base); const basePath = u.href.replace(/\/[^\/]*$/, '/'); url = basePath + encodeURIComponent(apk); }catch(e){}
-  }
-  window.open(url, '_blank');
-}
+  <script>
+    /****************** إعداد Supabase (تصحيح الاستخدام) ******************/
+    const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
 
-/****************** استيراد كـ مصدر (من بطاقات مبسطة) ******************/
-function importAsSource(repoIdx, extIdx){ const repo = state.repos[repoIdx]; if(!repo || !repo.items || !repo.items[extIdx]) return; const ex = repo.items[extIdx]; // إذا كانت لديها مصادر، استورد الأولى كافتراض
-  const s = (ex.sources && ex.sources[0]) || null; const sourceObj = { name: ex.title || ex.raw?.name || 'مصدر', url: s? (s.baseUrl||'') : (ex.apk||ex.raw?.apk||guessUrlFromRaw(ex.raw)||repo.url), raw: ex.raw || null };
-  if(state.sources.some(x=>x.url && x.url===sourceObj.url)) { alert('هذا المصدر موجود بالفعل.'); return; }
-  state.sources.push(sourceObj); renderSourcesGrid(); switchPanel('sources'); setDetails(`استوردت: ${sourceObj.name}`);
-}
+    // بعض الحمايات لعدم افتراض اسم النافذة العالمية
+    const supabaseClient = (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function')
+      ? window.supabase.createClient(supabaseUrl, supabaseKey)
+      : (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function')
+        ? supabase.createClient(supabaseUrl, supabaseKey)
+        : null;
 
-/****************** عرض المصادر الموحدة ******************/
-function renderSourcesGrid(){const grid = document.getElementById('sourcesGrid'); grid.innerHTML = '';if(state.sources.length===0){ grid.innerHTML = '<div class="muted">لم تقم باستيراد أي مصدر بعد.</div>'; return; }state.sources.forEach((s, idx) => {const d = document.createElement('div'); d.className='card'; d.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800">${escapeHtml(s.name)}</div><div class="small muted" style="margin-top:6px">${escapeHtml(s.url)}</div></div><div style="display:flex;gap:8px"><button class="btn" onclick="openSource(${idx})">افتح المصدر</button><button class="btn" style="background:#c94a4a" onclick="removeSource(${idx})">حذف</button></div></div>`;grid.appendChild(d);});}
+    async function loadUser() {
+      try {
+        if(!supabaseClient) throw new Error('Supabase SDK غير متاح');
+        const { data, error } = await supabaseClient.auth.getUser();
+        if (error || !data.user) return window.location.href = "index.html";
+        const { data: profile } = await supabaseClient.from("profiles").select("username, role, avatar_url").eq("id", data.user.id).single();
+        document.getElementById("welcome").textContent = `مرحباً بك، ${profile?.username || "مستخدم"} 👋`;
+        if (profile?.avatar_url) document.getElementById("profileImage").src = profile.avatar_url;
+        if ([(profile?.role||"")].some(r => String(r).toLowerCase() === 'admin' || String(r).toLowerCase() === 'owner')) {
+          document.getElementById("adminBtn").style.display = "block";
+        }
+      } catch(e) {
+        // لو Supabase فشل لأي سبب، نسمح للمستخدم بالمتابعة محلياً
+        console.warn(e);
+        document.getElementById("welcome").textContent = `مرحباً بك، زائر — (Supabase غير متاح حالياً).`;
+      }
+    }
+    loadUser();
 
-async function openSource(idx){const s = state.sources[idx]; if(!s) return; setDetails(`فتح المصدر: ${s.name}`); if(s.raw && Array.isArray(s.raw.manga)){ showMangaList(s.raw.manga, s); return; } try{ if(!s.url){ alert('لا يوجد رابط متاح لهذا المصدر.'); return; } const res = await fetch(s.url); if(!res.ok) throw new Error('HTTP '+res.status); const json = await res.json(); if(Array.isArray(json)) { showMangaList(json, s); return; } if(json.manga && Array.isArray(json.manga)) { showMangaList(json.manga, s); return; } alert('هذا المصدر لا يحتوي على قائمة مانجا بمعيارية مفهومة. راجع البنية أو الصق JSON يدوياً.'); }catch(e){ console.error(e); alert('فشل فتح المصدر — ربما CORS أو بنية غير متوقعة. جرب تشغيل الصفحة عبر خادم محلي أو الصق JSON يدوياً.'); setDetails('فشل فتح المصدر: ' + e.message); }}
+    /****************** وظائف واجهة عامة ******************/
+    function toggleMenu() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
+    function logout() {
+      if(supabaseClient && supabaseClient.auth && typeof supabaseClient.auth.signOut === 'function'){
+        supabaseClient.auth.signOut().then(()=> location.href='index.html').catch(()=> location.href='index.html');
+      } else {
+        location.href = 'index.html';
+      }
+    }
+    function goToMembers(){ location.href='index3.html' }
+    function goToAdmin(){ location.href='index5.html' }
+    function showSection(id){ document.querySelectorAll('.section').forEach(sec=>sec.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id==='repository') { switchPanel('extensions'); } }
 
-function showMangaList(list, source){const panel = document.getElementById('extensionsGrid'); panel.innerHTML = ''; if(!Array.isArray(list) || list.length===0){ panel.innerHTML = '<div class="muted">لم أعثر على مانجا في هذا المصدر.</div>'; return; } list.forEach(m => {const card = document.createElement('div'); card.className='card'; const thumb = (m.image || m.thumbnail || m.cover) || placeholderThumb(m.title || m.name); const payload = escapeJson(m); card.innerHTML = `<div style="display:flex;gap:10px;align-items:flex-start"><img src="${escapeHtml(thumb)}" class="ext-thumb" onerror="this.src='${placeholderThumb(m.title||m.name)}'"/><div style="flex:1"><div style="font-weight:800">${escapeHtml(m.title||m.name||'مانجا')}</div><div class="small muted" style="margin-top:6px">${escapeHtml(m.description||m.summary||'لا وصف')}</div><div style="margin-top:8px;display:flex;gap:8px"><button class="btn" onclick='openManga(${JSON.stringify(payload)})'>عرض الفصول</button><a class="btn btn-ghost" href="${escapeHtml(m.url||m.link||m.page||'#')}" target="_blank">صفحة المصدر</a></div></div></div>`; panel.appendChild(card); }); }
+    /****************** حالة التطبيق (state) ******************/
+    const state = { repos: [], currentRepoIndex: null, sources: [] };
 
-function openManga(mB64){ const m = unescapeJson(mB64); if(Array.isArray(m.chapters) && m.chapters.length>0){ showChaptersInPanel(m.chapters, m); return; } if(m.chaptersUrl){ (async ()=>{ try{ const res = await fetch(m.chaptersUrl); if(!res.ok) throw new Error('HTTP '+res.status); const json = await res.json(); if(Array.isArray(json)) showChaptersInPanel(json, m); else alert('بنية الفصول غير متوقعة.'); }catch(e){ alert('فشل جلب الفصول: '+e.message + ' (ربما CORS)'); console.error(e); } })(); return; } alert('لا يوجد رابط فصول واضح في هذا الكائن.'); }
+    const PREPOPULATED_REPOS = [
+      { name: "Keiyoushi", url: "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json" },
+      { name: "ThePBone (revived)", url: "https://raw.githubusercontent.com/ThePBone/tachiyomi-extensions-revived/repo/index.min.json" },
+      { name: "Mihon (chaerun)", url: "https://raw.githubusercontent.com/chaerun/mihon-extensions/repo/index.min.json" },
+      { name: "Kaciin (examples)", url: "https://raw.githubusercontent.com/kaciin/tachiyomi-extensions-source/repo/index.min.json" }
+    ];
 
-function showChaptersInPanel(chapters, manga){const panel = document.getElementById('extensionsGrid'); panel.innerHTML = ''; chapters.forEach(ch=>{ const d = document.createElement('div'); d.className='card'; d.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800">${escapeHtml(ch.title||ch.name||'فصل')}</div><div class="small muted">${escapeHtml(ch.date||'')}</div></div><div style="display:flex;gap:8px"><a class="btn" href="${escapeHtml(ch.chapterUrl||ch.url||ch.readUrl||'#')}" target="_blank">فتح</a>${Array.isArray(ch.images) ? `<button class="btn" onclick='openReader(${JSON.stringify(escapeJson(ch))})'>اقرأ</button>` : ''}</div></div>`; panel.appendChild(d); }); }
+    /****************** رندر تبويبات المستودعات ******************/
+    function renderRepoTabs(){
+      const tabs = document.getElementById('repoTabs'); tabs.innerHTML = '';
+      state.repos.forEach((r, idx)=>{
+        const el = document.createElement('button'); el.className = 'repo-tab' + (state.currentRepoIndex===idx ? ' active' : ''); el.textContent = r.name || `repo ${idx+1}`; el.onclick = ()=> { selectRepo(idx); };
+        tabs.appendChild(el);
+      });
+      if(state.repos.length===0){ const hint = document.createElement('div'); hint.className='small muted'; hint.style.marginTop='8px'; hint.textContent = 'لم يتم إضافة مستودعات. اضغط "تحميل المستودعات المضمّنة" أو ألصق رابط JSON.'; tabs.appendChild(hint); }
+    }
 
-function openReader(chB64){ const ch = unescapeJson(chB64); const w = window.open('','_blank'); let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${escapeHtml(ch.title||'القارئ')}</title></head><body style="background:#0f0f12;color:#fff;font-family:Cairo;padding:12px">`; if(Array.isArray(ch.images) && ch.images.length>0){ ch.images.forEach(img => html += `<img src="${escapeHtml(img)}" style="display:block;max-width:100%;margin:12px auto;border-radius:8px" />`); }else { html += `<p class="small">لا صور متاحة. افتح الرابط الأصلي.</p><a href="${escapeHtml(ch.chapterUrl||'#')}" target="_blank" class="btn">فتح الفصل</a>`; } html += '</body></html>'; w.document.write(html); w.document.close(); }
+    function selectRepo(idx){ state.currentRepoIndex = idx; renderRepoTabs(); if(!state.repos[idx].loaded) fetchRepo(idx); else renderExtensionsGrid(state.repos[idx].items || []); }
 
-/****************** أدوات إدارة المستودعات يدوياً ******************/
-function addRepoFromInput(){ const url = (document.getElementById('repoUrlInput').value||'').trim(); if(!url) return alert('أدخل رابط JSON للمستودع'); state.repos.push({name: url.split('/').slice(-2,-1)[0]||url, url, loaded:false, items:[]}); document.getElementById('repoUrlInput').value=''; renderRepoTabs(); }
-function loadPrepopulated(){ PREPOPULATED_REPOS.forEach(r=> state.repos.push({name:r.name,url:r.url, loaded:false, items:[]})); renderRepoTabs(); if(state.repos.length>0) selectRepo(0); }
-function importFromPaste(){ const txt = document.getElementById('repoPaste').value.trim(); if(!txt) return alert('ألصق JSON أولاً'); try{ const json = JSON.parse(txt); if(Array.isArray(json)) { json.forEach(it=> { if(it && (it.url||it.name)) state.repos.push({name: it.name||it.title||'repo', url: it.url||it.repo||it.index, loaded:false, items:[]}); else state.repos.push({name:'repo-pasted', url: '', loaded:false, items:[normalizeExtensionFromRepoFormat(it)]}); }); } else if(json.name && json.url){ state.repos.push({name: json.name, url: json.url, loaded:false, items:[]}); } else { state.repos.push({name:'repo-pasted', url:'(pasted)', loaded:true, items:Array.isArray(json)?json:[json]}); } document.getElementById('repoPaste').value=''; renderRepoTabs(); } catch(e){ alert('JSON غير صالح'); console.error(e); } }
-function clearRepos(){ if(confirm('مسح كل المستودعات؟')){ state.repos=[]; state.currentRepoIndex=null; renderRepoTabs(); document.getElementById('extensionsGrid').innerHTML=''; } }
 
-/****************** أدوات مساعدة ----------------- */
-function placeholderThumb(text){ const t = encodeURIComponent((text||'cover').slice(0,20)); return `https://via.placeholder.com/160x240.png?text=${t}&bg=111111&fg=d9d0ff`; }
-function shorten(s, n=120){ return s && s.length>n ? s.slice(0,n-1)+'…' : s || ''; }
-function guessUrlFromRaw(raw){ if(!raw) return ''; return raw.url || raw.repo || raw.index || raw.apk || raw.link || ''; }
-function setDetails(txt){ document.getElementById('repoTabs').title = txt; }
-function switchPanel(p){ document.getElementById('panelSources').style.display = p==='sources' ? 'block' : 'none'; document.getElementById('panelExtensions').style.display = p==='extensions' ? 'block' : 'none'; document.getElementById('tabSources').classList.toggle('active', p==='sources'); document.getElementById('tabExtensions').classList.toggle('active', p==='extensions'); }
-function removeSource(i){ if(confirm('حذف المصدر؟')){ state.sources.splice(i,1); renderSourcesGrid(); } }
+    /****************** جلب وتحليل مستودع مرن مع دعم APK ******************/
+    async function fetchRepo(idx){
+      const repo = state.repos[idx];
+      if(!repo) return;
+      setDetails(`جاري جلب: ${repo.url}`);
+      try {
+        const res = await fetch(repo.url);
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        const json = await res.json();
+        let items = [];
 
-/* ---- تحويل JSON إلى base64 وبالعكس - آمن لليونيكود ---- */
-function escapeJson(obj){const utf8 = encodeURIComponent(JSON.stringify(obj)).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1));return btoa(utf8);}function unescapeJson(b64){const str = atob(b64);const dec = decodeURIComponent(Array.prototype.map.call(str, c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));try{ return JSON.parse(dec); }catch(e){ console.error('فشل فك JSON:', e); return null; }}
-renderRepoTabs(); renderSourcesGrid();
+        if(Array.isArray(json)){
+          json.forEach(it => { items.push(normalizeExtension(it)); });
+        } else if(json.repositories && Array.isArray(json.repositories)) {
+          json.repositories.forEach(it => items.push(normalizeExtension(it)));
+        } else if(json.extensions && Array.isArray(json.extensions)) {
+          json.extensions.forEach(it => items.push(normalizeExtension(it)));
+        } else if(json.sources && Array.isArray(json.sources)) {
+          json.sources.forEach(it => items.push(normalizeExtension(it)));
+        } else {
+          let found = false;
+          Object.keys(json).forEach(k => {
+            if(Array.isArray(json[k])){
+              json[k].forEach(it => { items.push(normalizeExtension(it)); found = true; });
+            }
+          });
+          if(!found) { items.push({ title: repo.name || repo.url, raw: json }); }
+        }
 
-/****************** حماية HTML ----------------- */
-function escapeHtml(s){ if(s === null || s === undefined) return ''; return String(s).replace(/[&<>\"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m])); }
+        repo.items = items;
+        repo.loaded = true;
+        renderRepoTabs();
+        if(state.currentRepoIndex === idx) renderExtensionsGrid(items);
+        setDetails(`تم تحميل المستودع: ${repo.name} — ${items.length} عناصر.`);
+      } catch(err) {
+        console.error(err);
+        repo.loaded = false;
+        setDetails(`فشل تحميل repo: ${repo.url} — ${err.message}. إذا ظهر "CORS" استخدم خادم محلي أو الصق JSON يدوياً.`);
+        alert(`فشل جلب المستودع (${repo.name}): ${err.message}\nمشكلة شائعة: CORS. شغّل الصفحة عبر سيرفر محلي أو الصق JSON.`);
+      }
+    }
 
-/*********** ملاحظة تقنية نهائية (مهمة): ***********
-- معظم روابط raw من GitHub قد تمنع fetch بسبب CORS عند تشغيل الملف محلياً (file://).
-- لتفادي ذلك شغّل الصفحة عبر سيرفر محلي (python -m http.server أو npx serve) أو الصق JSON يدوياً في الحقل المخصص.
-- الكود الآن يقرأ بوضوح البنية التي وصفتها: name, pkg, apk, lang, code, version, nsfw, sources[]. ويمكنك استيراد كل مصدر منفرداً أو تحميل APK إن وُجد.
-***************************************************/
-</script>
-</body></html>
+    /****************** تطبيع العناصر لدعم البنية المرنة + APK ******************/
+    function normalizeExtension(it){
+      const title = it.title || it.name || it.id || it.pkg || it.apk || 'إضافة';
+      const lang = it.lang || it.language || it.languages || (it.availableLanguages ? (Array.isArray(it.availableLanguages)?it.availableLanguages.join(',') : it.availableLanguages) : '');
+      const description = it.description || it.desc || it.summary || '';
+      const icon = it.icon || it.logo || it.image || it.cover || it.thumbnail || null;
+      const url = it.url || it.repo || it.index || it.apk || it.pkg || it.link || null;
+      const apk = it.apk || it.pkg || null;
+      return { title, lang, description, icon, url, apk, raw: it };
+    }
+
+    function renderExtensionsGrid(items){
+      const grid = document.getElementById('extensionsGrid'); grid.innerHTML = '';
+      items.forEach(it=>{
+        const card = document.createElement('div'); card.className='card ext-card';
+        const thumb = document.createElement('img'); thumb.className='ext-thumb'; thumb.src=it.icon||'images/book.png';
+        const body = document.createElement('div'); body.className='ext-body';
+        const title = document.createElement('div'); title.className='ext-title'; title.textContent=it.title;
+        const meta = document.createElement('div'); meta.className='ext-meta'; meta.textContent=it.lang || '';
+        const desc = document.createElement('div'); desc.className='small'; desc.textContent=it.description || '';
+        const btn = document.createElement('button'); btn.className='btn'; btn.textContent='استيراد كمصدر'; btn.onclick=()=>{ if(it.apk) window.open(it.apk,'_blank'); else alert('رابط غير متوفر'); };
+        body.appendChild(title); body.appendChild(meta); body.appendChild(desc); body.appendChild(btn);
+        card.appendChild(thumb); card.appendChild(body); grid.appendChild(card);
+      });
+    }
+
+    /****************** أدوات مستودع ******************/
+    function switchPanel(name){
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById('panel'+capitalize(name)).classList.add('active');
+      document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active')); document.getElementById('tab'+capitalize(name)).classList.add('active');
+    }
+
+    function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+    function addRepoFromInput(){ const val = document.getElementById('repoUrlInput').value.trim(); if(!val) return alert('أدخل رابط JSON'); state.repos.push({ name:'مستودع جديد', url:val }); selectRepo(state.repos.length-1); renderRepoTabs(); }
+
+    function loadPrepopulated(){ PREPOPULATED_REPOS.forEach(r=>state.repos.push({...r, loaded:false, items:[] })); selectRepo(0); renderRepoTabs(); }
+
+    function importFromPaste(){ try{ const json = JSON.parse(document.getElementById('repoPaste').value); if(Array.isArray(json)){ json.forEach(r=>state.repos.push({...r, loaded:false, items:[]})); } else state.repos.push({...json, loaded:false, items:[]}); selectRepo(state.repos.length-1); renderRepoTabs(); }catch(e){ alert('JSON غير صالح'); } }
+
+    function clearRepos(){ state.repos=[]; state.currentRepoIndex=null; renderRepoTabs(); document.getElementById('extensionsGrid').innerHTML=''; }
+
+    function setDetails(text){ document.getElementById('welcome').textContent = text; }
+  </script>
+</body>
+</html>
