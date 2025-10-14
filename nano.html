@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>لوحة المستخدمين</title>
+<link rel="icon" href="images/dark_icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body {
+    margin: 0;
+    font-family: "Cairo", "Tahoma", sans-serif;
+    background: #0b0b0f;
+    color: #f5f5f5;
+  }
+  header {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #2b0b0b, #3a0f3a);
+    border-bottom: 2px solid #7b0f7b;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #ff8c00;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    box-shadow: 0 0 20px rgba(255,0,0,0.2);
+  }
+  th, td {
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  th {
+    background: rgba(128,0,128,0.7);
+    color: #ffcc00;
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+  tr:hover {
+    background: rgba(255,0,0,0.1);
+    transform: scale(1.01);
+    transition: 0.2s;
+  }
+  .profile-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #ff0000;
+    object-fit: cover;
+  }
+  .role {
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: #fff;
+  }
+  .admin { background: #8b0000; }
+  .owner { background: #4b0082; }
+  .user { background: #333; }
+  .status { font-style: italic; }
+  .active { color: #32cd32; }
+  .inactive { color: #ff4500; }
+  .container { padding: 20px; max-width: 1000px; margin: auto; }
+</style>
+</head>
+<body>
+
+<header>شياطين النظام — لوحة المستخدمين</header>
+
+<div class="container">
+  <table id="usersTable">
+    <thead>
+      <tr>
+        <th>الصورة</th>
+        <th>اسم المستخدم</th>
+        <th>ID</th>
+        <th>الدور</th>
+        <th>الحالة</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="5">جارِ تحميل المستخدمين...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+async function loadUsers(){
+  const table = document.getElementById('usersTable').querySelector('tbody');
+  table.innerHTML = `<tr><td colspan="5">جارِ تحميل المستخدمين...</td></tr>`;
+  
+  try {
+    const { data, error } = await supabase.from('profiles').select('id, username, role, status, avatar_url');
+    if(error) throw error;
+    
+    if(data.length === 0){
+      table.innerHTML = `<tr><td colspan="5">لا يوجد مستخدمين</td></tr>`;
+      return;
+    }
+    
+    table.innerHTML = '';
+    data.forEach(u => {
+      const roleClass = (u.role||'').toLowerCase() === 'admin' ? 'admin' : (u.role||'').toLowerCase() === 'owner' ? 'owner' : 'user';
+      const statusClass = (u.status||'').toLowerCase() === 'active' ? 'active' : 'inactive';
+      const avatar = u.avatar_url || 'images/imag2.jpg';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><img src="${avatar}" class="profile-img" onerror="this.src='images/imag2.jpg'"></td>
+        <td>${u.username || 'مجهول'}</td>
+        <td>${u.id}</td>
+        <td><span class="role ${roleClass}">${u.role || 'مستخدم'}</span></td>
+        <td class="status ${statusClass}">${u.status || 'غير معروف'}</td>
+      `;
+      table.appendChild(tr);
+    });
+  } catch(e){
+    table.innerHTML = `<tr><td colspan="5">فشل تحميل المستخدمين — تحقق من الاتصال.</td></tr>`;
+    console.error(e);
+  }
+}
+
+loadUsers();
+</script>
+
+</body>
+</html>
