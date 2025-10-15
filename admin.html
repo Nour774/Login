@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة إدارة المانجا الغامضة</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body {
+  margin: 0;
+  font-family: 'Cairo', sans-serif;
+  background: #111;
+  color: #eee;
+}
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: auto;
+}
+h1, h2, h3 {margin: 10px 0; color: #c00;}
+.section {
+  background: #1a1a1a;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.4);
+}
+label {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.95rem;
+}
+input, select, button {
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  width: 100%;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+input, select {
+  background: #222;
+  color: #fff;
+}
+button {
+  background: #c00;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover {
+  background: #e00;
+}
+@media (max-width: 768px) {
+  .container {padding: 10px;}
+  h1 {font-size: 1.4rem;}
+  h2 {font-size: 1.2rem;}
+  h3 {font-size: 1rem;}
+  input, select, button {font-size: 0.95rem; padding: 8px;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>لوحة الإدارة</h1>
+
+<div id="login-section" class="section">
+<h2>تسجيل الدخول</h2>
+<label>اسم المستخدم</label>
+<input type="text" id="username" placeholder="اكتب اسم المستخدم">
+<label>كلمة المرور</label>
+<input type="password" id="password" placeholder="••••••">
+<button onclick="login()">تسجيل الدخول</button>
+<div id="login-msg" style="color:#f55;margin-top:10px;"></div>
+</div>
+
+<div id="admin-section" class="section" style="display:none;">
+<h2>إدارة المانجا</h2>
+
+<h3>إضافة مانجا</h3>
+<label>عنوان المانجا</label>
+<input type="text" id="manga-title" placeholder="أدخل عنوان المانجا">
+<label>الوصف</label>
+<input type="text" id="manga-desc" placeholder="نبذة قصيرة عن العمل">
+<label>غلاف المانجا</label>
+<input type="file" id="manga-cover-file" accept="image/*">
+<button onclick="addManga()">إضافة مانجا</button>
+
+<h3>إضافة فصل</h3>
+<label>اختر المانجا</label>
+<select id="select-manga"></select>
+<label>رقم الفصل</label>
+<input type="number" id="chapter-number" placeholder="مثلاً: 1">
+<label>عنوان الفصل</label>
+<input type="text" id="chapter-title" placeholder="اسم الفصل إن وُجد">
+<label>اختر مجلد الصور</label>
+<input type="file" id="chapter-folder" webkitdirectory directory multiple>
+<button onclick="addChapter()">إضافة فصل</button>
+
+<h3>إدارة التصنيفات</h3>
+<label>اسم التصنيف</label>
+<input type="text" id="genre-name" placeholder="أدخل اسم التصنيف">
+<button onclick="addGenre()">إضافة تصنيف</button>
+
+<h3>إدارة المترجمين</h3>
+<label>اسم المترجم</label>
+<input type="text" id="translator-name" placeholder="اسم المترجم">
+<label>رابط التواصل</label>
+<input type="text" id="translator-contact" placeholder="رابط تواصل أو حساب">
+<button onclick="addTranslator()">إضافة مترجم</button>
+
+<h3>إدارة الفرق</h3>
+<label>اسم الفريق</label>
+<input type="text" id="team-name" placeholder="اسم الفريق">
+<label>وصف الفريق</label>
+<input type="text" id="team-desc" placeholder="نبذة قصيرة عن الفريق">
+<label>رابط التواصل</label>
+<input type="text" id="team-contact" placeholder="رابط تواصل">
+<button onclick="addTeam()">إضافة فريق</button>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
+// تسجيل الدخول
+async function login(){
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const { data, error } = await supabase.from('users').select('*').eq('username', username).single();
+  if(error || !data){
+    document.getElementById('login-msg').textContent="خطأ في اسم المستخدم أو كلمة المرور";
+    return;
+  }
+  if(data.password_hash !== password){
+    document.getElementById('login-msg').textContent="خطأ في اسم المستخدم أو كلمة المرور";
+    return;
+  }
+  currentUser = data;
+  document.getElementById('login-section').style.display='none';
+  document.getElementById('admin-section').style.display='block';
+  loadMangaSelect();
+}
+
+// رفع ملف إلى التخزين
+async function uploadFile(bucket, path, file) {
+  const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// إضافة مانجا مع رفع الغلاف
+async function addManga() {
+  const title = document.getElementById('manga-title').value;
+  const desc = document.getElementById('manga-desc').value;
+  const file = document.getElementById('manga-cover-file').files[0];
+  if (!file) return alert("اختر صورة الغلاف أولاً");
+
+  const path = `covers/${Date.now()}_${file.name}`;
+  const coverUrl = await uploadFile('manga', path, file);
+
+  await supabase.from('manga_list').insert([{ title, description: desc, cover_url: coverUrl }]);
+  alert('تم إضافة المانجا ورفع الغلاف بنجاح');
+  loadMangaSelect();
+}
+
+// إضافة فصل + رفع الصور من مجلد
+async function addChapter() {
+  const manga_id = document.getElementById('select-manga').value;
+  const number = document.getElementById('chapter-number').value;
+  const title = document.getElementById('chapter-title').value;
+  const files = Array.from(document.getElementById('chapter-folder').files);
+  if (files.length === 0) return alert("اختر مجلد الصور أولاً");
+
+  const { data: chData, error: chErr } = await supabase
+    .from('chapters')
+    .insert([{ manga_id: parseInt(manga_id), number: parseInt(number), title }])
+    .select()
+    .single();
+  if (chErr) throw chErr;
+
+  const chapter_id = chData.id;
+  files.sort((a,b)=>a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const path = `chapters/${chapter_id}/${file.name}`;
+    const url = await uploadFile('manga', path, file);
+    await supabase.from('pages').insert([{ chapter_id, page_number: i+1, image_url: url }]);
+  }
+
+  alert(`تم رفع ${files.length} صفحة للفصل ${number} بنجاح`);
+  loadChapterSelect();
+}
+
+// تحميل المانجات للفصل
+async function loadMangaSelect(){
+  const { data } = await supabase.from('manga_list').select('*').order('id');
+  const sel = document.getElementById('select-manga');
+  sel.innerHTML = '';
+  data.forEach(m => sel.innerHTML += `<option value="${m.id}">${m.title}</option>`);
+}
+
+// تحميل الفصول لإضافة الصفحات
+async function loadChapterSelect(){
+  const { data } = await supabase.from('chapters').select('*').order('id');
+  const sel = document.getElementById('select-chapter');
+  if(!sel) return;
+  sel.innerHTML = '';
+  data.forEach(ch => sel.innerHTML += `<option value="${ch.id}">الفصل ${ch.number} - ${ch.title}</option>`);
+}
+
+// إضافة تصنيف
+async function addGenre(){
+  const name = document.getElementById('genre-name').value;
+  await supabase.from('genres').insert([{name}]);
+  alert('تم إضافة التصنيف');
+}
+
+// إضافة مترجم
+async function addTranslator(){
+  const name = document.getElementById('translator-name').value;
+  const contact = document.getElementById('translator-contact').value;
+  await supabase.from('translators').insert([{name, contact}]);
+  alert('تم إضافة المترجم');
+}
+
+// إضافة فريق
+async function addTeam(){
+  const name = document.getElementById('team-name').value;
+  const desc = document.getElementById('team-desc').value;
+  const contact = document.getElementById('team-contact').value;
+  await supabase.from('teams').insert([{name, description: desc, contact}]);
+  alert('تم إضافة الفريق');
+}
+</script>
+</body>
+</html>
