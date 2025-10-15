@@ -2,149 +2,97 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>قارئ المانجا</title>
+  <title>قارئ المانجا الغامض</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body {
-      margin: 0;
-      font-family: 'Cairo', sans-serif;
-      background-color: #111;
-      color: #eee;
-    }
-    header {
-      text-align: center;
-      padding: 15px;
-      background: #1a1a1a;
-      font-size: 22px;
-      font-weight: bold;
-      border-bottom: 2px solid #333;
-    }
-    .manga-list, .chapter-list, .reader {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-    .manga-item {
-      width: 200px;
-      background: #222;
-      margin: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      text-align: center;
-      cursor: pointer;
-      transition: transform 0.3s;
-    }
-    .manga-item:hover { transform: scale(1.05); }
-    .manga-cover {
-      width: 100%;
-      border-radius: 8px;
-    }
-    .chapter-item {
-      background: #222;
-      padding: 10px;
-      width: 80%;
-      margin: 5px;
-      border-radius: 6px;
-      cursor: pointer;
-      text-align: center;
-      transition: background 0.3s;
-    }
-    .chapter-item:hover { background: #333; }
-    img.manga-page {
-      width: 100%;
-      max-width: 800px;
-      margin-bottom: 10px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px #000;
-    }
-    .back-btn {
-      background: #444;
-      color: #fff;
-      border: none;
-      padding: 8px 16px;
-      margin: 10px;
-      cursor: pointer;
-      border-radius: 5px;
-      transition: background 0.3s;
-    }
-    .back-btn:hover { background: #666; }
+    body { margin:0; font-family:'Cairo', sans-serif; background:#111; color:#eee; }
+    .manga-item { display:flex; align-items:center; padding:10px; margin:10px; background:#1a1a1a; border-radius:12px; cursor:pointer; transition:0.2s; }
+    .manga-item:hover { background:#2a2a2a; }
+    .manga-cover { width:80px; height:120px; object-fit:cover; margin-left:10px; border-radius:8px; }
+    .chapter-item { padding:8px; margin:5px 0; background:#222; border-left:3px solid #c00; border-radius:6px; cursor:pointer; transition:0.2s; }
+    .chapter-item:hover { background:#333; }
+    .back-btn { padding:6px 12px; margin:4px; background:#c00; color:#fff; border:none; border-radius:6px; cursor:pointer; transition:0.2s; }
+    .back-btn:hover { background:#e00; }
+    img.manga-page { width:100%; margin:10px 0; border-radius:8px; box-shadow:0 0 20px #c00; }
+    h2, h3 { margin:5px 0; }
+    button.sort-btn { background:#550000; color:#fff; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; margin-bottom:10px; }
+    button.sort-btn:hover { background:#880000; }
   </style>
 </head>
 <body>
-  <header>قارئ المانجا</header>
-
-  <div id="content" class="manga-list"></div>
-
+  <div id="content" style="padding:20px;"></div>
   <script>
-    const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
-    const SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";
+    const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const content = document.getElementById('content');
     let currentManga = null;
+    let currentChapters = [];
+    let currentChapterIndex = 0;
+    let sortAscending = true;
+
+    const content = document.getElementById('content');
 
     async function loadMangaList() {
       const { data, error } = await supabase.from('manga_list').select('*').order('id');
-      if (error) return console.error(error);
+      if(error) return console.error(error);
 
-      content.innerHTML = '';
-      data.forEach(manga => {
-        const div = document.createElement('div');
-        div.className = 'manga-item';
-        div.innerHTML = `
-          <img src="${manga.cover_url}" class="manga-cover">
-          <h3>${manga.title}</h3>
-        `;
-        div.onclick = () => loadChapters(manga);
+      content.innerHTML='';
+      data.forEach(manga=>{
+        const div=document.createElement('div');
+        div.className='manga-item';
+        div.innerHTML=`<img src="${manga.cover_url}" class="manga-cover"><h3>${manga.title}</h3>`;
+        div.onclick=()=>loadChapters(manga);
         content.appendChild(div);
       });
     }
 
-    async function loadChapters(manga) {
-      currentManga = manga;
-      const { data, error } = await supabase.from('chapters')
-        .select('*')
-        .eq('manga_id', manga.id)
-        .order('number');
-      if (error) return console.error(error);
+    async function loadChapters(manga){
+      currentManga=manga;
+      const {data,error}=await supabase.from('chapters').select('*').eq('manga_id',manga.id);
+      if(error) return console.error(error);
 
-      content.innerHTML = `
-        <button class="back-btn" onclick="loadMangaList()">الرجوع</button>
-        <h2>${manga.title}</h2>
-      `;
-      data.forEach(ch => {
-        const div = document.createElement('div');
-        div.className = 'chapter-item';
-        div.textContent = ch.title;
-        div.onclick = () => loadChapterPages(ch.folder_path);
+      currentChapters=data.sort((a,b)=>parseInt(a.number)-parseInt(b.number));
+      renderChapterList();
+    }
+
+    function renderChapterList(){
+      const chapters=sortAscending?currentChapters:[...currentChapters].reverse();
+      content.innerHTML=`<button class="back-btn" onclick="loadMangaList()">الرجوع</button>
+                         <h2>${currentManga.title}</h2>
+                         <button class="sort-btn" onclick="toggleSortOrder()">الترتيب: ${sortAscending?'من 1 إلى 5':'من 5 إلى 1'}</button>`;
+      chapters.forEach((ch,i)=>{
+        const div=document.createElement('div');
+        div.className='chapter-item';
+        div.textContent=`الفصل ${ch.number} - ${ch.title}`;
+        div.onclick=()=>{currentChapterIndex=i; loadChapterPages(ch.id);}
         content.appendChild(div);
       });
     }
 
-    async function loadChapterPages(folderPath) {
-      const { data, error } = await supabase.storage.from('manga').list(folderPath);
-      if (error) return console.error(error);
+    function toggleSortOrder(){ sortAscending=!sortAscending; renderChapterList(); }
 
-      const sorted = data.sort((a, b) => {
-        const numA = parseInt(a.name.replace(/\D/g, ''));
-        const numB = parseInt(b.name.replace(/\D/g, ''));
-        return numA - numB;
-      });
+    async function loadChapterPages(chapter_id){
+      const {data:errorPages,error}=await supabase.from('pages').select('*').eq('chapter_id',chapter_id).order('page_number');
+      if(error) return console.error(error);
 
-      content.innerHTML = `
-        <button class="back-btn" onclick="loadChapters(currentManga)">الرجوع للفصول</button>
-      `;
-
-      for (const file of sorted) {
-        const { data: urlData } = await supabase.storage
-          .from('manga')
-          .getPublicUrl(`${folderPath}/${file.name}`);
-        const img = document.createElement('img');
-        img.src = urlData.publicUrl;
-        img.className = 'manga-page';
+      content.innerHTML=`<button class="back-btn" onclick="renderChapterList()">العودة للفصول</button>`;
+      for(const page of errorPages){
+        const img=document.createElement('img');
+        img.src=page.image_url;
+        img.className='manga-page';
         content.appendChild(img);
       }
+
+      // إظهار المترجمين/الفرق
+      const {data:translators} = await supabase.from('chapter_translators').select('translator_id (name)').eq('chapter_id',chapter_id);
+      const {data:teams} = await supabase.from('chapter_teams').select('team_id (name)').eq('chapter_id',chapter_id);
+      const div=document.createElement('div');
+      div.style="margin-top:10px;font-weight:bold;color:#c00;";
+      div.textContent='الترجمة: ' + 
+        (translators?.map(t=>t.translator_id.name).join(', ') || '') +
+        (teams?.map(t=>t.team_id.name).join(', ') ? ' | ' + teams.map(t=>t.team_id.name).join(', ') : '');
+      content.appendChild(div);
     }
 
     loadMangaList();
