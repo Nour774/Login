@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة إدارة المانجا — المظلمة</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#0f0f10;--card:#141416;--muted:#aaa;--accent:#c00;--accent-2:#e33}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:#eee;min-height:100vh;padding:18px}
+  .wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 360px;gap:18px}
+  header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}
+  h1{margin:0;font-size:1.1rem;color:var(--accent)}
+  p.small{margin:0;color:var(--muted);font-size:0.9rem}
+  .panel{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 2px 18px rgba(0,0,0,.6)}
+  label{display:block;font-size:0.95rem;margin-top:10px;color:var(--muted)}
+  input[type="text"], input[type="number"], select, input[type="file"], textarea{
+    width:100%;padding:10px;margin-top:6px;border-radius:8px;border:0;background:#0d0d0d;color:#fff;
+    font-size:0.95rem;
+  }
+  button{background:var(--accent);color:#fff;border:0;padding:10px;border-radius:8px;cursor:pointer;margin-top:10px;transition:opacity .2s}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+  .list{max-height:66vh;overflow:auto;padding-right:6px}
+  .manga-row{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;background:#0b0b0b;margin-bottom:10px}
+  .manga-row img{width:64px;height:96px;object-fit:cover;border-radius:6px}
+  .manga-info{flex:1}
+  .manga-title{font-weight:700}
+  .row-actions{display:flex;gap:8px}
+  .small-btn{padding:6px 8px;border-radius:8px;border:0;background:#222;color:#fff;cursor:pointer}
+  .danger{background:#880000}
+  .muted{color:var(--muted);font-size:0.9rem}
+  hr{border:0;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0}
+  .progress-bar{width:100%;background:#222;border-radius:8px;margin-top:6px;overflow:hidden;height:20px}
+  .progress-fill{height:100%;width:0%;background:var(--accent);text-align:center;line-height:20px;font-size:0.85rem;color:#fff}
+  @media (max-width:980px){.wrap{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>لوحة إدارة المانجا الغامضة</h1>
+      <p class="small">رفع غلاف، رفع مجلد فصل، وإدارة المانجا — متوافق مع صفحة القراءة.</p>
+    </div>
+    <div class="muted">اتصل بـ Supabase عبر المفاتيح في أعلى الملف</div>
+  </header>
+
+  <section class="panel" id="left-panel">
+    <h2 style="margin:0 0 8px 0;color:var(--accent)">قائمة الأعمال</h2>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="searchInput" type="text" placeholder="ابحث باسم المانجا..." oninput="filterList()" />
+      <button class="ghost" onclick="refresh()">تحديث</button>
+    </div>
+    <div class="list panel" id="mangaList" style="padding:8px 0;background:transparent"></div>
+  </section>
+
+  <aside class="panel" id="right-panel">
+    <div id="form-area">
+      <h3 style="margin:0 0 6px 0;color:var(--accent)">إضافة مانجا جديدة</h3>
+      <label>عنوان المانجا</label>
+      <input type="text" id="mangaTitle" placeholder="مثال: Tokyo Noir">
+      <label>وصف (اختياري)</label>
+      <textarea id="mangaDesc" rows="3" placeholder="نبذة قصيرة"></textarea>
+      <label>غلاف المانجا</label>
+      <input type="file" id="mangaCover" accept="image/*">
+      <button onclick="handleAddManga(this)">حفظ وإرفع الغلاف</button>
+      <hr>
+      <h3 style="margin:0 0 6px 0;color:var(--accent)">إضافة فصل (مجلد صور)</h3>
+      <label>اختر مانجا (ID)</label>
+      <select id="selectMangaForChapter"></select>
+      <label>رقم الفصل</label>
+      <input type="number" id="chapterNumber" min="1" placeholder="1">
+      <label>عنوان الفصل (اختياري)</label>
+      <input type="text" id="chapterTitle" placeholder="مثلاً: الفصل الأول">
+      <label>اختر مجلد الصور (مجلد أو ملفات متعددة)</label>
+      <input type="file" id="chapterFolder" webkitdirectory directory multiple accept="image/*">
+      <button id="uploadBtn" onclick="handleAddChapter(this)">رفع المجلد و حفظ الفصل</button>
+      <div class="progress-bar" id="progressBar" style="display:none"><div class="progress-fill" id="progressFill">0%</div></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const SUPABASE_URL="https://dxpqkojigblqgwqxwbmg.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const BUCKET='manga';
+let MANGA=[],filtered=[];
+
+function getPublicUrl(path){const {data}=supabase.storage.from(BUCKET).getPublicUrl(path);return data?.publicUrl||'';}
+
+async function loadMangaList(){
+  const {data,error}=await supabase.from('manga_list').select('*').order('id');
+  if(error){console.error(error);return;}
+  MANGA=data;filtered=[...data];renderMangaList();populateSelectForChapter();
+}
+
+function renderMangaList(){
+  const c=document.getElementById('mangaList');c.innerHTML='';
+  if(!filtered.length){c.innerHTML='<div class="muted">لا توجد أعمال.</div>';return;}
+  filtered.forEach(m=>{
+    c.innerHTML+=`<div class="manga-row"><img src="${m.cover_url||''}" alt=""><div class="manga-info"><div class="manga-title">${m.title}</div><div class="muted">${m.description||''}</div></div></div>`;
+  });
+}
+
+function filterList(){const q=document.getElementById('searchInput').value.toLowerCase();filtered=MANGA.filter(m=>m.title.toLowerCase().includes(q));renderMangaList();}
+function populateSelectForChapter(){document.getElementById('selectMangaForChapter').innerHTML=MANGA.map(m=>`<option value="${m.id}">${m.title}</option>`).join('');}
+
+async function handleAddManga(btn){
+  const title=document.getElementById('mangaTitle').value.trim();
+  const desc=document.getElementById('mangaDesc').value.trim();
+  const file=document.getElementById('mangaCover').files[0];
+  if(!title||!file)return alert("أدخل العنوان واختر الغلاف.");
+  disableButton(btn);
+  try{
+    const path=`covers/${Date.now()}_${sanitizeFilename(file.name)}`;
+    await supabase.storage.from(BUCKET).upload(path,file,{upsert:true});
+    const coverUrl=getPublicUrl(path);
+    await supabase.from('manga_list').insert([{title,description:desc,cover_url:coverUrl}]);
+    alert("✅ تمت إضافة المانجا ورفع الغلاف بنجاح.");loadMangaList();
+  }catch(e){console.error(e);alert("❌ فشل رفع الغلاف.");}
+  enableButton(btn);
+}
+
+async function handleAddChapter(btn){
+  const manga_id=parseInt(document.getElementById('selectMangaForChapter').value,10);
+  const number=parseInt(document.getElementById('chapterNumber').value,10);
+  const title=document.getElementById('chapterTitle').value.trim();
+  const files=Array.from(document.getElementById('chapterFolder').files||[]);
+  if(!manga_id||!number||!files.length)return alert("أكمل البيانات.");
+
+  disableButton(btn);
+  const progressBar=document.getElementById('progressBar');
+  const progressFill=document.getElementById('progressFill');
+  progressBar.style.display="block";
+  progressFill.style.width="0%";progressFill.textContent="0%";
+
+  const validFiles=files.filter(f=>{
+    const name=f.name.toLowerCase();
+    if(/\(\d+\)/.test(name))return false;
+    if(!/^manga1/i.test(name))return false;
+    return true;
+  }).sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+
+  if(!validFiles.length){enableButton(btn);progressBar.style.display="none";return alert("❌ لا توجد صور مطابقة للتنسيق المطلوب.");}
+
+  try{
+    const {data:ch,error:chErr}=await supabase.from('chapters').insert([{manga_id,number,title,folder_path:`chapters/${manga_id}/${number}/`}]).select('id').single();
+    if(chErr)throw chErr;
+    const chapter_id=ch.id;
+
+    for(let i=0;i<validFiles.length;i++){
+      const f=validFiles[i];
+      const filename=sanitizeFilename(f.name);
+      const path=`chapters/${manga_id}/${chapter_id}/${filename}`;
+      const {error:upErr}=await supabase.storage.from(BUCKET).upload(path,f,{upsert:true});
+      if(!upErr){
+        const publicUrl=getPublicUrl(path);
+        await supabase.from('pages').insert([{chapter_id,page_number:i+1,image_url:publicUrl}]);
+      }
+      const percent=Math.round(((i+1)/validFiles.length)*100);
+      progressFill.style.width=percent+"%";progressFill.textContent=`${percent}% (${i+1}/${validFiles.length})`;
+    }
+    alert(`✅ تم رفع ${validFiles.length} صفحة مطابقة.`);
+  }catch(e){console.error(e);alert("❌ حدث خطأ أثناء رفع الفصل.");}
+  progressBar.style.display="none";enableButton(btn);
+}
+
+function sanitizeFilename(name){return name.replace(/[^a-zA-Z0-9.\-_]/g,'_');}
+function disableButton(btn){btn.disabled=true;btn.textContent="جارٍ الرفع...";}
+function enableButton(btn){btn.disabled=false;btn.textContent="رفع المجلد و حفظ الفصل";}
+
+loadMangaList();
+</script>
+</body>
+</html>
