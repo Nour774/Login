@@ -1,244 +1,289 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة إدارة المانجا الغامضة</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة إدارة المانجا — المظلمة</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-body {
-  margin: 0;
-  font-family: 'Cairo', sans-serif;
-  background: #111;
-  color: #eee;
-}
-.container {
-  padding: 20px;
-  max-width: 1200px;
-  margin: auto;
-}
-h1, h2, h3 {margin: 10px 0; color: #c00;}
-.section {
-  background: #1a1a1a;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.4);
-}
-label {
-  display: block;
-  margin-top: 10px;
-  font-size: 0.95rem;
-}
-input, select, button {
-  margin: 5px 0;
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-  width: 100%;
-  font-size: 1rem;
-  box-sizing: border-box;
-}
-input, select {
-  background: #222;
-  color: #fff;
-}
-button {
-  background: #c00;
-  color: #fff;
-  cursor: pointer;
-  transition: 0.2s;
-}
-button:hover {
-  background: #e00;
-}
-@media (max-width: 768px) {
-  .container {padding: 10px;}
-  h1 {font-size: 1.4rem;}
-  h2 {font-size: 1.2rem;}
-  h3 {font-size: 1rem;}
-  input, select, button {font-size: 0.95rem; padding: 8px;}
-}
+  :root{--bg:#0f0f10;--card:#141416;--muted:#aaa;--accent:#c00;--accent-2:#e33}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:#eee;min-height:100vh;padding:18px}
+  .wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 360px;gap:18px}
+  header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}
+  h1{margin:0;font-size:1.1rem;color:var(--accent)}
+  p.small{margin:0;color:var(--muted);font-size:0.9rem}
+  .panel{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 2px 18px rgba(0,0,0,.6)}
+  label{display:block;font-size:0.95rem;margin-top:10px;color:var(--muted)}
+  input[type="text"], input[type="number"], select, input[type="file"], textarea{
+    width:100%;padding:10px;margin-top:6px;border-radius:8px;border:0;background:#0d0d0d;color:#fff;
+    font-size:0.95rem;
+  }
+  button{background:var(--accent);color:#fff;border:0;padding:10px;border-radius:8px;cursor:pointer;margin-top:10px}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+  .list{max-height:66vh;overflow:auto;padding-right:6px}
+  .manga-row{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;background:#0b0b0b;margin-bottom:10px}
+  .manga-row img{width:64px;height:96px;object-fit:cover;border-radius:6px}
+  .manga-info{flex:1}
+  .manga-title{font-weight:700}
+  .row-actions{display:flex;gap:8px}
+  .small-btn{padding:6px 8px;border-radius:8px;border:0;background:#222;color:#fff;cursor:pointer}
+  .danger{background:#880000}
+  .muted{color:var(--muted);font-size:0.9rem}
+  hr{border:0;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0}
+  /* responsive */
+  @media (max-width:980px){.wrap{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
-<div class="container">
-<h1>لوحة الإدارة</h1>
 
-<div id="login-section" class="section">
-<h2>تسجيل الدخول</h2>
-<label>اسم المستخدم</label>
-<input type="text" id="username" placeholder="اكتب اسم المستخدم">
-<label>كلمة المرور</label>
-<input type="password" id="password" placeholder="••••••">
-<button onclick="login()">تسجيل الدخول</button>
-<div id="login-msg" style="color:#f55;margin-top:10px;"></div>
-</div>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>لوحة إدارة المانجا الغامضة</h1>
+      <p class="small">رفع غلاف، رفع مجلد فصل، وإدارة المانجا — متوافق مع صفحة القراءة.</p>
+    </div>
+    <div class="muted">اتصل بـ Supabase عبر المفاتيح في أعلى الملف</div>
+  </header>
 
-<div id="admin-section" class="section" style="display:none;">
-<h2>إدارة المانجا</h2>
+  <!-- القائمة الرئيسية -->
+  <section class="panel" id="left-panel">
+    <h2 style="margin:0 0 8px 0;color:var(--accent)">قائمة الأعمال</h2>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="searchInput" type="text" placeholder="ابحث باسم المانجا..." oninput="filterList()" />
+      <button class="ghost" onclick="refresh()">تحديث</button>
+    </div>
 
-<h3>إضافة مانجا</h3>
-<label>عنوان المانجا</label>
-<input type="text" id="manga-title" placeholder="أدخل عنوان المانجا">
-<label>الوصف</label>
-<input type="text" id="manga-desc" placeholder="نبذة قصيرة عن العمل">
-<label>غلاف المانجا</label>
-<input type="file" id="manga-cover-file" accept="image/*">
-<button onclick="addManga()">إضافة مانجا</button>
+    <div class="list panel" id="mangaList" style="padding:8px 0;background:transparent"></div>
+  </section>
 
-<h3>إضافة فصل</h3>
-<label>اختر المانجا</label>
-<select id="select-manga"></select>
-<label>رقم الفصل</label>
-<input type="number" id="chapter-number" placeholder="مثلاً: 1">
-<label>عنوان الفصل</label>
-<input type="text" id="chapter-title" placeholder="اسم الفصل إن وُجد">
-<label>اختر مجلد الصور</label>
-<input type="file" id="chapter-folder" webkitdirectory directory multiple>
-<button onclick="addChapter()">إضافة فصل</button>
+  <!-- لوحة إضافة/تعديل -->
+  <aside class="panel" id="right-panel">
+    <div id="form-area">
+      <h3 style="margin:0 0 6px 0;color:var(--accent)">إضافة مانجا جديدة</h3>
+      <label>عنوان المانجا</label>
+      <input type="text" id="mangaTitle" placeholder="مثال: Tokyo Noir">
 
-<h3>إدارة التصنيفات</h3>
-<label>اسم التصنيف</label>
-<input type="text" id="genre-name" placeholder="أدخل اسم التصنيف">
-<button onclick="addGenre()">إضافة تصنيف</button>
+      <label>وصف (اختياري)</label>
+      <textarea id="mangaDesc" rows="3" placeholder="نبذة قصيرة"></textarea>
 
-<h3>إدارة المترجمين</h3>
-<label>اسم المترجم</label>
-<input type="text" id="translator-name" placeholder="اسم المترجم">
-<label>رابط التواصل</label>
-<input type="text" id="translator-contact" placeholder="رابط تواصل أو حساب">
-<button onclick="addTranslator()">إضافة مترجم</button>
+      <label>غلاف المانجا</label>
+      <input type="file" id="mangaCover" accept="image/*">
 
-<h3>إدارة الفرق</h3>
-<label>اسم الفريق</label>
-<input type="text" id="team-name" placeholder="اسم الفريق">
-<label>وصف الفريق</label>
-<input type="text" id="team-desc" placeholder="نبذة قصيرة عن الفريق">
-<label>رابط التواصل</label>
-<input type="text" id="team-contact" placeholder="رابط تواصل">
-<button onclick="addTeam()">إضافة فريق</button>
-</div>
+      <button onclick="handleAddManga()">حفظ وإرفع الغلاف</button>
+
+      <hr>
+
+      <h3 style="margin:0 0 6px 0;color:var(--accent)">إضافة فصل (مجلد صور)</h3>
+      <label>اختر مانجا (ID)</label>
+      <select id="selectMangaForChapter"></select>
+
+      <label>رقم الفصل</label>
+      <input type="number" id="chapterNumber" min="1" placeholder="1">
+
+      <label>عنوان الفصل (اختياري)</label>
+      <input type="text" id="chapterTitle" placeholder="مثلاً: الفصل الأول">
+
+      <label>اختر مجلد الصور (مجلد أو ملفات متعددة)</label>
+      <input type="file" id="chapterFolder" webkitdirectory directory multiple accept="image/*">
+
+      <button onclick="handleAddChapter()">رفع المجلد و حفظ الفصل</button>
+
+      <hr>
+
+      <div style="display:flex;gap:8px">
+        <button class="ghost" onclick="showReaderPreview()">عرض كقارئ</button>
+        <button class="ghost danger" onclick="cleanup()">حذف مؤقت (اختباري)</button>
+      </div>
+
+      <p class="muted" style="margin-top:10px;font-size:0.85rem">ملاحظة: سيتم رفع الملفات إلى Bucket باسم <strong>manga</strong> داخل مجلدات <code>covers/</code> و <code>chapters/{mangaId}/{chapterId}/</code>.</p>
+    </div>
+  </aside>
 </div>
 
 <script>
+/* ====== إعداد Supabase (غيّر القيم هنا) ====== */
 const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const BUCKET = 'manga'; // bucket واحد كما اتفقنا
+/* ============================================ */
 
-let currentUser = null;
+let MANGA = []; // cache
+let filtered = [];
 
-// تسجيل الدخول
-async function login(){
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  const { data, error } = await supabase.from('users').select('*').eq('username', username).single();
-  if(error || !data){
-    document.getElementById('login-msg').textContent="خطأ في اسم المستخدم أو كلمة المرور";
-    return;
-  }
-  if(data.password_hash !== password){
-    document.getElementById('login-msg').textContent="خطأ في اسم المستخدم أو كلمة المرور";
-    return;
-  }
-  currentUser = data;
-  document.getElementById('login-section').style.display='none';
-  document.getElementById('admin-section').style.display='block';
-  loadMangaSelect();
-}
-
-// رفع ملف إلى التخزين
-async function uploadFile(bucket, path, file) {
-  const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
-  if (error) throw error;
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+/* --- مساعدة: الحصول على publicUrl --- */
+function getPublicUrl(path){
+  const { data, error } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  if(error){ console.warn('getPublicUrl error', error); return null; }
   return data.publicUrl;
 }
 
-// إضافة مانجا مع رفع الغلاف
-async function addManga() {
-  const title = document.getElementById('manga-title').value;
-  const desc = document.getElementById('manga-desc').value;
-  const file = document.getElementById('manga-cover-file').files[0];
-  if (!file) return alert("اختر صورة الغلاف أولاً");
-
-  const path = `covers/${Date.now()}_${file.name}`;
-  const coverUrl = await uploadFile('manga', path, file);
-
-  await supabase.from('manga_list').insert([{ title, description: desc, cover_url: coverUrl }]);
-  alert('تم إضافة المانجا ورفع الغلاف بنجاح');
-  loadMangaSelect();
+/* --- تحميل قائمة المانجا من قاعدة البيانات --- */
+async function loadMangaList(){
+  const { data, error } = await supabase.from('manga_list').select('id,title,description,cover_url,created_at').order('id',{ascending:true});
+  if(error){ console.error(error); alert('خطأ في جلب المانجا'); return; }
+  MANGA = data || [];
+  filtered = [...MANGA];
+  renderMangaList();
+  populateSelectForChapter();
 }
 
-// إضافة فصل + رفع الصور من مجلد
-async function addChapter() {
-  const manga_id = document.getElementById('select-manga').value;
-  const number = document.getElementById('chapter-number').value;
-  const title = document.getElementById('chapter-title').value;
-  const files = Array.from(document.getElementById('chapter-folder').files);
-  if (files.length === 0) return alert("اختر مجلد الصور أولاً");
+/* --- عرض القائمة --- */
+function renderMangaList(){
+  const container = document.getElementById('mangaList');
+  container.innerHTML = '';
+  if(filtered.length === 0){ container.innerHTML = '<div class="muted">لا توجد أعمال.</div>'; return; }
+  filtered.forEach(m => {
+    const row = document.createElement('div'); row.className = 'manga-row';
+    const img = document.createElement('img'); img.src = m.cover_url || ''; img.alt = m.title;
+    const info = document.createElement('div'); info.className='manga-info';
+    info.innerHTML = `<div class="manga-title">${escapeHtml(m.title)}</div><div class="muted" style="font-size:0.88rem">${escapeHtml(m.description||'')}</div><div class="muted" style="font-size:0.8rem">ID: ${m.id} — ${new Date(m.created_at).toLocaleString()}</div>`;
+    const actions = document.createElement('div'); actions.className='row-actions';
+    const btnOpen = document.createElement('button'); btnOpen.className='small-btn'; btnOpen.textContent='عرض الفصول'; btnOpen.onclick = ()=>openChapters(m);
+    const btnDelete = document.createElement('button'); btnDelete.className='small-btn danger'; btnDelete.textContent='حذف'; btnDelete.onclick = ()=>deleteManga(m.id);
+    actions.appendChild(btnOpen); actions.appendChild(btnDelete);
+    row.appendChild(img); row.appendChild(info); row.appendChild(actions);
+    container.appendChild(row);
+  });
+}
 
-  const { data: chData, error: chErr } = await supabase
-    .from('chapters')
-    .insert([{ manga_id: parseInt(manga_id), number: parseInt(number), title }])
-    .select()
-    .single();
-  if (chErr) throw chErr;
+/* --- فلترة بحث --- */
+function filterList(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  filtered = MANGA.filter(m => m.title.toLowerCase().includes(q) || (m.description||'').toLowerCase().includes(q));
+  renderMangaList();
+}
 
-  const chapter_id = chData.id;
-  files.sort((a,b)=>a.name.localeCompare(b.name, undefined, { numeric: true }));
+/* --- ملء select لاختيار المانجا عند إضافة فصل --- */
+function populateSelectForChapter(){
+  const sel = document.getElementById('selectMangaForChapter');
+  sel.innerHTML = '';
+  MANGA.forEach(m => sel.innerHTML += `<option value="${m.id}">${escapeHtml(m.title)} (ID:${m.id})</option>`);
+}
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const path = `chapters/${chapter_id}/${file.name}`;
-    const url = await uploadFile('manga', path, file);
-    await supabase.from('pages').insert([{ chapter_id, page_number: i+1, image_url: url }]);
+/* ====== رفع غلاف المانجا ثم حفظ السجل ====== */
+async function handleAddManga(){
+  const title = document.getElementById('mangaTitle').value.trim();
+  const desc = document.getElementById('mangaDesc').value.trim();
+  const file = document.getElementById('mangaCover').files[0];
+  if(!title) return alert('اكتب عنوان المانجا.');
+  if(!file) return alert('اختَر صورة غلاف.');
+
+  try{
+    const path = `covers/${Date.now()}_${sanitizeFilename(file.name)}`;
+    const { error:uploadError } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
+    if(uploadError) throw uploadError;
+    const coverUrl = getPublicUrl(path);
+    const { error:insertError } = await supabase.from('manga_list').insert([{ title, description: desc, cover_url: coverUrl }]);
+    if(insertError) throw insertError;
+    alert('تمت إضافة المانجا ورفع الغلاف.');
+    clearMangaForm();
+    await loadMangaList();
+  }catch(err){
+    console.error(err); alert('فشل رفع الغلاف أو حفظ المانجا. راجع الكونسول.');
   }
+}
+function clearMangaForm(){ document.getElementById('mangaTitle').value=''; document.getElementById('mangaDesc').value=''; document.getElementById('mangaCover').value=null; }
 
-  alert(`تم رفع ${files.length} صفحة للفصل ${number} بنجاح`);
-  loadChapterSelect();
+/* ====== إضافة فصل ورفع مجلد الصور ====== */
+async function handleAddChapter(){
+  const manga_id = parseInt(document.getElementById('selectMangaForChapter').value,10);
+  const number = parseInt(document.getElementById('chapterNumber').value,10);
+  const title = document.getElementById('chapterTitle').value.trim();
+  const files = Array.from(document.getElementById('chapterFolder').files || []);
+  if(!manga_id || !number) return alert('اختر ID المانجا و رقم الفصل.');
+  if(files.length === 0) return alert('اختر مجلد يحتوي على صور الفصل.');
+
+  // تأكد من ترتيب الملفات حسب الاسم (رقمي)
+  files.sort((a,b)=> a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+  try{
+    // إنشاء سجل الفصل
+    const { data:chapterData, error:chErr } = await supabase.from('chapters').insert([{ manga_id, number, title, folder_path: `chapters/${manga_id}/${number}/` }]).select('id').single();
+    if(chErr) throw chErr;
+    const chapter_id = chapterData.id;
+
+    // رفع كل ملف وتسجيلة في pages
+    for(let i=0;i<files.length;i++){
+      const f = files[i];
+      const filename = sanitizeFilename(f.name);
+      const path = `chapters/${manga_id}/${chapter_id}/${filename}`;
+      const { error:upErr } = await supabase.storage.from(BUCKET).upload(path, f, { upsert: true });
+      if(upErr){ console.warn('upload error for', path, upErr); continue; }
+      const publicUrl = getPublicUrl(path);
+      const { error:insertPageErr } = await supabase.from('pages').insert([{ chapter_id, page_number: i+1, image_url: publicUrl }]);
+      if(insertPageErr) console.warn('insert page error', insertPageErr);
+    }
+
+    alert(`تم إنشاء الفصل ورفع ${files.length} صفحة.`);
+    document.getElementById('chapterFolder').value = null;
+    document.getElementById('chapterNumber').value = '';
+    document.getElementById('chapterTitle').value = '';
+    await loadMangaList();
+  }catch(e){
+    console.error(e);
+    alert('فشل رفع الفصل. تحقق من الكونسول.');
+  }
 }
 
-// تحميل المانجات للفصل
-async function loadMangaSelect(){
-  const { data } = await supabase.from('manga_list').select('*').order('id');
-  const sel = document.getElementById('select-manga');
-  sel.innerHTML = '';
-  data.forEach(m => sel.innerHTML += `<option value="${m.id}">${m.title}</option>`);
+/* ====== فتح صفحة الفصول لمانجا محددة ====== */
+async function openChapters(manga){
+  // جلب الفصول
+  const { data, error } = await supabase.from('chapters').select('id,number,title,created_at').eq('manga_id', manga.id).order('number',{ascending:true});
+  if(error){ console.error(error); alert('خطأ في جلب الفصول'); return; }
+  // عرض بسيط في اليسار (استبدال القائمة)
+  const container = document.getElementById('mangaList');
+  container.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong>فصول: ${escapeHtml(manga.title)}</strong><div><button class="small-btn" onclick="loadMangaList()">رجوع</button></div></div>`;
+  if(!data || data.length===0){ container.innerHTML += '<div class="muted">لا توجد فصول حتى الآن.</div>'; return; }
+  data.forEach(ch=>{
+    const d = document.createElement('div'); d.className='manga-row';
+    d.style.alignItems='center';
+    d.innerHTML = `<div style="flex:1"><div style="font-weight:700">الفصل ${ch.number} — ${escapeHtml(ch.title||'بدون عنوان')}</div><div class="muted">ID:${ch.id} — ${new Date(ch.created_at).toLocaleString()}</div></div>`;
+    const actions = document.createElement('div'); actions.className='row-actions';
+    const btnView = document.createElement('button'); btnView.className='small-btn'; btnView.textContent='عرض بالقارئ'; btnView.onclick = ()=>openReaderForChapter(ch.id);
+    const btnDel = document.createElement('button'); btnDel.className='small-btn danger'; btnDel.textContent='حذف فصل'; btnDel.onclick = ()=>deleteChapter(ch.id);
+    actions.appendChild(btnView); actions.appendChild(btnDel);
+    d.appendChild(actions);
+    container.appendChild(d);
+  });
 }
 
-// تحميل الفصول لإضافة الصفحات
-async function loadChapterSelect(){
-  const { data } = await supabase.from('chapters').select('*').order('id');
-  const sel = document.getElementById('select-chapter');
-  if(!sel) return;
-  sel.innerHTML = '';
-  data.forEach(ch => sel.innerHTML += `<option value="${ch.id}">الفصل ${ch.number} - ${ch.title}</option>`);
+/* ====== افتح القارئ مباشرة لعرض الفصل (يتوافق مع صفحة القارئ التي بنتها) ====== */
+async function openReaderForChapter(chapterId){
+  // مستخدم يريد فقط أن يرى إن الصور تعمل. سنفتح صفحة جديدة تشير إلى reader.html?chapter=ID
+  // (افتراض: لديك صفحة قارئ تقرأ من query param أو بناء آخر)
+  // إن لم تكن لديك صفحة منفصلة، يمكننا عرض الصور مباشرة هنا — سأعرض نافذة جديدة برابط الصور.
+  window.open(`reader.html?chapter=${chapterId}`, '_blank');
 }
 
-// إضافة تصنيف
-async function addGenre(){
-  const name = document.getElementById('genre-name').value;
-  await supabase.from('genres').insert([{name}]);
-  alert('تم إضافة التصنيف');
+/* ====== حذف مانجا (يحذف الفصول والصفحات عبر FK CASCADE) ====== */
+async function deleteManga(id){
+  if(!confirm('هل تريد حذف المانجا نهائياً (ستُحذف الفصول والصفحات)؟')) return;
+  const { error } = await supabase.from('manga_list').delete().eq('id', id);
+  if(error){ console.error(error); alert('فشل الحذف'); return; }
+  alert('تم الحذف'); await loadMangaList();
 }
 
-// إضافة مترجم
-async function addTranslator(){
-  const name = document.getElementById('translator-name').value;
-  const contact = document.getElementById('translator-contact').value;
-  await supabase.from('translators').insert([{name, contact}]);
-  alert('تم إضافة المترجم');
+/* ====== حذف فصل فقط ====== */
+async function deleteChapter(id){
+  if(!confirm('حذف هذا الفصل سيزيل جميع صفحاته. موافق؟')) return;
+  const { error } = await supabase.from('chapters').delete().eq('id', id);
+  if(error){ console.error(error); alert('فشل حذف الفصل'); return; }
+  alert('تم حذف الفصل'); await loadMangaList();
 }
 
-// إضافة فريق
-async function addTeam(){
-  const name = document.getElementById('team-name').value;
-  const desc = document.getElementById('team-desc').value;
-  const contact = document.getElementById('team-contact').value;
-  await supabase.from('teams').insert([{name, description: desc, contact}]);
-  alert('تم إضافة الفريق');
-}
+/* ====== دوال مساعدة ====== */
+function sanitizeFilename(name){ return name.replace(/[^a-zA-Z0-9.\-_가-힣\u0600-\u06FF]/g,'_'); }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function refresh(){ loadMangaList(); }
+function cleanup(){ alert('زر اختبار؛ لا يقوم بشيء خطير هنا.'); }
+function showReaderPreview(){ alert('يفتح نافذة القارئ إن وُجد ملف reader.html أو يمكنك عرض الفصل من القائمة.'); }
+
+/* تحميل أولي */
+loadMangaList();
+
 </script>
 </body>
-</html>
+      </html>
