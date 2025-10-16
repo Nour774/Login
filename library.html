@@ -1,198 +1,199 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📜 قارئ المانجا الغامض</title>
-<link rel="icon" href="images/book.png"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-  * { box-sizing: border-box; transition: 0.3s ease; }
-  body { margin:0; font-family:'Cairo',sans-serif; background: radial-gradient(circle at center, #111 40%, #000); color:#eee; display:flex; justify-content:center; padding:10px; min-height:100vh; }
-  #content { width:100%; max-width:1200px; }
+  <meta charset="UTF-8" />
+  <title>المكتبة</title>
+  <link rel="icon" href="images/book.png"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; transition: 0.3s ease; }
+    body { margin: 0; font-family: "Cairo", "Tahoma", sans-serif; background: #1a1a1d; color: #f5f5f5; overflow-x: hidden; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #0f0e14; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .menu-btn { cursor: pointer; font-size: 24px; }
+    .profile-pic { width: 40px; height: 40px; border-radius: 50%; }
+    .sub-header { display: flex; gap: 16px; padding: 10px 20px; background: #2a2a2d; }
+    .sub-header a { color: #f5f5f5; text-decoration: none; font-weight: bold; cursor: pointer; }
+    .hero img { width: 100%; max-height: 300px; object-fit: cover; }
+    .content { padding: 20px; }
+    .sidebar { position: fixed; top: 0; right: -250px; width: 250px; height: 100%; background: #333; padding: 20px; transition: right 0.3s ease; z-index: 1000; }
+    .sidebar.active { right: 0; }
+    .sidebar a, .sidebar button { display: block; margin-bottom: 10px; color: #fff; background: none; border: none; font-size: 16px; cursor: pointer; text-align: right; }
+    .overlay { position: fixed; top: 0; right: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; }
+    .overlay.active { display: block; }
+    .section { display: none; padding: 20px; }
+    .section.active { display: block; }
 
-  /* شبكة المانجا */
-  .manga-grid {
-    display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
-    gap:14px;
-    margin-top:18px;
-  }
-  .manga-item {
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    background: rgba(30,30,30,0.9);
-    border-radius:14px;
-    cursor:pointer;
-    box-shadow:0 0 15px #400 inset;
-    overflow:hidden;
-    text-align:center;
-    transition:0.25s;
-  }
-  .manga-item:hover {
-    background:#222;
-    box-shadow:0 0 20px #800 inset;
-    transform:translateY(-4px);
-  }
-  .manga-cover {
-    width:100%;
-    aspect-ratio:2/3;
-    object-fit:cover;
-    border-radius:8px 8px 0 0;
-    box-shadow:0 0 12px #c00;
-  }
-  .manga-item h3 {
-    font-size:1rem;
-    margin:10px 0;
-    color:#ffdddd;
-    text-shadow:0 0 6px #c00;
-    padding:0 5px;
-  }
-
-  /* الفصول */
-  .chapter-item {
-    padding:10px;
-    margin:6px 0;
-    background: rgba(40,40,40,0.9);
-    border-right:4px solid #a00;
-    border-radius:8px;
-    cursor:pointer;
-    transition:0.2s;
-    font-size:1.1rem;
-  }
-  .chapter-item:hover { background:#333; }
-
-  /* أزرار */
-  .back-btn, .sort-btn { padding:10px 18px; margin:6px; font-size:1rem; background:linear-gradient(90deg,#800,#b00); color:#fff; border:none; border-radius:10px; cursor:pointer; font-weight:bold; box-shadow:0 0 10px #600; transition:0.25s; }
-  .back-btn:hover, .sort-btn:hover { background:linear-gradient(90deg,#b00,#e00); transform:scale(1.05); }
-
-  /* القائمة الجانبية */
-  .sidebar {
-    position: fixed;
-    top:0;
-    right:-250px;
-    width:250px;
-    height:100%;
-    background:#333;
-    padding:20px;
-    transition:right 0.3s ease;
-    z-index:1000;
-  }
-  .sidebar.active { right:0; }
-  .sidebar a, .sidebar button {
-    display:block;
-    margin-bottom:10px;
-    color:#fff;
-    background:none;
-    border:none;
-    font-size:16px;
-    cursor:pointer;
-    text-align:right;
-  }
-  .overlay {
-    position:fixed;
-    top:0;
-    right:0;
-    width:100%;
-    height:100%;
-    background: rgba(0,0,0,0.5);
-    display:none;
-    z-index:999;
-  }
-  .overlay.active { display:block; }
-
-  @media(max-width:768px){ .manga-item h3{ font-size:0.9rem; } .chapter-item{ font-size:0.95rem; } .back-btn, .sort-btn{ font-size:0.9rem; padding:8px 12px; } }
-  @media(max-width:480px){ .manga-grid { grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:10px; } }
-</style>
+    /* تصميم قسم المانجا */
+    .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .logo div:first-child { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #a88bff, #e6c07b); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #0b0710; font-size: 18px; }
+    .logo .title { font-weight: 700; font-size: 18px; }
+    nav { display: flex; gap: 16px; margin-bottom: 10px; }
+    nav button { padding: 6px 12px; border: none; border-radius: 8px; background: transparent; color: #9b8fb3; cursor: pointer; font-weight: 700; }
+    nav button.active { color: #fff; background: rgba(168,139,255,0.12); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .hint { margin-top: 12px; color: #9b8fb3; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 14px; margin-top: 18px; }
+    .card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12)); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); cursor: pointer; text-align: center; }
+    .card img { width: 100%; border-radius: 8px; margin-bottom: 8px; }
+  </style>
 </head>
 <body>
+  <header>
+    <span class="menu-btn" onclick="toggleMenu()">☰</span>
+    <h1>المكتبة</h1>
+    <img id="profileImage" class="profile-pic" src="images/imag2.jpg" alt="بروفايل">
+  </header>
 
-<button onclick="toggleMenu()" style="position:fixed;top:10px;left:10px;z-index:1100;">☰</button>
+  <div class="sub-header">
+    <a href="index5.html">الرئيسية</a>
+    <a onclick="showSection('library')">مكتبتي</a>
+    <a onclick="showSection('repository')">المانجا/المانهوا</a>
+    <a onclick="showSection('settings')">الروايات</a>
+  </div>
 
-<div id="content">جارٍ التحميل...</div>
+  <div class="hero"><img src="images/imag1.jpg" alt="صورة المقدمة"></div>
 
-<div class="sidebar" id="sidebar">
-  <a href="#" onclick="goToMembers()">الأعضاء</a>
-  <button id="adminBtn" onclick="goToAdmin()" style="display:none;">لوحة التحكم</button>
-  <button onclick="logout()">تسجيل الخروج</button>
-</div>
-<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+  <!-- مكتبة المستخدم -->
+  <div id="library" class="section active">
+    <div class="content">
+      <div id="welcome" class="welcome">جار التحميل...</div>
+    </div>
+  </div>
 
-<script>
-const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <!-- قسم المانجا/المانهوا -->
+  <div id="repository" class="section">
+    <div class="logo">
+      <div>MS</div>
+      <div class="title">Manga Sanctum</div>
+    </div>
 
-let currentManga = null;
-let currentChapters = [];
-let sortAscending = true;
-const content = document.getElementById('content');
+    <nav>
+      <button id="tabSources" class="active" onclick="switchPanel('sources')">المصادر</button>
+      <button id="tabExtensions" onclick="switchPanel('extensions')">الإضافات</button>
+    </nav>
 
-function getNum(str=""){ const match = String(str).match(/\d+/); return match ? parseInt(match[0]) : 0; }
+    <div id="panelSources" class="panel active">
+      <div class="hint">اختر مانجا لعرض الفصول:</div>
+      <div id="sourcesGrid" class="grid"></div>
+    </div>
 
-async function loadMangaList() {
-  const { data, error } = await supabase.from('manga_list').select('id,title,cover_url').order('id',{ascending:true});
-  if(error) return console.error(error);
+    <div id="panelExtensions" class="panel">
+      <div class="hint">قائمة الإضافات ستظهر هنا لاحقًا.</div>
+      <div id="extensionsGrid" class="grid"></div>
+    </div>
+  </div>
 
-  content.innerHTML = '<h2>📜 قائمة المانجا</h2><div class="manga-grid"></div>';
-  const grid = content.querySelector('.manga-grid');
-  (data||[]).forEach(manga=>{
-    const div = document.createElement('div');
-    div.className='manga-item';
-    div.innerHTML=`<img src="${manga.cover_url||''}" class="manga-cover"><h3>${manga.title}</h3>`;
-    div.onclick = ()=> loadChapters(manga);
-    grid.appendChild(div);
-  });
-}
+  <!-- قسم الروايات -->
+  <div id="settings" class="section">
+    <p>الروايات ستظهر هنا لاحقًا.</p>
+  </div>
 
-async function loadChapters(manga){
-  currentManga = manga;
-  const { data, error } = await supabase.from('chapters').select('id,title,number').eq('manga_id',manga.id).order('number',{ascending:true});
-  if(error) return console.error(error);
-  currentChapters = data||[];
-  renderChapterList();
-}
+  <!-- القائمة الجانبية -->
+  <div class="sidebar" id="sidebar">
+    <a href="#" onclick="goToMembers()">الأعضاء</a>
+    <button id="adminBtn" onclick="goToAdmin()" style="display:none;">لوحة التحكم</button>
+    <button onclick="logout()">تسجيل الخروج</button>
+  </div>
+  <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
-function renderChapterList(){
-  const chapters = sortAscending ? currentChapters : [...currentChapters].reverse();
-  content.innerHTML = `<button class="back-btn" onclick="loadMangaList()">← عودة</button>
-  <h2>${currentManga.title}</h2>
-  <button class="sort-btn" onclick="toggleSortOrder()">الترتيب: ${sortAscending?'تصاعدي ↑':'تنازلي ↓'}</button>`;
-  
-  chapters.forEach(ch=>{
-    const div = document.createElement('div');
-    div.className='chapter-item';
-    div.textContent = `الفصل ${ch.number} — ${ch.title||''}`;
-    div.onclick = ()=> location.href=`index8.html?chapter_id=${ch.id}`;
-    content.appendChild(div);
-  });
-}
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-function toggleSortOrder(){ sortAscending = !sortAscending; renderChapterList(); }
+    async function loadUser() {
+      try {
+        const { data, error } = await supabaseClient.auth.getUser();
+        if(error || !data.user) return window.location.href = "index.html";
+        const { data: profile } = await supabaseClient.from("profiles").select("username, role, avatar_url").eq("id", data.user.id).single();
+        document.getElementById("welcome").textContent = `مرحباً بك، ${profile?.username || "مستخدم"} 👋`;
+        if(profile?.avatar_url) document.getElementById("profileImage").src = profile.avatar_url;
+        if(["admin","owner"].includes(String(profile?.role || "").toLowerCase())){
+          document.getElementById("adminBtn").style.display = "block";
+        }
+      } catch(e){
+        console.warn(e);
+        document.getElementById("welcome").textContent = `مرحباً بك، زائر — (Supabase غير متاح حالياً).`;
+      }
+    }
+    loadUser();
 
-function toggleMenu(){
-  document.getElementById("sidebar").classList.toggle("active");
-  document.getElementById("overlay").classList.toggle("active");
-}
+    function toggleMenu(){
+      document.getElementById("sidebar").classList.toggle("active");
+      document.getElementById("overlay").classList.toggle("active");
+    }
+    function logout(){
+      if(supabaseClient?.auth?.signOut){
+        supabaseClient.auth.signOut().then(()=> location.href='index.html');
+      } else {
+        location.href='index.html';
+      }
+    }
+    function goToMembers(){ location.href='index3.html'; }
+    function goToAdmin(){ location.href='index5.html'; }
+    function showSection(id){
+      document.querySelectorAll('.section').forEach(sec=>sec.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+    function switchPanel(name){
+      document.getElementById('tabSources').classList.remove('active');
+      document.getElementById('tabExtensions').classList.remove('active');
+      document.getElementById('panelSources').classList.remove('active');
+      document.getElementById('panelExtensions').classList.remove('active');
+      if(name==='sources'){
+        document.getElementById('tabSources').classList.add('active');
+        document.getElementById('panelSources').classList.add('active');
+      } else {
+        document.getElementById('tabExtensions').classList.add('active');
+        document.getElementById('panelExtensions').classList.add('active');
+      }
+    }
 
-function logout(){
-  supabase.auth.signOut().then(()=> location.href='index.html');
-}
+    // قائمة المانجا والفصول
+    const mangaData = [
+      {
+        title: "مانجا 1",
+        cover: "images/manga1.jpg",
+        chapters: [
+          { title: "الفصل 1", link: "index8.html?chapter=1" },
+          { title: "الفصل 2", link: "index8.html?chapter=2" }
+        ]
+      },
+      {
+        title: "مانجا 2",
+        cover: "images/manga2.jpg",
+        chapters: [
+          { title: "الفصل 1", link: "index8.html?chapter=1" },
+          { title: "الفصل 2", link: "index8.html?chapter=2" },
+          { title: "الفصل 3", link: "index8.html?chapter=3" }
+        ]
+      },
+      {
+        title: "مانجا 3",
+        cover: "images/manga3.jpg",
+        chapters: [
+          { title: "الفصل 1", link: "index8.html?chapter=1" }
+        ]
+      }
+    ];
 
-function goToMembers(){ location.href='index3.html'; }
-function goToAdmin(){ location.href='index5.html'; }
-
-async function initSession(){
-  const { data:{session} } = await supabase.auth.getSession();
-  if(!session) return location.href='index.html';
-  const { data:profile } = await supabase.from("profiles").select("role").eq("id",session.user.id).single();
-  if(["admin","owner"].includes(String(profile?.role||"").toLowerCase())) document.getElementById("adminBtn").style.display='block';
-}
-
-initSession();
-loadMangaList();
-</script>
-
-</body>
-</html>
+    function renderMangaList(){
+      const grid = document.getElementById('sourcesGrid');
+      grid.innerHTML = "";
+      mangaData.forEach((manga,i)=>{
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<img src="${manga.cover}" alt="${manga.title}"><div>${manga.title}</div>`;
+        card.onclick = ()=>{
+          // عند الضغط على مانجا، عرض الفصول
+          grid.innerHTML = "";
+          manga.chapters.forEach(ch=>{
+            const chCard = document.createElement('div');
+            chCard.className = 'card';
+            chCard.textContent = ch.title;
+            chCard.onclick = ()=> window.location.href = ch.link;
+            grid.appendChild(chCard);
+          });
+          // زر العودة
