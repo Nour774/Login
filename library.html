@@ -7,35 +7,158 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     * { box-sizing: border-box; transition: 0.3s ease; }
-    body { margin: 0; font-family: "Cairo", "Tahoma", sans-serif; background: #1a1a1d; color: #f5f5f5; overflow-x: hidden; }
-    header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #0f0e14; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .menu-btn { cursor: pointer; font-size: 24px; }
+    body {
+      margin: 0;
+      font-family: "Cairo", "Tahoma", sans-serif;
+      background: #1a1a1d;
+      color: #f5f5f5;
+      overflow-x: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: #0f0e14;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .menu-btn {
+      cursor: pointer;
+      font-size: 26px;
+      color: #f5f5f5;
+      user-select: none;
+      transition: transform 0.2s ease;
+    }
+    .menu-btn:hover { transform: scale(1.1); }
+
     .profile-pic { width: 40px; height: 40px; border-radius: 50%; }
-    .sub-header { display: flex; gap: 16px; padding: 10px 20px; background: #2a2a2d; }
-    .sub-header a { color: #f5f5f5; text-decoration: none; font-weight: bold; cursor: pointer; }
+
+    .sub-header {
+      display: flex;
+      gap: 16px;
+      padding: 10px 20px;
+      background: #2a2a2d;
+    }
+    .sub-header a {
+      color: #f5f5f5;
+      text-decoration: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    .sub-header a:hover { color: #a88bff; }
+
     .hero img { width: 100%; max-height: 300px; object-fit: cover; }
+
     .content { padding: 20px; }
-    .sidebar { position: fixed; top: 0; right: -250px; width: 250px; height: 100%; background: #333; padding: 20px; transition: right 0.3s ease; z-index: 1000; }
-    .sidebar.active { right: 0; }
-    .sidebar a, .sidebar button { display: block; margin-bottom: 10px; color: #fff; background: none; border: none; font-size: 16px; cursor: pointer; text-align: right; }
-    .overlay { position: fixed; top: 0; right: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; }
-    .overlay.active { display: block; }
     .section { display: none; padding: 20px; }
     .section.active { display: block; }
 
-    /* تصميم قسم المانجا */
+    /* قسم المانجا */
     .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-    .logo div:first-child { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #a88bff, #e6c07b); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #0b0710; font-size: 18px; }
+    .logo div:first-child {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #a88bff, #e6c07b);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #0b0710;
+      font-size: 18px;
+    }
     .logo .title { font-weight: 700; font-size: 18px; }
+
     nav { display: flex; gap: 16px; margin-bottom: 10px; }
-    nav button { padding: 6px 12px; border: none; border-radius: 8px; background: transparent; color: #9b8fb3; cursor: pointer; font-weight: 700; }
+    nav button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #9b8fb3;
+      cursor: pointer;
+      font-weight: 700;
+    }
     nav button.active { color: #fff; background: rgba(168,139,255,0.12); }
     .panel { display: none; }
     .panel.active { display: block; }
     .hint { margin-top: 12px; color: #9b8fb3; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 14px; margin-top: 18px; }
-    .card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12)); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); cursor: pointer; text-align: center; }
-    .card img { width: 100%; border-radius: 8px; margin-bottom: 8px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.03);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* القائمة الجانبية */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: -280px; /* تبدأ مخفية */
+      width: 260px;
+      height: 100%;
+      background: #141417;
+      box-shadow: -3px 0 15px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      gap: 14px;
+      z-index: 2000;
+      transition: right 0.35s cubic-bezier(0.77, 0, 0.175, 1);
+    }
+    .sidebar.active {
+      right: 0;
+    }
+    .sidebar a,
+    .sidebar button {
+      background: none;
+      border: none;
+      color: #f5f5f5;
+      font-size: 16px;
+      text-align: right;
+      cursor: pointer;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+      transition: background 0.2s ease;
+    }
+    .sidebar a:hover,
+    .sidebar button:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
+    /* الخلفية المعتمة */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      opacity: 0;
+      visibility: hidden;
+      z-index: 1000;
+      transition: opacity 0.35s ease;
+    }
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
   </style>
 </head>
 <body>
@@ -74,12 +197,12 @@
     </nav>
 
     <div id="panelSources" class="panel active">
-      <div class="hint">اختر مانجا لعرض الفصول:</div>
+      <div class="hint">قائمة المصادر ستظهر هنا.</div>
       <div id="sourcesGrid" class="grid"></div>
     </div>
 
     <div id="panelExtensions" class="panel">
-      <div class="hint">قائمة الإضافات ستظهر هنا لاحقًا.</div>
+      <div class="hint">قائمة الإضافات ستظهر هنا.</div>
       <div id="extensionsGrid" class="grid"></div>
     </div>
   </div>
@@ -99,40 +222,32 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const supabaseUrl = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
-    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
 
-    async function loadUser() {
-      try {
-        const { data, error } = await supabaseClient.auth.getUser();
-        if(error || !data.user) return window.location.href = "index.html";
-        const { data: profile } = await supabaseClient.from("profiles").select("username, role, avatar_url").eq("id", data.user.id).single();
-        document.getElementById("welcome").textContent = `مرحباً بك، ${profile?.username || "مستخدم"} 👋`;
-        if(profile?.avatar_url) document.getElementById("profileImage").src = profile.avatar_url;
-        if(["admin","owner"].includes(String(profile?.role || "").toLowerCase())){
-          document.getElementById("adminBtn").style.display = "block";
-        }
-      } catch(e){
-        console.warn(e);
-        document.getElementById("welcome").textContent = `مرحباً بك، زائر — (Supabase غير متاح حالياً).`;
-      }
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
+
+    async function checkUser() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if(error || !session) return location.href='index.html';
+      const { data: profile } = await supabase.from("profiles").select("username, avatar_url, role").eq("id", session.user.id).single();
+      document.getElementById("welcome").textContent = `مرحباً بك، ${profile?.username || "مستخدم"} 👋`;
+      if(profile?.avatar_url) document.getElementById("profileImage").src = profile.avatar_url;
+      if(["admin","owner"].includes(String(profile?.role || "").toLowerCase())) document.getElementById("adminBtn").style.display='block';
     }
-    loadUser();
 
-    function toggleMenu(){
+    checkUser();
+
+    function toggleMenu() {
       document.getElementById("sidebar").classList.toggle("active");
       document.getElementById("overlay").classList.toggle("active");
     }
-    function logout(){
-      if(supabaseClient?.auth?.signOut){
-        supabaseClient.auth.signOut().then(()=> location.href='index.html');
-      } else {
-        location.href='index.html';
-      }
-    }
+    function logout() { supabase.auth.signOut().then(()=> location.href='index.html'); }
     function goToMembers(){ location.href='index3.html'; }
     function goToAdmin(){ location.href='index5.html'; }
+
     function showSection(id){
       document.querySelectorAll('.section').forEach(sec=>sec.classList.remove('active'));
       document.getElementById(id).classList.add('active');
@@ -151,49 +266,22 @@
       }
     }
 
-    // قائمة المانجا والفصول
-    const mangaData = [
-      {
-        title: "مانجا 1",
-        cover: "images/manga1.jpg",
-        chapters: [
-          { title: "الفصل 1", link: "index8.html?chapter=1" },
-          { title: "الفصل 2", link: "index8.html?chapter=2" }
-        ]
-      },
-      {
-        title: "مانجا 2",
-        cover: "images/manga2.jpg",
-        chapters: [
-          { title: "الفصل 1", link: "index8.html?chapter=1" },
-          { title: "الفصل 2", link: "index8.html?chapter=2" },
-          { title: "الفصل 3", link: "index8.html?chapter=3" }
-        ]
-      },
-      {
-        title: "مانجا 3",
-        cover: "images/manga3.jpg",
-        chapters: [
-          { title: "الفصل 1", link: "index8.html?chapter=1" }
-        ]
-      }
-    ];
-
-    function renderMangaList(){
+    // تحميل قائمة المانجا
+    async function loadMangaList() {
+      const { data, error } = await supabase.from('manga_list').select('id, title, cover_url').order('id');
+      if(error) return console.error(error);
       const grid = document.getElementById('sourcesGrid');
-      grid.innerHTML = "";
-      mangaData.forEach((manga,i)=>{
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `<img src="${manga.cover}" alt="${manga.title}"><div>${manga.title}</div>`;
-        card.onclick = ()=>{
-          // عند الضغط على مانجا، عرض الفصول
-          grid.innerHTML = "";
-          manga.chapters.forEach(ch=>{
-            const chCard = document.createElement('div');
-            chCard.className = 'card';
-            chCard.textContent = ch.title;
-            chCard.onclick = ()=> window.location.href = ch.link;
-            grid.appendChild(chCard);
-          });
-          // زر العودة
+      grid.innerHTML='';
+      (data||[]).forEach(manga=>{
+        const div=document.createElement('div');
+        div.className='card';
+        div.innerHTML=`<img src="${manga.cover_url}" style="width:100%; border-radius:12px;"><h3>${manga.title}</h3>`;
+        div.onclick=()=> location.href=`index8.html?manga_id=${manga.id}`;
+        grid.appendChild(div);
+      });
+    }
+
+    loadMangaList();
+  </script>
+</body>
+</html>
