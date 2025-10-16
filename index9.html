@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<title>قراءة الفصل</title>
+<link rel="icon" href="images/book.png" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  * { box-sizing: border-box; transition: 0.3s ease; }
+  body {
+    margin: 0;
+    font-family: "Cairo", "Tahoma", sans-serif;
+    background: radial-gradient(circle at 50% 10%, #0b0b10, #050505 90%);
+    color: #eaeaea;
+    overflow-x: hidden;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .fog {
+    position: fixed; top: 0; left: 0;
+    width: 200%; height: 200%;
+    background: url('images/fog.png') repeat;
+    opacity: 0.15;
+    animation: fogMove 120s linear infinite;
+    z-index: 0;
+    pointer-events: none;
+    transform: translate(-25%, -25%);
+  }
+  @keyframes fogMove { 0%{background-position:0 0;}50%{background-position:1000px 800px;}100%{background-position:0 0;} }
+
+  .symbols { position: fixed; top:0; left:0; width:100%; height:100%; overflow:hidden; pointer-events:none; z-index:1; }
+  .symbol { position:absolute; color: rgba(168,139,255,0.08); font-size:22px; animation:floatSymbol 30s linear infinite; user-select:none; }
+  @keyframes floatSymbol { 0%{transform:translateY(100vh) rotate(0deg);opacity:0;} 10%{opacity:1;} 90%{opacity:1;} 100%{transform:translateY(-10vh) rotate(360deg);opacity:0;} }
+
+  header {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    display:flex; justify-content:space-between; align-items:center;
+    z-index:10;
+    transition: top 0.3s;
+  }
+  .theme-toggle { cursor:pointer; font-size:20px; }
+
+  #reader { margin-top:60px; text-align:center; }
+  #reader img { width: 100%; display:block; margin:0; padding:0; }
+
+  .nav-btn { position:fixed; top:50%; transform:translateY(-50%); font-size:50px; color:#fff; background:rgba(0,0,0,0.2); padding:10px; border-radius:10px; cursor:pointer; user-select:none; z-index:10; }
+  .nav-btn:hover { background: rgba(168,139,255,0.3); }
+  #prevBtn { left:10px; }
+  #nextBtn { right:10px; }
+
+  .read-marker { text-align:center; color:#0f0; font-weight:bold; margin:15px; }
+  footer { text-align:center; padding:20px; color:#666; font-size:14px; z-index:10; position:relative; }
+
+  /* Light Theme */
+  body.light { background: radial-gradient(circle at 50% 10%, #f0f0f0, #e0e0e0 90%); color:#111; }
+  body.light .nav-btn { color:#111; background:rgba(255,255,255,0.3); }
+</style>
+</head>
+<body>
+<div class="fog"></div>
+<div class="symbols" id="symbols"></div>
+
+<header id="topHeader">
+  <div class="back-btn" onclick="history.back()">⮌ عودة</div>
+  <div class="theme-toggle" id="themeToggle">🌙</div>
+</header>
+
+<div id="reader">
+  <div id="chapterImages">جار تحميل الصفحات...</div>
+</div>
+<footer>© 2025 Manga Sanctum | Realm of Shadows & Light</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const mangaId = new URLSearchParams(window.location.search).get("manga_id");
+const chapterId = new URLSearchParams(window.location.search).get("chapter_id");
+
+let currentIndex = 0;
+let images = [];
+
+async function loadChapter() {
+  const { data, error } = await supabase.from("pages").select("image_url").eq("chapter_id", chapterId).order("id");
+  if(error || !data.length){ document.getElementById("chapterImages").innerHTML="<p style='color:#aaa'>لا توجد صفحات.</p>"; return; }
+  images = data.map(p=>p.image_url);
+  showImage(0);
+}
+
+function showImage(i){
+  const container = document.getElementById("chapterImages");
+  container.innerHTML = `<img src='${images[i]}'>`;
+  currentIndex = i;
+  document.title = `صفحة ${i+1} من ${images.length} | Manga Sanctum`;
+  prevBtn.style.display = i>0 ? 'block':'none';
+  nextBtn.style.display = i<images.length-1 ? 'block':'none';
+  if(i===images.length-1) container.innerHTML+=`<div class='read-marker'>✅ الفصل تمت قراءته</div>`;
+}
+
+const prevBtn = document.createElement('div'); prevBtn.id='prevBtn'; prevBtn.className='nav-btn'; prevBtn.innerHTML='&#10094;'; prevBtn.onclick=()=>showImage(currentIndex-1); document.body.appendChild(prevBtn);
+const nextBtn = document.createElement('div'); nextBtn.id='nextBtn'; nextBtn.className='nav-btn'; nextBtn.innerHTML='&#10095;'; nextBtn.onclick=()=>showImage(currentIndex+1); document.body.appendChild(nextBtn);
+
+// 🌞/🌙 ثيم
+const themeToggle = document.getElementById('themeToggle');
+themeToggle.onclick=()=>{
+  document.body.classList.toggle('light');
+  themeToggle.textContent = document.body.classList.contains('light')?'🌙':'🌞';
+};
+
+// شريط علوي يظهر ويختفي عند التمرير
+let lastScroll=0;
+const header = document.getElementById('topHeader');
+window.addEventListener('scroll',()=>{
+  const st = window.pageYOffset || document.documentElement.scrollTop;
+  header.style.top = st>lastScroll?'-60px':'0';
+  lastScroll = st<=0?0:st;
+});
+
+// رموز متحركة
+const SYMBOLS=["☽","✦","✶","⛧","☥","♆","卍","⚚"];
+function spawnSymbols(){
+  const c=document.getElementById('symbols');
+  for(let i=0;i<20;i++){
+    const s=document.createElement('div'); s.className='symbol';
+    s.textContent=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+    s.style.left=Math.random()*100+'%';
+    s.style.animationDelay=Math.random()*30+'s';
+    s.style.fontSize=16+Math.random()*24+'px';
+    c.appendChild(s);
+  }
+}
+spawnSymbols();
+loadChapter();
+</script>
+</body>
+</html>
