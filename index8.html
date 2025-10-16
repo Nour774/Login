@@ -2,156 +2,219 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <title>قراءة المانجا</title>
-  <link rel="icon" href="images/book.png" />
+  <title>📜 فصول المانجا</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="images/book.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * { box-sizing: border-box; transition: 0.3s ease; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      margin: 0;
-      font-family: "Cairo", "Tahoma", sans-serif;
-      background: radial-gradient(circle at 50% 10%, #0b0b10, #050505 90%);
-      color: #eaeaea;
+      font-family: "Cairo", sans-serif;
+      background: radial-gradient(circle at center, #0a0014, #000);
+      color: #eee;
       overflow-x: hidden;
       min-height: 100vh;
       position: relative;
     }
-    .fog { position: fixed; top:0; left:0; width:200%; height:200%; background:url('images/fog.png') repeat; opacity:0.15; animation:fogMove 120s linear infinite; z-index:0; pointer-events:none; transform:translate(-25%,-25%);}
-    @keyframes fogMove {0%{background-position:0 0;}50%{background-position:1000px 800px;}100%{background-position:0 0;}}
-    .symbols { position: fixed; top:0; left:0; width:100%; height:100%; overflow:hidden; pointer-events:none; z-index:1;}
-    .symbol { position:absolute; color:rgba(168,139,255,0.08); font-size:22px; animation:floatSymbol 30s linear infinite; user-select:none;}
-    @keyframes floatSymbol {0%{transform:translateY(100vh) rotate(0deg); opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{transform:translateY(-10vh) rotate(360deg); opacity:0;}}
-    header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:rgba(10,10,15,0.85); backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,0.05); position:sticky; top:0; z-index:10;}
-    h1 { font-family:"Cairo",sans-serif; letter-spacing:1px; color:#d4c3ff; text-shadow:0 0 12px #a88bff,0 0 40px #7a5fff; margin:0; }
-    .back-btn { color:#eaeaea; font-size:20px; cursor:pointer; padding:8px 14px; border-radius:8px; background:rgba(255,255,255,0.05); z-index:10; }
-    .back-btn:hover { background:rgba(255,255,255,0.12);}
-    .manga-header { position:relative; display:flex; flex-direction:column; align-items:center; text-align:center; padding:50px 20px 30px; z-index:5; }
-    .manga-header::before { content:""; position:absolute; top:0; left:0; width:100%; height:100%; background:radial-gradient(circle at center, rgba(168,139,255,0.1), transparent 70%); z-index:1; }
-    .manga-header img { width:220px; height:310px; object-fit:cover; border-radius:14px; box-shadow:0 0 50px rgba(168,139,255,0.4); z-index:2; position:relative; }
-    .manga-title { font-size:30px; font-weight:800; margin-top:16px; background:linear-gradient(90deg,#a88bff,#e6c07b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-shadow:0 0 10px rgba(168,139,255,0.5); z-index:2; position:relative; }
-    .manga-description { max-width:800px; margin-top:10px; color:#bdb3d6; font-size:16px; line-height:1.8; z-index:2; position:relative; }
-    .chapter-list { margin-top:30px; max-width:600px; margin-inline:auto; background:rgba(255,255,255,0.03); border-radius:14px; padding:12px; box-shadow:0 0 25px rgba(168,139,255,0.2); position:relative; z-index:2; }
-    .chapter { padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; color:#eaeaea; display:flex; justify-content:space-between; align-items:center; }
-    .chapter:hover { background:rgba(168,139,255,0.08); color:#fff; }
-    .chapter span { color:#a88bff; font-weight:bold; cursor:pointer; }
-    footer { text-align:center; padding:20px; color:#666; font-size:14px; z-index:10; position:relative; }
+
+    /* ضباب متحرك */
+    .fog {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 200%;
+      height: 200%;
+      background: url('images/fog.png') repeat;
+      opacity: 0.15;
+      animation: fogMove 60s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes fogMove {
+      from { transform: translateX(0) translateY(0); }
+      to { transform: translateX(-50px) translateY(-100px); }
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 2;
+      transition: top 0.4s;
+    }
+    header.hide { top: -60px; }
+    header span { font-size: 1.3em; cursor: pointer; }
+
+    .chapters {
+      position: relative;
+      z-index: 1;
+      padding: 60px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      animation: fadeIn 1s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chapter {
+      background: rgba(20, 0, 40, 0.7);
+      border: 1px solid rgba(100, 0, 255, 0.3);
+      padding: 15px 20px;
+      border-radius: 12px;
+      font-size: 1.1em;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chapter::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(120,0,255,0.15), rgba(255,255,255,0.03));
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .chapter:hover::before { opacity: 1; }
+    .chapter:hover { transform: scale(1.02); }
+
+    .chapter.read {
+      box-shadow: 0 0 20px 5px rgba(150, 0, 255, 0.4);
+      border-color: rgba(180, 0, 255, 0.6);
+    }
+
+    .chapter.read::after {
+      content: "✅";
+      position: absolute;
+      left: 15px;
+      top: 10px;
+      font-size: 1.2em;
+      color: #c38aff;
+      filter: drop-shadow(0 0 6px #c38aff);
+    }
+
+    .loading {
+      text-align: center;
+      margin-top: 100px;
+      color: #999;
+    }
   </style>
 </head>
+
 <body>
-<div class="fog"></div>
-<div class="symbols" id="symbols"></div>
+  <div class="fog"></div>
 
-<header>
-  <div class="back-btn" onclick="history.back()">⮌ عودة</div>
-  <h1>Manga Sanctum</h1>
-  <div style="width:40px"></div>
-</header>
+  <header id="header">
+    <span id="themeToggle">🌙</span>
+    <span>📖 قائمة الفصول</span>
+  </header>
 
-<div id="mangaInfo" class="manga-header">
-  <img id="cover" src="" alt="غلاف المانجا">
-  <div class="manga-title" id="title">جار التحميل...</div>
-  <div class="manga-description" id="description"></div>
-</div>
-
-<div id="chaptersSection">
-  <div class="chapter-list" id="chapterList">
-    <div style="text-align:center; padding:20px;">جار تحميل الفصول...</div>
+  <div id="chapters" class="chapters">
+    <div class="loading">جارٍ تحميل الفصول...</div>
   </div>
-</div>
 
-<footer>© 2025 Manga Sanctum | Realm of Shadows & Light</footer>
+  <script>
+    const supabaseUrl = "https://YOUR_PROJECT.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const chaptersContainer = document.getElementById("chapters");
+    let lastScroll = 0;
 
-const mangaId = new URLSearchParams(window.location.search).get("manga_id");
-const currentUser = { id: "PUT_USER_UUID_HERE" }; // ضع UUID المستخدم الحالي هنا
-
-async function loadMangaInfo() {
-  const { data: manga, error } = await supabase
-    .from("manga_list")
-    .select("title, description, cover_url")
-    .eq("id", mangaId)
-    .single();
-  if (error || !manga) return console.error(error);
-  document.getElementById("title").textContent = manga.title;
-  document.getElementById("description").textContent = manga.description || "لا يوجد وصف متاح.";
-  document.getElementById("cover").src = manga.cover_url;
-}
-
-async function loadChapters() {
-  const { data: chapters, error } = await supabase
-    .from("chapters")
-    .select("id, title, number")
-    .eq("manga_id", mangaId)
-    .order("number", { ascending:true });
-  if (error) return console.error(error);
-
-  const { data: reads } = await supabase
-    .from("chapter_reads")
-    .select("chapter_id")
-    .eq("user_id", currentUser.id);
-  const readIds = new Set(reads.map(r=>r.chapter_id));
-
-  const list = document.getElementById("chapterList");
-  list.innerHTML = "";
-  if (!chapters.length) {
-    list.innerHTML = "<div style='text-align:center; padding:20px;'>لا توجد فصول بعد.</div>";
-    return;
-  }
-
-  chapters.forEach(ch => {
-    const div = document.createElement("div");
-    div.className = "chapter";
-    div.dataset.chapterId = ch.id;
-
-    div.innerHTML = readIds.has(ch.id)
-      ? `✅ <span>الفصل ${ch.number}</span> ${ch.title || ""}`
-      : `<span>الفصل ${ch.number}</span> ${ch.title || ""}`;
-
-    // عند الضغط على الفصل يفتح index9.html
-    div.onclick = () => { window.location.href = `index9.html?manga_id=${mangaId}&chapter_id=${ch.id}`; };
-
-    // عند الضغط على العلامة ✅ أو span لتغيير حالة القراءة
-    const span = div.querySelector("span");
-    span.addEventListener("click", async (e) => {
-      e.stopPropagation(); // منع فتح الفصل عند الضغط على العلامة
-      if (readIds.has(ch.id)) {
-        await supabase.from("chapter_reads").delete().eq("user_id", currentUser.id).eq("chapter_id", ch.id);
-        readIds.delete(ch.id);
-        div.innerHTML = `<span>الفصل ${ch.number}</span> ${ch.title || ""}`;
-      } else {
-        await supabase.from("chapter_reads").insert({ user_id: currentUser.id, chapter_id: ch.id });
-        readIds.add(ch.id);
-        div.innerHTML = `✅ <span>الفصل ${ch.number}</span> ${ch.title || ""}`;
-      }
+    // إخفاء/إظهار الشريط عند التمرير
+    window.addEventListener("scroll", () => {
+      const current = window.pageYOffset;
+      const header = document.getElementById("header");
+      if (current > lastScroll) header.classList.add("hide");
+      else header.classList.remove("hide");
+      lastScroll = current;
     });
 
-    list.appendChild(div);
-  });
-}
+    // تبديل الوضع الليلي/النهاري
+    const themeToggle = document.getElementById("themeToggle");
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("light");
+      themeToggle.textContent = document.body.classList.contains("light") ? "☀️" : "🌙";
+      document.body.style.background = document.body.classList.contains("light")
+        ? "radial-gradient(circle at center, #fff, #ccc)"
+        : "radial-gradient(circle at center, #0a0014, #000)";
+      document.body.style.color = document.body.classList.contains("light") ? "#222" : "#eee";
+    });
 
-// رموز متحركة
-const SYMBOLS = ["☽","✦","✶","⛧","☥","♆","卍","⚚"];
-function spawnSymbols() {
-  const c = document.getElementById("symbols");
-  for(let i=0;i<20;i++){
-    const s = document.createElement("div");
-    s.className="symbol";
-    s.textContent=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
-    s.style.left=Math.random()*100+"%";
-    s.style.animationDelay=Math.random()*30+"s";
-    s.style.fontSize=16+Math.random()*24+"px";
-    c.appendChild(s);
-  }
-}
+    async function loadChapters() {
+      const mangaId = new URLSearchParams(window.location.search).get("manga_id");
+      if (!mangaId) {
+        chaptersContainer.innerHTML = "<p>❌ لم يتم تحديد المانجا.</p>";
+        return;
+      }
 
-spawnSymbols();
-loadMangaInfo();
-loadChapters();
-</script>
+      const { data: user } = await supabase.auth.getUser();
+      const userId = user?.user?.id;
+
+      // تحميل الفصول
+      const { data: chapters, error } = await supabase
+        .from("chapters")
+        .select("*")
+        .eq("manga_id", mangaId)
+        .order("number", { ascending: true });
+
+      if (error) {
+        chaptersContainer.innerHTML = "<p>⚠️ خطأ في تحميل الفصول.</p>";
+        return;
+      }
+
+      // تحميل حالة القراءة للمستخدم
+      let readChapters = [];
+      if (userId) {
+        const { data: reads } = await supabase
+          .from("chapter_reads")
+          .select("chapter_id")
+          .eq("user_id", userId);
+        readChapters = reads ? reads.map(r => r.chapter_id) : [];
+      }
+
+      chaptersContainer.innerHTML = "";
+
+      chapters.forEach(ch => {
+        const div = document.createElement("div");
+        div.className = "chapter";
+        div.textContent = ch.title || `الفصل ${ch.number}`;
+        if (readChapters.includes(ch.id)) div.classList.add("read");
+
+        div.addEventListener("click", async () => {
+          if (!userId) {
+            window.location.href = `index9.html?chapter_id=${ch.id}`;
+            return;
+          }
+
+          if (div.classList.contains("read")) {
+            await supabase.from("chapter_reads").delete().match({ user_id: userId, chapter_id: ch.id });
+            div.classList.remove("read");
+          } else {
+            await supabase.from("chapter_reads").insert([{ user_id: userId, chapter_id: ch.id }]);
+            div.classList.add("read");
+            setTimeout(() => {
+              window.location.href = `index9.html?chapter_id=${ch.id}`;
+            }, 300);
+          }
+        });
+
+        chaptersContainer.appendChild(div);
+      });
+    }
+
+    loadChapters();
+  </script>
 </body>
 </html>
