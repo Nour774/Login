@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📖 قارئ الفصل</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@500;700&display=swap');
+
+    :root {
+      --bg-main: radial-gradient(circle at center, #111 40%, #000);
+      --text-color: #eee;
+      --accent: #a00;
+      --shadow: #400;
+      --highlight: #ffdddd;
+      --card-bg: #181818;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Cairo', sans-serif;
+      background: var(--bg-main);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 10px;
+    }
+
+    h2 {
+      text-align: center;
+      color: var(--highlight);
+      text-shadow: 0 0 8px var(--accent);
+      margin: 20px 0;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .nav button {
+      background: linear-gradient(90deg, #800, #b00);
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--shadow);
+      transition: 0.25s;
+    }
+
+    .nav button:hover {
+      background: linear-gradient(90deg, #b00, #e00);
+      transform: scale(1.05);
+    }
+
+    .page-container {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    img.page {
+      width: 100%;
+      display: block;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      box-shadow: 0 0 12px var(--accent);
+    }
+
+    .loading {
+      color: var(--highlight);
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: 50px;
+    }
+
+    .error {
+      color: #f55;
+      text-align: center;
+      font-size: 1.1rem;
+      margin-top: 40px;
+    }
+
+    /* شريط التنقل السفلي */
+    .chapter-nav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 25px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      background: #222;
+      color: #fff;
+      border: 1px solid #a00;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--shadow);
+      transition: 0.25s;
+    }
+
+    select:hover {
+      border-color: #e00;
+    }
+  </style>
+</head>
+<body>
+  <h2 id="chapterTitle">جار التحميل...</h2>
+
+  <div class="nav">
+    <button id="backBtn">← الفصول</button>
+    <button id="prevBtn" disabled>⬅️ السابق</button>
+    <button id="nextBtn" disabled>التالي ➡️</button>
+  </div>
+
+  <div id="pages" class="page-container"></div>
+  <div id="loading" class="loading">جارٍ تحميل الصفحات...</div>
+  <div id="error" class="error"></div>
+
+  <!-- 🔽 شريط التنقل السفلي -->
+  <div class="chapter-nav">
+    <label for="chapterSelect">انتقل إلى فصل:</label>
+    <select id="chapterSelect"></select>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const pagesDiv = document.getElementById("pages");
+    const titleEl = document.getElementById("chapterTitle");
+    const loadingEl = document.getElementById("loading");
+    const errorEl = document.getElementById("error");
+    const backBtn = document.getElementById("backBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const selectEl = document.getElementById("chapterSelect");
+
+    // استخراج معرف الفصل من الرابط
+    const urlParams = new URLSearchParams(window.location.search);
+    const chapterId = parseInt(urlParams.get("chapter_id")) || null;
+
+    // الفصول المحفوظة من الصفحة السابقة
+    let chapters = JSON.parse(localStorage.getItem("chapters") || "[]");
+    let currentIndex = chapters.findIndex(ch => ch.id === chapterId);
+
+    async function loadChapter() {
+      if (!chapterId) {
+        errorEl.textContent = "لم يتم العثور على معرف الفصل.";
+        loadingEl.style.display = "none";
+        return;
+      }
+
+      const chapter = chapters[currentIndex] || {};
+      titleEl.textContent = `📖 الفصل ${chapter.number || ""} — ${chapter.title || ""}`;
+
+      const { data, error } = await supabase
+        .from("pages")
+        .select("page_number, image_url")
+        .eq("chapter_id", chapterId)
+        .order("page_number", { ascending: true });
+
+      loadingEl.style.display = "none";
+
+      if (error) {
+        errorEl.textContent = "حدث خطأ أثناء تحميل الصفحات.";
+        console.error(error);
+        return;
+      }
+
+      pagesDiv.innerHTML = "";
+      (data || []).forEach(p => {
+        const img = document.createElement("img");
+        img.src = p.image_url;
+        img.className = "page";
+        pagesDiv.appendChild(img);
+      });
+
+      // تفعيل الأزرار
+      prevBtn.disabled = currentIndex <= 0;
+      nextBtn.disabled = currentIndex >= chapters.length - 1;
+
+      // تعبئة القائمة المنسدلة
+      selectEl.innerHTML = "";
+      chapters.forEach((ch, idx) => {
+        const opt = document.createElement("option");
+        opt.value = ch.id;
+        opt.textContent = `الفصل ${ch.number}: ${ch.title}`;
+        if (idx === currentIndex) opt.selected = true;
+        selectEl.appendChild(opt);
+      });
+    }
+
+    // تنقل الأزرار
+    backBtn.onclick = () => history.back();
+    prevBtn.onclick = () => goToChapter(currentIndex - 1);
+    nextBtn.onclick = () => goToChapter(currentIndex + 1);
+    selectEl.onchange = () => {
+      const newId = parseInt(selectEl.value);
+      const idx = chapters.findIndex(c => c.id === newId);
+      goToChapter(idx);
+    };
+
+    function goToChapter(index) {
+      if (index < 0 || index >= chapters.length) return;
+      const nextChapter = chapters[index];
+      window.location.href = `index8.html?chapter_id=${nextChapter.id}`;
+    }
+
+    loadChapter();
+  </script>
+</body>
+</html>
