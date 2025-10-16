@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📜 قارئ المانجا الغامض</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Amiri&family=Cairo:wght@500;700&display=swap');
+
+    body {
+      margin: 0;
+      font-family: 'Cairo', sans-serif;
+      background: radial-gradient(circle at center, #111 40%, #000);
+      color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 10px;
+    }
+
+    #content {
+      width: 100%;
+      max-width: 1000px;
+      padding: 10px;
+    }
+
+    /* شبكة عرض المانجا */
+    .manga-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+    }
+
+    .manga-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(30, 30, 30, 0.9);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: 0.25s;
+      box-shadow: 0 0 15px #400 inset;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .manga-item:hover {
+      background: #222;
+      box-shadow: 0 0 20px #800 inset;
+      transform: translateY(-4px);
+    }
+
+    .manga-cover {
+      width: 100%;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+      border-radius: 8px 8px 0 0;
+      box-shadow: 0 0 12px #c00;
+    }
+
+    .manga-item h3 {
+      font-size: 1rem;
+      margin: 10px 0;
+      color: #ffdddd;
+      text-shadow: 0 0 6px #c00;
+      padding: 0 5px;
+    }
+
+    /* عناصر الفصول */
+    .chapter-item {
+      padding: 10px;
+      margin: 6px 0;
+      background: rgba(40, 40, 40, 0.9);
+      border-right: 4px solid #a00;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 1.1rem;
+    }
+
+    .chapter-item:hover {
+      background: #333;
+    }
+
+    /* أزرار */
+    .back-btn, .nav-btn, .sort-btn {
+      padding: 10px 18px;
+      margin: 6px;
+      font-size: 1rem;
+      background: linear-gradient(90deg, #800, #b00);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 0 10px #600;
+      transition: 0.25s;
+    }
+
+    .back-btn:hover, .nav-btn:hover, .sort-btn:hover {
+      background: linear-gradient(90deg, #b00, #e00);
+      transform: scale(1.05);
+    }
+
+    /* صفحات الفصول */
+    img.manga-page {
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    /* عناوين */
+    h2, h3 {
+      color: #ffdddd;
+      text-shadow: 0 0 8px #c00;
+    }
+
+    /* الهواتف */
+    @media (max-width: 768px) {
+      body { padding: 5px; }
+      .manga-item h3 { font-size: 0.9rem; }
+      .chapter-item { font-size: 0.95rem; }
+      .back-btn, .nav-btn, .sort-btn {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .manga-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="content">جارٍ التحميل...</div>
+
+  <script>
+    const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentManga = null;
+    let currentChapters = [];
+    let sortAscending = true;
+    let currentChapterIndex = 0;
+    const content = document.getElementById('content');
+
+    function getNum(str = "") {
+      const match = String(str).match(/\d+/);
+      return match ? parseInt(match[0]) : 0;
+    }
+
+    async function loadMangaList() {
+      const { data, error } = await supabase
+        .from('manga_list')
+        .select('id, title, cover_url')
+        .order('id', { ascending: true });
+      if (error) return console.error(error);
+
+      content.innerHTML = '<h2>📜 قائمة المانجا</h2><div class="manga-grid"></div>';
+      const grid = content.querySelector('.manga-grid');
+
+      (data || []).forEach(manga => {
+        const div = document.createElement('div');
+        div.className = 'manga-item';
+        div.innerHTML = `
+          <img src="${manga.cover_url || ''}" class="manga-cover">
+          <h3>${manga.title}</h3>
+        `;
+        div.onclick = () => loadChapters(manga);
+        grid.appendChild(div);
+      });
+    }
+
+    async function loadChapters(manga) {
+      currentManga = manga;
+      const { data, error } = await supabase
+        .from('chapters')
+        .select('id, title, number')
+        .eq('manga_id', manga.id)
+        .order('number', { ascending: true });
+      if (error) return console.error(error);
+
+      currentChapters = data || [];
+      renderChapterList();
+    }
+
+    function renderChapterList() {
+      const chapters = sortAscending ? currentChapters : [...currentChapters].reverse();
+      content.innerHTML = `
+        <button class="back-btn" onclick="loadMangaList()">← عودة</button>
+        <h2>${currentManga.title}</h2>
+        <button class="sort-btn" onclick="toggleSortOrder()">الترتيب: ${sortAscending ? 'تصاعدي ↑' : 'تنازلي ↓'}</button>
+      `;
+      chapters.forEach((ch, i) => {
+        const div = document.createElement('div');
+        div.className = 'chapter-item';
+        div.textContent = `الفصل ${ch.number} — ${ch.title || ''}`;
+        div.onclick = () => loadChapterPages(i);
+        content.appendChild(div);
+      });
+    }
+
+    function toggleSortOrder() {
+      sortAscending = !sortAscending;
+      renderChapterList();
+    }
+
+    async function loadChapterPages(index) {
+      currentChapterIndex = index;
+      const chapter = currentChapters[index];
+      const { data: pages, error } = await supabase
+        .from('pages')
+        .select('page_number, image_url')
+        .eq('chapter_id', chapter.id);
+      if (error) return console.error(error);
+
+      const sortedPages = (pages || [])
+        .filter(p => p.image_url)
+        .sort((a, b) => getNum(a.image_url) - getNum(b.image_url));
+
+      content.innerHTML = `
+        <button class="back-btn" onclick="renderChapterList()">← الفصول</button>
+        <h2>📖 الفصل ${chapter.number} — ${chapter.title || ''}</h2>
+      `;
+
+      // عرض الصفحات دون أي فراغ بين الصور
+      sortedPages.forEach(p => {
+        const img = document.createElement('img');
+        img.src = p.image_url;
+        img.className = 'manga-page';
+        content.appendChild(img);
+      });
+
+      // أزرار التنقل
+      const navDiv = document.createElement('div');
+      navDiv.style.textAlign = "center";
+      navDiv.innerHTML = `
+        ${index > 0 ? `<button class="nav-btn" onclick="loadChapterPages(${index - 1})">⬅️ السابق</button>` : ''}
+        ${index < currentChapters.length - 1 ? `<button class="nav-btn" onclick="loadChapterPages(${index + 1})">التالي ➡️</button>` : ''}
+      `;
+      content.appendChild(navDiv);
+    }
+
+    loadMangaList();
+  </script>
+</body>
+</html>
