@@ -6,7 +6,7 @@
 <link rel="icon" href="images/book.png" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  * { box-sizing: border-box; transition: 0.3s ease; }
+  * { box-sizing: border-box; transition: 0.3s ease; scroll-behavior: smooth; }
   body {
     margin: 0;
     font-family: "Cairo", "Tahoma", sans-serif;
@@ -58,32 +58,17 @@
 
   #reader {
     margin-top:80px;
-    text-align:center;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   #reader img {
-    width: 100%;
+    width: 90%;
+    max-width:800px;
     display:block;
-    margin:0 auto;
-    padding:0;
+    margin:15px 0;
   }
-
-  .nav-btn {
-    position:fixed;
-    top:50%;
-    transform:translateY(-50%);
-    font-size:50px;
-    color:#fff;
-    background:rgba(0,0,0,0.2);
-    padding:10px;
-    border-radius:10px;
-    cursor:pointer;
-    user-select:none;
-    z-index:10;
-  }
-  .nav-btn:hover { background: rgba(168,139,255,0.3); }
-  #prevBtn { left:10px; }
-  #nextBtn { right:10px; }
 
   .read-marker {
     text-align:center;
@@ -141,7 +126,6 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const mangaId = new URLSearchParams(window.location.search).get("manga_id");
 const chapterId = new URLSearchParams(window.location.search).get("chapter_id");
 
-let currentIndex = 0;
 let images = [];
 let chapters = [];
 let currentChapterIndex = -1;
@@ -171,60 +155,47 @@ async function loadChapter() {
   images = data.map(p=>p.image_url);
   const chapterTitle = chapters[currentChapterIndex]?.title || "فصل غير معروف";
   document.getElementById("chapterTitle").textContent = `الفصل ${currentChapterIndex+1} - ${chapterTitle}`;
-  showImage(0);
+
+  showChapterVertically();
 }
 
-function showImage(i){
+// عرض جميع الصفحات عموديًا
+function showChapterVertically(){
   const container = document.getElementById("chapterImages");
-  container.innerHTML = `<img src='${images[i]}'>`;
-  currentIndex = i;
-  document.title = `صفحة ${i+1} من ${images.length}`;
-  prevBtn.style.display = i>0 ? 'block':'none';
-  nextBtn.style.display = i<images.length-1 ? 'block':'none';
+  container.innerHTML = '';
+  images.forEach((imgUrl, idx)=>{
+    const img = document.createElement('img');
+    img.src = imgUrl;
+    container.appendChild(img);
+  });
 
-  // آخر صفحة: علامة ✅ وأزرار الفصل التالي/السابق
-  if(i === images.length-1){
-    container.innerHTML += `<div class='read-marker'>✅ الفصل تمت قراءته</div>`;
-    addChapterNavEnd();
-  }
-}
+  // إضافة العلامة بعد آخر صورة
+  container.innerHTML += `<div class='read-marker'>✅ الفصل تمت قراءته</div>`;
 
-// أزرار التنقل بين الصفحات
-const prevBtn = document.createElement('div');
-prevBtn.id='prevBtn';
-prevBtn.className='nav-btn';
-prevBtn.innerHTML='&#10094;';
-prevBtn.onclick=()=>showImage(currentIndex-1);
-document.body.appendChild(prevBtn);
-
-const nextBtn = document.createElement('div');
-nextBtn.id='nextBtn';
-nextBtn.className='nav-btn';
-nextBtn.innerHTML='&#10095;';
-nextBtn.onclick=()=>showImage(currentIndex+1);
-document.body.appendChild(nextBtn);
-
-// أزرار الفصل في نهاية الصفحة
-function addChapterNavEnd(){
-  const container = document.getElementById("chapterImages");
+  // أزرار التنقل بين الفصول
   const navDiv = document.createElement('div');
-  navDiv.className = 'chapter-nav-end';
-
+  navDiv.className='chapter-nav-end';
   if(currentChapterIndex > 0){
     const prevChap = document.createElement('div');
-    prevChap.textContent = "الفصل السابق ⮌";
-    prevChap.onclick=()=>window.location.href=`read.html?manga_id=${mangaId}&chapter_id=${chapters[currentChapterIndex-1].id}`;
+    prevChap.textContent="الفصل السابق ⮌";
+    prevChap.onclick=()=>scrollToTopAndLoadChapter(chapters[currentChapterIndex-1].id);
     navDiv.appendChild(prevChap);
   }
-
   if(currentChapterIndex < chapters.length-1){
     const nextChap = document.createElement('div');
-    nextChap.textContent = "⮎ الفصل التالي";
-    nextChap.onclick=()=>window.location.href=`read.html?manga_id=${mangaId}&chapter_id=${chapters[currentChapterIndex+1].id}`;
+    nextChap.textContent="⮎ الفصل التالي";
+    nextChap.onclick=()=>scrollToTopAndLoadChapter(chapters[currentChapterIndex+1].id);
     navDiv.appendChild(nextChap);
   }
-
   container.appendChild(navDiv);
+}
+
+// تمرير سلس عند الانتقال لفصل آخر
+function scrollToTopAndLoadChapter(newChapterId){
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>{
+    window.location.href=`read.html?manga_id=${mangaId}&chapter_id=${newChapterId}`;
+  },500);
 }
 
 // رموز متحركة
