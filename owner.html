@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>لوحة إدارة المانجا — متقدّم</title>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root{
+    --bg: #0f0f12;
+    --card: #131316;
+    --muted: #9aa0b4;
+    --accent: #a88bff;
+    --accent-2: #ffd54a;
+    --danger: #e56565;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Cairo',sans-serif;background:linear-gradient(180deg,#0b0b0d 0%, #0f0f12 100%);color:#eef2ff;min-height:100vh;padding:18px}
+  .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
+  header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  h1{margin:0;font-size:1.1rem;color:var(--accent)}
+  p.small{margin:0;color:var(--muted);font-size:0.9rem}
+  .panel{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 30px rgba(0,0,0,.6)}
+  label{display:block;font-size:0.95rem;margin-top:10px;color:var(--muted)}
+  input[type="text"], input[type="number"], select, input[type="file"], textarea{
+    width:100%;padding:10px;margin-top:6px;border-radius:8px;border:0;background:#0d0d0f;color:#eef2ff;font-size:0.95rem;
+  }
+  button{background:var(--accent);color:#071126;border:0;padding:10px;border-radius:8px;cursor:pointer;margin-top:10px}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+  button.small-btn{padding:6px 8px;border-radius:8px;border:0;background:#1a1a1f;color:#fff;cursor:pointer}
+  button.danger{background:var(--danger);color:#fff}
+  .list{max-height:68vh;overflow:auto;padding-right:6px}
+  .manga-row{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.06));margin-bottom:10px}
+  .manga-row img{width:64px;height:96px;object-fit:cover;border-radius:6px;flex-shrink:0}
+  .manga-info{flex:1;min-width:0}
+  .manga-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row-actions{display:flex;gap:8px;align-items:center}
+  .muted{color:var(--muted);font-size:0.9rem}
+  hr{border:0;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0}
+
+  /* more menu */
+  .more-btn{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:14px}
+  .menu {position:relative}
+  .menu .dropdown {position:absolute;right:0;top:26px;background:#0b0b0e;border:1px solid rgba(255,255,255,0.03);padding:6px;border-radius:8px;display:none;min-width:160px;z-index:50}
+  .menu .dropdown.show{display:block}
+  .dropdown button{display:block;width:100%;text-align:right;padding:8px;border-radius:6px;background:transparent;border:0;color:#eef2ff}
+
+  /* modals */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(2,3,6,0.6);display:none;align-items:center;justify-content:center;z-index:10000}
+  .modal{background:var(--card);padding:18px;border-radius:10px;max-width:720px;width:94%;max-height:90vh;overflow:auto}
+  .modal.show{display:block}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .close-x{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:18px}
+
+  /* grid responsive fix: ensure items don't grow too large */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 200px));
+    gap: 14px;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  @media (max-width:980px){.wrap{grid-template-columns:1fr}}
+  @media (max-width:600px){
+    .grid{grid-template-columns:repeat(3,1fr) !important}
+  }
+
+  .card { background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.06));padding:10px;border-radius:10px;text-align:center }
+  .card img{width:100%;height:220px;object-fit:cover;border-radius:8px}
+  .flex{display:flex;gap:12px;align-items:center}
+  .muted-sm{color:var(--muted);font-size:0.85rem}
+
+  /* helper */
+  .inline-input{display:flex;gap:8px;align-items:center}
+  .tag{display:inline-block;background:rgba(168,139,255,0.12);color:var(--accent);padding:4px 8px;border-radius:6px;font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>لوحة إدارة المانجا — المتقدم</h1>
+      <p class="small">إدارة المانجا، الفصول، الصور، وتعديل البيانات — التكامل مع read.html</p>
+    </div>
+    <div class="muted">اتصل بـ Supabase عبر المفاتيح أدناه</div>
+  </header>
+
+  <!-- القائمة الرئيسية -->
+  <section class="panel" id="left-panel">
+    <h2 style="margin:0 0 8px 0;color:var(--accent)">قائمة الأعمال</h2>
+
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <input id="searchInput" type="text" placeholder="ابحث باسم المانجا أو الوصف..." oninput="filterList()" />
+      <button class="ghost" onclick="loadMangaList()">تحديث</button>
+      <button class="ghost" onclick="openAddMangaModal()">+ مانجا جديدة</button>
+    </div>
+
+    <div class="list panel" id="mangaList" style="padding:8px 6px;background:transparent"></div>
+  </section>
+
+  <!-- لوحة الإعدادات / الإجراءات السريعة -->
+  <aside class="panel" id="right-panel">
+    <h3 style="margin:0 0 10px 0;color:var(--accent)">إضافة فصل سريع</h3>
+
+    <label>اختر مانجا</label>
+    <select id="selectMangaQuick"></select>
+
+    <label>رقم الفصل</label>
+    <input type="number" id="quickChapterNumber" min="1" placeholder="1">
+
+    <label>عنوان الفصل (اختياري)</label>
+    <input type="text" id="quickChapterTitle" placeholder="مثلاً: الفصل الأول">
+
+    <label>اسم المترجم / الفريق (اختياري)</label>
+    <input type="text" id="quickTranslator" placeholder="مثلاً: فريق الترجمة">
+
+    <label>اختر صور الفصل (اختياري)</label>
+    <input type="file" id="quickChapterFiles" webkitdirectory directory multiple accept="image/*">
+
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button onclick="handleQuickAddChapter()">رفع وحفظ سريع</button>
+      <button class="ghost" onclick="openManageMangaModal()">إدارة المانجا</button>
+    </div>
+
+    <hr>
+
+    <div class="muted-sm">معلومات: سيتم رفع الملفات إلى Bucket <strong>manga</strong> داخل مجلدات <code>covers/</code> و <code>chapters/{mangaId}/{chapterId}/</code>. التعديلات تحفظ مباشرة في قاعدة البيانات.</div>
+  </aside>
+</div>
+
+<!-- Modals -->
+<div id="modalBackdrop" class="modal-backdrop" onclick="closeModal(event)">
+  <!-- Add/Edit Manga Modal -->
+  <div id="mangaModal" class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <strong id="mangaModalTitle">إضافة مانجا جديدة</strong>
+      <button class="close-x" onclick="closeAllModals()">✕</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <label>عنوان المانجا</label>
+      <input type="text" id="modalMangaTitle">
+
+      <label>وصف</label>
+      <textarea id="modalMangaDesc" rows="3"></textarea>
+
+      <label>غلاف (اختياري - ارفع لتغييره)</label>
+      <input type="file" id="modalMangaCover" accept="image/*">
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="modalSaveManga" onclick="saveMangaFromModal()">حفظ</button>
+        <button class="ghost" onclick="closeAllModals()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chapters Modal (list + search + edit) -->
+  <div id="chaptersModal" class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <strong id="chaptersModalTitle">فصول — </strong>
+      <button class="close-x" onclick="closeAllModals()">✕</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="chapterSearch" placeholder="ابحث برقم الفصل أو بالعنوان أو بالمترجم..." oninput="filterChapters()" style="flex:1">
+        <button class="ghost" onclick="openAddChapterModal()">+ فصل جديد</button>
+      </div>
+
+      <div id="chaptersList" style="margin-top:12px;max-height:56vh;overflow:auto"></div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Chapter Modal -->
+  <div id="chapterModal" class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <strong id="chapterModalTitle">إضافة فصل</strong>
+      <button class="close-x" onclick="closeAllModals()">✕</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <label>اختر مانجا</label>
+      <select id="modalSelectManga"></select>
+
+      <label>رقم الفصل</label>
+      <input type="number" id="modalChapterNumber" min="1">
+
+      <label>عنوان الفصل</label>
+      <input type="text" id="modalChapterTitle">
+
+      <label>المترجم / الفريق</label>
+      <input type="text" id="modalChapterTranslator">
+
+      <label>اختيار صور الفصل (اختر مجلد أو ملفات متعددة)</label>
+      <input type="file" id="modalChapterFiles" webkitdirectory directory multiple accept="image/*">
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="modalSaveChapter" onclick="saveChapterFromModal()">حفظ الفصل</button>
+        <button class="ghost" onclick="closeAllModals()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Delete Modal -->
+  <div id="confirmModal" class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <strong id="confirmTitle">تأكيد</strong>
+      <button class="close-x" onclick="closeAllModals()">✕</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <p id="confirmMessage">هل أنت متأكد؟</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="confirmYes" class="danger" onclick="confirmYes()">نعم، احذف</button>
+        <button class="ghost" onclick="closeAllModals()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========== إعداد Supabase ========== */
+const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+const BUCKET = 'manga';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ========== حالة الواجهة ========== */
+let MANGA = [];
+let filtered = [];
+let currentMangaForChapters = null;
+let chaptersCache = []; // chapters for the opened manga
+let pendingDelete = null; // {type:'manga'|'chapter', id, extra}
+
+/* ========== مساعدة URL عام للصور ========== */
+function getPublicUrl(path){
+  try{
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return data?.publicUrl || '';
+  }catch(e){ console.warn(e); return ''; }
+}
+
+/* ========== تحميل قائمة المانجا ========== */
+async function loadMangaList(){
+  const { data, error } = await supabase.from('manga_list').select('id,title,description,cover_url,created_at').order('id',{ascending:true});
+  if(error){ console.error(error); alert('خطأ في جلب المانجا'); return; }
+  MANGA = data || [];
+  filtered = [...MANGA];
+  renderMangaList();
+  populateSelects();
+}
+
+/* ========== عرض القائمة ========== */
+function renderMangaList(){
+  const container = document.getElementById('mangaList');
+  container.innerHTML = '';
+  if(filtered.length === 0){ container.innerHTML = '<div class="muted">لا توجد أعمال.</div>'; return; }
+
+  filtered.forEach(m=>{
+    const row = document.createElement('div'); row.className = 'manga-row';
+    const img = document.createElement('img'); img.src = m.cover_url || 'images/imag2.jpg'; img.alt = m.title;
+    const info = document.createElement('div'); info.className='manga-info';
+    info.innerHTML = `<div class="manga-title" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</div>
+      <div class="muted" style="font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(m.description||'')}</div>
+      <div class="muted" style="font-size:0.8rem">ID: ${m.id} — ${new Date(m.created_at).toLocaleString()}</div>`;
+
+    const actions = document.createElement('div'); actions.className='row-actions';
+
+    // View chapters
+    const btnOpen = document.createElement('button'); btnOpen.className='small-btn'; btnOpen.textContent='الفصول';
+    btnOpen.onclick = ()=>openChapters(m);
+
+    // More menu
+    const menuWrap = document.createElement('div'); menuWrap.className='menu';
+    const moreBtn = document.createElement('button'); moreBtn.className='more-btn'; moreBtn.textContent='⋯';
+    moreBtn.onclick = (e)=> { e.stopPropagation(); toggleMenu(menuWrap); };
+    const dropdown = document.createElement('div'); dropdown.className='dropdown';
+    dropdown.innerHTML = `
+      <button onclick="openEditMangaModal(${m.id})">✏️ تعديل المانجا</button>
+      <button onclick="openManageCoverModal(${m.id})">🖼️ تغيير الغلاف</button>
+      <button onclick="openChaptersById(${m.id})">📚 إدارة الفصول</button>
+      <button onclick="window.open('read.html?manga=${m.id}','_blank')">🔗 افتح كقارئ (المانجا)</button>
+      <button style="color:var(--danger)" onclick="promptDelete('manga', ${m.id})">🗑️ حذف مانجا</button>
+    `;
+    menuWrap.appendChild(moreBtn); menuWrap.appendChild(dropdown);
+
+    // Open in reader (if want specific chapter later)
+    const openReaderBtn = document.createElement('button'); openReaderBtn.className='small-btn'; openReaderBtn.textContent='قارئ';
+    openReaderBtn.onclick = ()=> window.open(`read.html?manga=${m.id}`,'_blank');
+
+    actions.appendChild(btnOpen);
+    actions.appendChild(openReaderBtn);
+    actions.appendChild(menuWrap);
+
+    row.appendChild(img); row.appendChild(info); row.appendChild(actions);
+    container.appendChild(row);
+  });
+}
+
+/* ========== فلترة بحث في القائمة الرئيسية ========== */
+function filterList(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  filtered = MANGA.filter(m => m.title.toLowerCase().includes(q) || (m.description||'').toLowerCase().includes(q));
+  renderMangaList();
+}
+
+/* ========== مساعدة لتعبئة القوائم select ========== */
+function populateSelects(){
+  const sel = document.getElementById('selectMangaQuick');
+  const modalSel = document.getElementById('modalSelectManga');
+  const selForChapter = document.getElementById('selectMangaQuick');
+  sel.innerHTML = '';
+  modalSel.innerHTML = '';
+  MANGA.forEach(m => {
+    sel.innerHTML += `<option value="${m.id}">${escapeHtml(m.title)} (ID:${m.id})</option>`;
+    modalSel.innerHTML += `<option value="${m.id}">${escapeHtml(m.title)} (ID:${m.id})</option>`;
+  });
+}
+
+/* ========== فتح فصول مانجا (modal) ========== */
+async function openChapters(manga){
+  currentMangaForChapters = manga;
+  document.getElementById('chaptersModalTitle').textContent = `فصول — ${manga.title}`;
+  document.getElementById('chapterSearch').value = '';
+  await loadChaptersForManga(manga.id);
+  showModal('chaptersModal');
+}
+
+/* بديل: افتح الإدارة لفئة مانجا حسب id */
+async function openChaptersById(mangaId){
+  const m = MANGA.find(x=>x.id===mangaId);
+  if(!m) return alert('المانجا غير موجودة في الذاكرة، حدّث القائمة أولاً.');
+  openChapters(m);
+}
+
+/* ========== تحميل فصول المانجا ========== */
+async function loadChaptersForManga(mangaId){
+  const { data, error } = await supabase.from('chapters').select('id,manga_id,number,title,translator,created_at').eq('manga_id', mangaId).order('number',{ascending:true});
+  if(error){ console.error(error); alert('خطأ في جلب الفصول'); return; }
+  chaptersCache = data || [];
+  renderChaptersList(chaptersCache);
+}
+
+/* ========== عرض قائمة الفصول مع أزرار تعديل/حذف/فتح بالقارئ ======== */
+function renderChaptersList(list){
+  const container = document.getElementById('chaptersList');
+  container.innerHTML = '';
+  if(!list || list.length===0){ container.innerHTML = '<div class="muted">لا توجد فصول حتى الآن.</div>'; return; }
+  list.forEach(ch=>{
+    const row = document.createElement('div'); row.className='manga-row';
+    row.style.alignItems='flex-start';
+    const info = document.createElement('div'); info.style.flex='1';
+    info.innerHTML = `<div style="font-weight:700">الفصل ${ch.number} — ${escapeHtml(ch.title||'بدون عنوان')}</div>
+      <div class="muted" style="font-size:0.86rem">المترجم: ${escapeHtml(ch.translator||'—')} — ID:${ch.id} — ${new Date(ch.created_at).toLocaleString()}</div>`;
+    const actions = document.createElement('div'); actions.className='row-actions';
+    const viewBtn = document.createElement('button'); viewBtn.className='small-btn'; viewBtn.textContent='فتح بالقارئ';
+    viewBtn.onclick = ()=> window.open(`read.html?chapter=${ch.id}`,'_blank');
+
+    const editBtn = document.createElement('button'); editBtn.className='small-btn'; editBtn.textContent='تعديل';
+    editBtn.onclick = ()=> openEditChapterModal(ch);
+
+    const delBtn = document.createElement('button'); delBtn.className='small-btn danger'; delBtn.textContent='حذف';
+    delBtn.onclick = ()=> promptDelete('chapter', ch.id, {mangaId:ch.manga_id});
+
+    actions.appendChild(viewBtn); actions.appendChild(editBtn); actions.appendChild(delBtn);
+
+    row.appendChild(info); row.appendChild(actions);
+    container.appendChild(row);
+  });
+}
+
+/* ========== فلترة بحث داخل الفصول (رقم/عنوان/مترجم) ========== */
+function filterChapters(){
+  const q = document.getElementById('chapterSearch').value.trim().toLowerCase();
+  const filteredCh = chaptersCache.filter(c => 
+    String(c.number).includes(q) ||
+    (c.title||'').toLowerCase().includes(q) ||
+    (c.translator||'').toLowerCase().includes(q)
+  );
+  renderChaptersList(filteredCh);
+}
+
+/* ========== Quick Add Chapter (اللوحة اليمنى) ========== */
+async function handleQuickAddChapter(){
+  const manga_id = parseInt(document.getElementById('selectMangaQuick').value,10);
+  const number = parseInt(document.getElementById('quickChapterNumber').value,10);
+  const title = document.getElementById('quickChapterTitle').value.trim();
+  const translator = document.getElementById('quickTranslator').value.trim();
+  const files = Array.from(document.getElementById('quickChapterFiles').files || []);
+  if(!manga_id || !number) return alert('اختر مانجا وأدخل رقم الفصل.');
+
+  try{
+    // انشاء الفصل في DB
+    const { data: chData, error: chErr } = await supabase.from('chapters')
+      .insert([{ manga_id, number, title, translator, folder_path: `chapters/${manga_id}/${number}/` }])
+      .select('id').single();
+    if(chErr) throw chErr;
+    const chapter_id = chData.id;
+
+    // رفع الصفحات إن وُجدت ملفات
+    if(files.length>0){
+      files.sort((a,b)=> a.name.localeCompare(b.name, undefined, { numeric:true }));
+      for(let i=0;i<files.length;i++){
+        const f = files[i];
+        const path = `chapters/${manga_id}/${chapter_id}/${sanitizeFilename(f.name)}`;
+        const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, f, { upsert: true });
+        if(upErr){ console.warn('upload error', upErr); continue; }
+        const publicUrl = getPublicUrl(path);
+        await supabase.from('pages').insert([{ chapter_id, page_number: i+1, image_url: publicUrl }]);
+      }
+    }
+
+    alert('✅ تم إنشاء الفصل بنجاح.');
+    // تنظيف الحقول
+    document.getElementById('quickChapterFiles').value = null;
+    document.getElementById('quickChapterNumber').value = '';
+    document.getElementById('quickChapterTitle').value = '';
+    document.getElementById('quickTranslator').value = '';
+    await loadChaptersForManga(manga_id);
+    await loadMangaList();
+  }catch(e){
+    console.error(e);
+    alert('❌ فشل إنشاء الفصل. راجع الكونسول.');
+  }
+}
+
+/* ========== Modals management ========== */
+function showModal(id){
+  document.getElementById('modalBackdrop').style.display='flex';
+  document.getElementById(id).classList.add('show');
+}
+function closeAllModals(){
+  document.getElementById('modalBackdrop').style.display='none';
+  document.querySelectorAll('.modal').forEach(m=>m.classList.remove('show'));
+  // reset some form states
+  clearModalForms();
+}
+function closeModal(ev){
+  if(ev.target.id === 'modalBackdrop') closeAllModals();
+}
+function toggleMenu(menuWrap){
+  // close other open menus
+  document.querySelectorAll('.menu .dropdown').forEach(d=>d.classList.remove('show'));
+  menuWrap.querySelector('.dropdown').classList.toggle('show');
+  // close on next click outside
+  document.addEventListener('click', ()=> document.querySelectorAll('.menu .dropdown').forEach(d=>d.classList.remove('show')), {once:true});
+}
+
+/* ========== Add / Edit Manga Modal ========== */
+let editingMangaId = null;
+function openAddMangaModal(){
+  editingMangaId = null;
+  document.getElementById('mangaModalTitle').textContent = 'إضافة مانجا جديدة';
+  document.getElementById('modalMangaTitle').value = '';
+  document.getElementById('modalMangaDesc').value = '';
+  document.getElementById('modalMangaCover').value = null;
+  showModal('mangaModal');
+}
+async function openEditMangaModal(mangaId){
+  editingMangaId = mangaId;
+  const m = MANGA.find(x=>x.id===mangaId);
+  if(!m){ alert('المانجا غير موجودة'); return; }
+  document.getElementById('mangaModalTitle').textContent = 'تعديل بيانات المانجا';
+  document.getElementById('modalMangaTitle').value = m.title || '';
+  document.getElementById('modalMangaDesc').value = m.description || '';
+  document.getElementById('modalMangaCover').value = null;
+  showModal('mangaModal');
+}
+async function saveMangaFromModal(){
+  const title = document.getElementById('modalMangaTitle').value.trim();
+  const desc = document.getElementById('modalMangaDesc').value.trim();
+  const file = document.getElementById('modalMangaCover').files[0];
+
+  if(!title) return alert('اكتب عنوان المانجا.');
+
+  try{
+    if(editingMangaId){
+      // update metadata
+      const updates = { title, description: desc };
+      const { error: upErr } = await supabase.from('manga_list').update(updates).eq('id', editingMangaId);
+      if(upErr) throw upErr;
+
+      // if file selected, upload and update cover_url
+      if(file){
+        const path = `covers/${Date.now()}_${sanitizeFilename(file.name)}`;
+        const { data: upData, error: upE } = await supabase.storage.from(BUCKET).upload(path, file, { upsert:true });
+        if(upE) throw upE;
+        const coverUrl = getPublicUrl(path);
+        const { error: updCoverErr } = await supabase.from('manga_list').update({ cover_url: coverUrl }).eq('id', editingMangaId);
+        if(updCoverErr) throw updCoverErr;
+      }
+
+      alert('✅ تم تحديث بيانات المانجا.');
+    } else {
+      // insert new manga (and optionally upload cover)
+      let coverUrl = null;
+      if(file){
+        const path = `covers/${Date.now()}_${sanitizeFilename(file.name)}`;
+        const { data: upData, error: upE } = await supabase.storage.from(BUCKET).upload(path, file, { upsert:true });
+        if(upE) throw upE;
+        coverUrl = getPublicUrl(path);
+      }
+      const { error: insertErr } = await supabase.from('manga_list').insert([{ title, description: desc, cover_url: coverUrl }]);
+      if(insertErr) throw insertErr;
+      alert('✅ تمت إضافة المانجا.');
+    }
+    closeAllModals();
+    await loadMangaList();
+  }catch(e){
+    console.error(e);
+    alert('❌ فشل الحفظ. راجع الكونسول.');
+  }
+}
+
+/* ========== Change cover modal (simple re-use of edit modal) ========== */
+async function openManageCoverModal(mangaId){
+  editingMangaId = mangaId;
+  const m = MANGA.find(x=>x.id===mangaId);
+  if(!m) return alert('المانجا غير موجودة');
+  document.getElementById('mangaModalTitle').textContent = `تغيير غلاف — ${m.title}`;
+  document.getElementById('modalMangaTitle').value = m.title || '';
+  document.getElementById('modalMangaDesc').value = m.description || '';
+  document.getElementById('modalMangaCover').value = null;
+  showModal('mangaModal');
+}
+
+/* ========== Add / Edit Chapter Modal ========== */
+let editingChapterId = null;
+function openAddChapterModal(){
+  editingChapterId = null;
+  document.getElementById('chapterModalTitle').textContent = 'إضافة فصل جديد';
+  document.getElementById('modalSelectManga').value = currentMangaForChapters?.id || (MANGA[0] && MANGA[0].id) || '';
+  document.getElementById('modalChapterNumber').value = '';
+  document.getElementById('modalChapterTitle').value = '';
+  document.getElementById('modalChapterTranslator').value = '';
+  document.getElementById('modalChapterFiles').value = null;
+  showModal('chapterModal');
+}
+async function openEditChapterModal(chapter){
+  editingChapterId = chapter.id;
+  document.getElementById('chapterModalTitle').textContent = `تعديل الفصل ${chapter.number}`;
+  document.getElementById('modalSelectManga').value = chapter.manga_id;
+  document.getElementById('modalChapterNumber').value = chapter.number;
+  document.getElementById('modalChapterTitle').value = chapter.title || '';
+  document.getElementById('modalChapterTranslator').value = chapter.translator || '';
+  document.getElementById('modalChapterFiles').value = null;
+  showModal('chapterModal');
+}
+async function saveChapterFromModal(){
+  const manga_id = parseInt(document.getElementById('modalSelectManga').value,10);
+  const number = parseInt(document.getElementById('modalChapterNumber').value,10);
+  const title = document.getElementById('modalChapterTitle').value.trim();
+  const translator = document.getElementById('modalChapterTranslator').value.trim();
+  const files = Array.from(document.getElementById('modalChapterFiles').files || []);
+
+  if(!manga_id || !number) return alert('اختر مانجا وأدخل رقم الفصل.');
+
+  try{
+    if(editingChapterId){
+      // تحديث بيانات الفصل
+      const { error: upErr } = await supabase.from('chapters').update({ number, title, translator }).eq('id', editingChapterId);
+      if(upErr) throw upErr;
+
+      // رفع صفحات جديدة إن اختيرت
+      if(files.length>0){
+        // نستخدم سجل الصفحات الموجود مسبقاً لمعرفة next page number أو نعيد ترتيب كامل
+        for(let i=0;i<files.length;i++){
+          const f = files[i];
+          const path = `chapters/${manga_id}/${editingChapterId}/${sanitizeFilename(f.name)}`;
+          const { error: upErr2 } = await supabase.storage.from(BUCKET).upload(path, f, { upsert:true });
+          if(upErr2){ console.warn('upload error', upErr2); continue; }
+          const publicUrl = getPublicUrl(path);
+          await supabase.from('pages').insert([{ chapter_id: editingChapterId, page_number: i+1, image_url: publicUrl }]);
+        }
+      }
+      alert('✅ تم تحديث بيانات الفصل.');
+    } else {
+      // إنشاء فصل جديد
+      const { data: chData, error: chErr } = await supabase.from('chapters')
+        .insert([{ manga_id, number, title, translator, folder_path: `chapters/${manga_id}/${number}/` }])
+        .select('id').single();
+      if(chErr) throw chErr;
+      const chapter_id = chData.id;
+
+      if(files.length>0){
+        files.sort((a,b)=> a.name.localeCompare(b.name, undefined, { numeric:true }));
+        for(let i=0;i<files.length;i++){
+          const f = files[i];
+          const path = `chapters/${manga_id}/${chapter_id}/${sanitizeFilename(f.name)}`;
+          const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, f, { upsert:true });
+          if(upErr){ console.warn('upload error', upErr); continue; }
+          const publicUrl = getPublicUrl(path);
+          await supabase.from('pages').insert([{ chapter_id, page_number: i+1, image_url: publicUrl }]);
+        }
+      }
+      alert('✅ تم إنشاء الفصل ورفع الصفحات.');
+    }
+
+    closeAllModals();
+    await loadChaptersForManga(manga_id);
+    await loadMangaList();
+  }catch(e){
+    console.error(e);
+    alert('❌ فشل حفظ الفصل. راجع الكونسول.');
+  }
+}
+
+/* ========== Delete prompts ========== */
+function promptDelete(type, id, extra){
+  pendingDelete = { type, id, extra };
+  document.getElementById('confirmTitle').textContent = (type==='manga') ? 'حذف المانجا' : 'حذف الفصل';
+  document.getElementById('confirmMessage').textContent = (type==='manga') ? 'هل تريد حذف هذه المانجا نهائياً؟ سيتم حذف بياناتها وكل الفصول.' : 'هل تريد حذف هذا الفصل نهائياً؟';
+  showModal('confirmModal');
+}
+
+async function confirmYes(){
+  if(!pendingDelete) return closeAllModals();
+  const { type, id, extra } = pendingDelete;
+  try{
+    if(type==='manga'){
+      // حذف المانجا من DB (لا نحذف الملفات من الstorage تلقائياً هنا)
+      const { error } = await supabase.from('manga_list').delete().eq('id', id);
+      if(error) throw error;
+      alert('✅ تم حذف المانجا.');
+      await loadMangaList();
+    } else if(type==='chapter'){
+      const { error } = await supabase.from('chapters').delete().eq('id', id);
+      if(error) throw error;
+      alert('✅ تم حذف الفصل.');
+      if(extra && extra.mangaId) await loadChaptersForManga(extra.mangaId);
+      await loadMangaList();
+    }
+  }catch(e){
+    console.error(e);
+    alert('❌ فشل الحذف. راجع الكونسول.');
+  }finally{
+    pendingDelete = null;
+    closeAllModals();
+  }
+}
+
+/* ========== Helpers: sanitize, escape ========= */
+function sanitizeFilename(name){ return name.replace(/[^a-zA-Z0-9.\-_가-힣\u0600-\u06FF]/g,'_'); }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ========== Utility: clear modal forms ========== */
+function clearModalForms(){
+  editingMangaId = null;
+  editingChapterId = null;
+  pendingDelete = null;
+  document.getElementById('modalMangaCover').value = null;
+  document.getElementById('modalChapterFiles').value = null;
+  document.getElementById('quickChapterFiles').value = null;
+}
+
+/* ========== Delete single manga / chapter (quick) ========== */
+async function deleteManga(id){
+  if(!confirm('هل تريد حذف المانجا نهائياً؟')) return;
+  const { error } = await supabase.from('manga_list').delete().eq('id', id);
+  if(error){ console.error(error); alert('فشل الحذف'); return; }
+  alert('تم الحذف'); await loadMangaList();
+}
+async function deleteChapter(id){
+  if(!confirm('هل تريد حذف الفصل؟')) return;
+  const { error } = await supabase.from('chapters').delete().eq('id', id);
+  if(error){ console.error(error); alert('فشل حذف الفصل'); return; }
+  alert('تم حذف الفصل'); await loadMangaList();
+}
+
+/* ========== Initialization ========== */
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await loadMangaList();
+});
+
+/* ========== Open manage manga modal (helper) ========== */
+function openManageMangaModal(){
+  // simply open add/edit modal but prefill nothing; user can choose from select to edit
+  openAddMangaModal();
+}
+
+/* ========== Open reader for chapter (compat) ========== */
+function openReaderForChapter(chapterId){
+  window.open(`read.html?chapter=${chapterId}`,'_blank');
+}
+</script>
+
+</body>
+</html>
