@@ -74,7 +74,6 @@
       padding: 10px;
       cursor: pointer;
       transition: 0.3s;
-      text-align: center;
     }
 
     .manga-item:hover {
@@ -88,25 +87,9 @@
     }
 
     .manga-item h3 {
-      margin: 10px 0 5px;
+      margin: 10px 0 0;
       font-size: 15px;
       color: #cbb9ff;
-    }
-
-    .manga-item .tags {
-      margin-top: 5px;
-      font-size: 12px;
-      color: #b5a3ff;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 5px;
-    }
-
-    .manga-item .tags span {
-      background: rgba(255,255,255,0.05);
-      padding: 2px 6px;
-      border-radius: 5px;
     }
 
     .highlight {
@@ -177,10 +160,7 @@
         // تمييز الكلمات المطابقة في العنوان
         const highlightedTitle = highlightText(m.title, query);
 
-        // تمييز الكلمات المطابقة في الوسوم
-        const tagsHTML = m.tags.map(t => `<span>${highlightText(t, query)}</span>`).join("");
-
-        div.innerHTML = `<img src="${m.cover_url}"><h3>${highlightedTitle}</h3><div class="tags">${tagsHTML}</div>`;
+        div.innerHTML = `<img src="${m.cover_url}"><h3>${highlightedTitle}</h3>`;
         div.onclick = () => {
           window.location.href = `index8.html?manga_id=${m.id}`;
         };
