@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<title>قراءة الفصل</title>
+<link rel="icon" href="images/book.png" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  * { box-sizing: border-box; transition: 0.3s ease; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Cairo", "Tahoma", sans-serif;
+    background: radial-gradient(circle at 50% 10%, #0b0b10, #050505 90%);
+    color: #eaeaea;
+    overflow-x: hidden;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .fog {
+    position: fixed; top: 0; left: 0;
+    width: 200%; height: 200%;
+    background: url('images/fog.png') repeat;
+    opacity: 0.15;
+    animation: fogMove 120s linear infinite;
+    z-index: 0;
+    pointer-events: none;
+    transform: translate(-25%, -25%);
+  }
+  @keyframes fogMove {
+    0%{background-position:0 0;}
+    50%{background-position:1000px 800px;}
+    100%{background-position:0 0;}
+  }
+
+  .symbols { position: fixed; top:0; left:0; width:100%; height:100%; overflow:hidden; pointer-events:none; z-index:1; }
+  .symbol { position:absolute; color: rgba(168,139,255,0.08); font-size:22px; animation:floatSymbol 30s linear infinite; user-select:none; }
+  @keyframes floatSymbol {
+    0%{transform:translateY(100vh) rotate(0deg);opacity:0;}
+    10%{opacity:1;}
+    90%{opacity:1;}
+    100%{transform:translateY(-10vh) rotate(360deg);opacity:0;}
+  }
+
+  header {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    display:flex; justify-content:space-between; align-items:center;
+    z-index:10;
+    transition: top 0.3s;
+  }
+  .back-btn { cursor:pointer; font-weight:bold; }
+  .chapter-title { font-size:18px; font-weight:bold; color:#a88bff; text-align:center; flex:1; }
+
+  #reader {
+    margin-top:80px;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #reader img {
+    width: 100%;
+    display:block;
+    margin:0; /* إزالة أي فراغ */
+    padding:0; /* إزالة أي فراغ */
+    border-radius:0; /* لضمان الالتصاق الكامل */
+  }
+
+  .chapter-nav-end {
+    text-align:center;
+    margin:20px;
+  }
+  .chapter-nav-end div {
+    display:inline-block;
+    background:#222;
+    padding:10px 15px;
+    margin:5px;
+    border-radius:8px;
+    cursor:pointer;
+    color:#fff;
+  }
+  .chapter-nav-end div:hover { background:#444; }
+
+  footer {
+    text-align:center;
+    padding:20px;
+    color:#666;
+    font-size:14px;
+    z-index:10;
+    position:relative;
+  }
+</style>
+</head>
+<body>
+<div class="fog"></div>
+<div class="symbols" id="symbols"></div>
+
+<header id="topHeader">
+  <div class="back-btn" onclick="history.back()">⮌ عودة</div>
+  <div class="chapter-title" id="chapterTitle">الفصل</div>
+</header>
+
+<div id="reader">
+  <div id="chapterImages">جارٍ تحميل الصفحات...</div>
+</div>
+
+<footer>© 2025 Manga Sanctum | Realm of Shadows & Light</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const mangaId = new URLSearchParams(window.location.search).get("manga_id");
+const chapterId = new URLSearchParams(window.location.search).get("chapter_id");
+
+let images = [];
+let chapters = [];
+let currentChapterIndex = -1;
+
+// تحميل بيانات الفصل
+async function loadChapter() {
+  const { data: chapterList } = await supabase
+    .from("chapters")
+    .select("id, title")
+    .eq("manga_id", mangaId)
+    .order("id");
+
+  chapters = chapterList || [];
+  currentChapterIndex = chapters.findIndex(c => c.id == chapterId);
+
+  const { data, error } = await supabase
+    .from("pages")
+    .select("image_url")
+    .eq("chapter_id", chapterId)
+    .order("id");
+
+  if(error || !data.length){
+    document.getElementById("chapterImages").innerHTML="<p style='color:#aaa'>لا توجد صفحات.</p>";
+    return;
+  }
+
+  images = data.map(p=>p.image_url);
+  const chapterTitle = chapters[currentChapterIndex]?.title || "فصل غير معروف";
+  document.getElementById("chapterTitle").textContent = `الفصل ${currentChapterIndex+1} - ${chapterTitle}`;
+
+  showChapterVertically();
+}
+
+// عرض جميع الصفحات عموديًا بدون فراغات
+function showChapterVertically(){
+  const container = document.getElementById("chapterImages");
+  container.innerHTML = '';
+  images.forEach((imgUrl)=>{
+    const img = document.createElement('img');
+    img.src = imgUrl;
+    container.appendChild(img);
+  });
+
+  // أزرار التنقل بين الفصول بعد آخر صورة
+  const navDiv = document.createElement('div');
+  navDiv.className='chapter-nav-end';
+  if(currentChapterIndex > 0){
+    const prevChap = document.createElement('div');
+    prevChap.textContent="الفصل السابق ⮌";
+    prevChap.onclick=()=>scrollToTopAndLoadChapter(chapters[currentChapterIndex-1].id);
+    navDiv.appendChild(prevChap);
+  }
+  if(currentChapterIndex < chapters.length-1){
+    const nextChap = document.createElement('div');
+    nextChap.textContent="⮎ الفصل التالي";
+    nextChap.onclick=()=>scrollToTopAndLoadChapter(chapters[currentChapterIndex+1].id);
+    navDiv.appendChild(nextChap);
+  }
+  container.appendChild(navDiv);
+}
+
+// تمرير سلس عند الانتقال لفصل آخر
+function scrollToTopAndLoadChapter(newChapterId){
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>{
+    window.location.href=`read.html?manga_id=${mangaId}&chapter_id=${newChapterId}`;
+  },500);
+}
+
+// رموز متحركة
+const SYMBOLS=["☽","✦","✶","⛧","☥","♆","卍","⚚"];
+function spawnSymbols(){
+  const c=document.getElementById('symbols');
+  for(let i=0;i<20;i++){
+    const s=document.createElement('div');
+    s.className='symbol';
+    s.textContent=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+    s.style.left=Math.random()*100+'%';
+    s.style.animationDelay=Math.random()*30+'s';
+    s.style.fontSize=16+Math.random()*24+'px';
+    c.appendChild(s);
+  }
+}
+
+spawnSymbols();
+loadChapter();
+</script>
+</body>
+</html>
