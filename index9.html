@@ -64,17 +64,11 @@
   }
 
   #reader img {
-    width: 90%;
-    max-width:800px;
+    width: 100%;
     display:block;
-    margin:15px 0;
-  }
-
-  .read-marker {
-    text-align:center;
-    color:#0f0;
-    font-weight:bold;
-    margin:15px;
+    margin:0; /* إزالة أي فراغ */
+    padding:0; /* إزالة أي فراغ */
+    border-radius:0; /* لضمان الالتصاق الكامل */
   }
 
   .chapter-nav-end {
@@ -159,20 +153,17 @@ async function loadChapter() {
   showChapterVertically();
 }
 
-// عرض جميع الصفحات عموديًا
+// عرض جميع الصفحات عموديًا بدون فراغات
 function showChapterVertically(){
   const container = document.getElementById("chapterImages");
   container.innerHTML = '';
-  images.forEach((imgUrl, idx)=>{
+  images.forEach((imgUrl)=>{
     const img = document.createElement('img');
     img.src = imgUrl;
     container.appendChild(img);
   });
 
-  // إضافة العلامة بعد آخر صورة
-  container.innerHTML += `<div class='read-marker'>✅ الفصل تمت قراءته</div>`;
-
-  // أزرار التنقل بين الفصول
+  // أزرار التنقل بين الفصول بعد آخر صورة
   const navDiv = document.createElement('div');
   navDiv.className='chapter-nav-end';
   if(currentChapterIndex > 0){
