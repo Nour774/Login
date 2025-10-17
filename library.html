@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>المكتبة</title>
+  <link rel="icon" href="images/book.png"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; transition: 0.3s ease; }
+    body {
+      margin: 0;
+      font-family: "Cairo", "Tahoma", sans-serif;
+      background: #1a1a1d;
+      color: #f5f5f5;
+      overflow-x: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: #0f0e14;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .menu-btn { cursor: pointer; font-size: 26px; color: #f5f5f5; user-select: none; transition: transform 0.2s ease; }
+    .menu-btn:hover { transform: scale(1.1); }
+    .profile-pic { width: 40px; height: 40px; border-radius: 50%; }
+
+    .sub-header { display: flex; gap: 16px; padding: 10px 20px; background: #2a2a2d; }
+    .sub-header a { color: #f5f5f5; text-decoration: none; font-weight: bold; cursor: pointer; transition: color 0.2s ease; }
+    .sub-header a:hover { color: #a88bff; }
+
+    .hero img { width: 100%; max-height: 300px; object-fit: cover; }
+
+    .content { padding: 20px; }
+    .section { display: none; padding: 20px; }
+    .section.active { display: block; }
+
+    /* قسم المانجا */
+    .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .logo div:first-child { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #a88bff, #e6c07b); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #0b0710; font-size: 18px; }
+    .logo .title { font-weight: 700; font-size: 18px; }
+
+    nav { display: flex; gap: 16px; margin-bottom: 10px; }
+    nav button { padding: 6px 12px; border: none; border-radius: 8px; background: transparent; color: #9b8fb3; cursor: pointer; font-weight: 700; }
+    nav button.active { color: #fff; background: rgba(168,139,255,0.12); }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .hint { margin-top: 12px; color: #9b8fb3; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-top: 18px; }
+    @media (max-width: 600px) { 
+      .grid { grid-template-columns: repeat(3, 1fr) !important; } 
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.03);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-align: center;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .card h3 { margin-top: 10px; font-size: 15px; }
+
+    .highlight { background-color: #ffeb3b80; border-radius: 3px; padding: 0 2px; }
+
+    /* القائمة الجانبية */
+    .sidebar { position: fixed; top: 0; right: -280px; width: 260px; height: 100%; background: #141417; box-shadow: -3px 0 15px rgba(0,0,0,0.6); display: flex; flex-direction: column; padding: 24px 20px; gap: 14px; z-index: 2000; transition: right 0.35s cubic-bezier(0.77, 0, 0.175, 1); }
+    .sidebar.active { right: 0; }
+    .sidebar a, .sidebar button { background: none; border: none; color: #f5f5f5; font-size: 16px; text-align: right; cursor: pointer; font-weight: 600; padding: 10px; border-radius: 8px; transition: background 0.2s ease; }
+    .sidebar a:hover, .sidebar button:hover { background: rgba(255,255,255,0.08); }
+
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); opacity: 0; visibility: hidden; z-index: 1000; transition: opacity 0.35s ease; }
+    .overlay.active { opacity: 1; visibility: visible; }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="menu-btn" onclick="toggleMenu()">☰</span>
+    <h1>المكتبة</h1>
+    <img id="profileImage" class="profile-pic" src="images/imag2.jpg" alt="بروفايل">
+  </header>
+
+  <div class="sub-header">
+    <a href="index5.html">الرئيسية</a>
+    <a onclick="showSection('library')">مكتبتي</a>
+    <a onclick="showSection('repository')">المانجا/المانهوا</a>
+    <a onclick="showSection('settings')">الروايات</a>
+  </div>
+
+  <div class="hero"><img src="images/imag1.jpg" alt="صورة المقدمة"></div>
+
+  <!-- مكتبة المستخدم -->
+  <div id="library" class="section active">
+    <div class="content">
+      <div id="welcome" class="welcome">جار التحميل...</div>
+    </div>
+  </div>
+
+  <!-- قسم المانجا/المانهوا -->
+  <div id="repository" class="section">
+    <div class="logo">
+      <div>MS</div>
+      <div class="title">Manga Sanctum</div>
+    </div>
+
+    <nav>
+      <button id="tabSources" class="active" onclick="switchPanel('sources')">المصادر</button>
+      <button id="tabExtensions" onclick="switchPanel('extensions')">الإضافات</button>
+    </nav>
+
+    <!-- خانة البحث في المصادر -->
+    <div id="panelSources" class="panel active">
+      <input type="text" id="sourceSearch" placeholder="ابحث في المصادر..." style="width:90%; max-width:400px; padding:6px 10px; border-radius:8px; margin-bottom:12px; border:none; outline:none; font-size:14px;">
+      <div class="hint">قائمة المصادر ستظهر هنا.</div>
+      <div id="sourcesGrid" class="grid"></div>
+    </div>
+
+    <div id="panelExtensions" class="panel">
+      <div class="hint">قائمة الإضافات ستظهر هنا.</div>
+      <div id="extensionsGrid" class="grid"></div>
+    </div>
+  </div>
+
+  <!-- قسم الروايات -->
+  <div id="settings" class="section">
+    <p>الروايات ستظهر هنا لاحقًا.</p>
+  </div>
+
+  <!-- القائمة الجانبية -->
+  <div class="sidebar" id="sidebar">
+    <a href="#" onclick="goToMembers()">الأعضاء</a>
+    <button id="adminBtn" onclick="goToAdmin()" style="display:none;">لوحة التحكم</button>
+    <button onclick="logout()">تسجيل الخروج</button>
+  </div>
+  <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
+
+    async function checkUser() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if(error || !session) return location.href='index.html';
+      const { data: profile } = await supabase.from("profiles").select("username, avatar_url, role").eq("id", session.user.id).single();
+      document.getElementById("welcome").textContent = `مرحباً بك، ${profile?.username || "مستخدم"} 👋`;
+      if(profile?.avatar_url) document.getElementById("profileImage").src = profile.avatar_url;
+      if(["admin","owner"].includes(String(profile?.role || "").toLowerCase())) document.getElementById("adminBtn").style.display='block';
+    }
+
+    checkUser();
+
+    function toggleMenu() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
+    function logout() { supabase.auth.signOut().then(()=> location.href='index.html'); }
+    function goToMembers(){ location.href='index3.html'; }
+    function goToAdmin(){ location.href='index5.html'; }
+
+    function showSection(id){ document.querySelectorAll('.section').forEach(sec=>sec.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function switchPanel(name){
+      document.getElementById('tabSources').classList.remove('active');
+      document.getElementById('tabExtensions').classList.remove('active');
+      document.getElementById('panelSources').classList.remove('active');
+      document.getElementById('panelExtensions').classList.remove('active');
+      if(name==='sources'){
+        document.getElementById('tabSources').classList.add('active');
+        document.getElementById('panelSources').classList.add('active');
+      } else {
+        document.getElementById('tabExtensions').classList.add('active');
+        document.getElementById('panelExtensions').classList.add('active');
+      }
+    }
+
+    // تحميل قائمة المانجا
+    const sourceSearchInput = document.getElementById('sourceSearch');
+    let allSources = [];
+
+    async function loadMangaList() {
+      const { data, error } = await supabase.from('manga_list').select('id, title, cover_url').order('id');
+      if(error) return console.error(error);
+      allSources = data || [];
+      renderSources(allSources);
+    }
+
+    function highlightText(text, query) {
+      if(!query) return text;
+      const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return text.replace(regex, '<span class="highlight">$1</span>');
+    }
+
+    function renderSources(list, query="") {
+      const grid = document.getElementById('sourcesGrid');
+      grid.innerHTML = '';
+      if(!list.length){ grid.innerHTML = "<p>لا توجد مانجات متاحة.</p>"; return; }
+      list.forEach(manga=>{
+        const div=document.createElement('div');
+        div.className='card';
+        div.innerHTML=`<img src="${manga.cover_url}" style="width:100%; border-radius:12px;"><h3>${highlightText(manga.title, query)}</h3>`;
+        div.onclick=()=> location.href=`index8.html?manga_id=${manga.id}`;
+        grid.appendChild(div);
+      });
+    }
+
+    sourceSearchInput.addEventListener('input', e=>{
+      const query = e.target.value.trim().toLowerCase();
+      const filtered = allSources.filter(m=> m.title.toLowerCase().includes(query));
+      renderSources(filtered, query);
+    });
+
+    loadMangaList();
+  </script>
+</body>
+</html>
