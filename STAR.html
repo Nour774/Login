@@ -1,421 +1,250 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<title>Manga Sanctum - عرض المانجا</title>
-<link rel="icon" href="images/book.png" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>
-  * { box-sizing: border-box; transition: 0.3s ease; }
-  body {
-    margin: 0;
-    font-family: "Cairo", sans-serif;
-    background: radial-gradient(circle at 50% 10%, #0b0b10, #050505 90%);
-    color: #eaeaea;
-    min-height: 100vh;
-    overflow-x: hidden;
-    position: relative;
-  }
+  <meta charset="UTF-8" />
+  <title>Manga Sanctum</title>
+  <link rel="icon" href="images/book.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; transition: 0.3s ease; }
+    body {
+      margin: 0;
+      font-family: "Cairo", "Tahoma", sans-serif;
+      background: radial-gradient(circle at 50% 10%, #0b0b10, #050505 90%);
+      color: #eaeaea;
+      overflow-x: hidden;
+      min-height: 100vh;
+      position: relative;
+    }
 
-  /* --- الرموز العائمة --- */
-  .symbols {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 0;
-  }
-  .symbol {
-    position: absolute;
-    color: rgba(168,139,255,0.08);
-    font-size: 22px;
-    animation: floatSymbol 30s linear infinite;
-    user-select: none;
-  }
-  @keyframes floatSymbol {
-    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
-  }
+    /* تأثير الضباب */
+    .fog {
+      position: fixed;
+      top: 0; left: 0;
+      width: 200%;
+      height: 200%;
+      background: url('images/fog.png') repeat;
+      opacity: 0.15;
+      animation: fogMove 120s linear infinite;
+      z-index: 0;
+      pointer-events: none;
+      transform: translate(-25%, -25%);
+    }
+    @keyframes fogMove {
+      0% { background-position: 0 0; }
+      50% { background-position: 1000px 800px; }
+      100% { background-position: 0 0; }
+    }
 
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 20px;
-    background: rgba(10,10,15,0.85);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  .back-btn {
-    color: #eaeaea;
-    font-size: 18px;
-    cursor: pointer;
-    padding: 8px 14px;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.05);
-  }
-  .back-btn:hover { background: rgba(255,255,255,0.12); }
-  .logo-text {
-    font-weight: 800;
-    font-size: 26px;
-    color: #d4c3ff;
-    letter-spacing: 1px;
-  }
+    /* رموز غامضة */
+    .symbols {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .symbol {
+      position: absolute;
+      color: rgba(168,139,255,0.08);
+      font-size: 22px;
+      animation: floatSymbol 30s linear infinite;
+      user-select: none;
+    }
+    @keyframes floatSymbol {
+      0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+    }
 
-  main {
-    padding: 20px;
-    max-width: 900px;
-    margin: auto;
-    position: relative;
-    z-index: 2;
-  }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .left-section { display: flex; align-items: center; gap: 10px; }
+    .back-btn { color: #eaeaea; font-size: 20px; cursor: pointer; padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); }
+    .back-btn:hover { background: rgba(255,255,255,0.12); }
+    .logo-text {
+      font-weight: 800;
+      font-size: 26px;
+      color: #d4c3ff;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      filter: drop-shadow(0 0 10px rgba(168,139,255,0.7)) drop-shadow(0 0 25px rgba(122,95,255,0.4)) blur(0.3px);
+      animation: softGlow 3s ease-in-out infinite alternate;
+      user-select: none;
+    }
+    @keyframes softGlow {
+      from { opacity: 0.95; filter: drop-shadow(0 0 8px rgba(168,139,255,0.6)) drop-shadow(0 0 20px rgba(122,95,255,0.3)) blur(0.4px); }
+      to { opacity: 1; filter: drop-shadow(0 0 14px rgba(168,139,255,0.9)) drop-shadow(0 0 40px rgba(122,95,255,0.5)) blur(0.6px); }
+    }
+    .logo-box { width: 46px; height: 46px; border-radius: 10px; background: linear-gradient(135deg, #a88bff, #e6c07b); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #0b0710; font-size: 21px; box-shadow: 0 0 10px rgba(168,139,255,0.5); }
+    @media (max-width: 600px) { .logo-text { font-size: 22px; } .back-btn { font-size: 18px; padding: 6px 12px; } .logo-box { width: 36px; height: 36px; font-size: 16px; } }
 
-  .manga-header {
-    text-align: center;
-  }
-  .manga-header img {
-    width: 220px;
-    height: 310px;
-    object-fit: cover;
-    border-radius: 14px;
-    box-shadow: 0 0 50px rgba(168,139,255,0.4);
-  }
-  .manga-title {
-    font-size: 30px;
-    font-weight: 800;
-    margin-top: 16px;
-    background: linear-gradient(90deg,#a88bff,#e6c07b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+    main { padding: 20px; text-align: center; z-index: 5; position: relative; }
+    .cover { width: 220px; height: 310px; object-fit: cover; border-radius: 14px; margin: 0 auto; display: block; box-shadow: 0 0 50px rgba(168,139,255,0.4); }
 
-  .tags-container {
-    margin-top: 15px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-  }
-  .tag {
-    background: rgba(168,139,255,0.1);
-    border: 1px solid rgba(168,139,255,0.3);
-    color: #cbb9ff;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 14px;
-  }
+    .tab-buttons { margin-top: 20px; display: flex; justify-content: center; gap: 10px; }
+    .tab-buttons button {
+      background: rgba(168,139,255,0.1);
+      border: 1px solid rgba(168,139,255,0.3);
+      color: #cbb9ff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .tab-buttons button.active { background: rgba(168,139,255,0.3); }
 
-  /* --- التقييم --- */
-  .rating-section {
-    margin-top: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-  }
-  .star {
-    font-size: 28px;
-    color: rgba(168,139,255,0.3);
-    cursor: pointer;
-  }
-  .star.active {
-    color: #e6c07b;
-    transform: scale(1.2);
-  }
-  .rating-info {
-    margin-left: 10px;
-    color: #bdb3d6;
-    font-size: 14px;
-  }
+    .tab-content { display: none; margin-top: 20px; text-align: right; background: rgba(255,255,255,0.02); border-radius: 12px; padding: 15px; }
+    .tab-content.active { display: block; }
 
-  /* --- التبويبات --- */
-  .tab-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 20px;
-  }
-  .tab-buttons button {
-    background: rgba(168,139,255,0.1);
-    border: 1px solid rgba(168,139,255,0.3);
-    color: #cbb9ff;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .tab-buttons button.active {
-    background: rgba(168,139,255,0.3);
-  }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .tag { background: rgba(168,139,255,0.15); color: #cbb9ff; padding: 4px 10px; border-radius: 6px; font-size: 13px; cursor:pointer; }
 
-  .tab-content {
-    display: none;
-    margin-top: 20px;
-    background: rgba(255,255,255,0.02);
-    border-radius: 12px;
-    padding: 15px;
-  }
-  .tab-content.active { display: block; }
+    .chapter-search { margin-bottom: 15px; }
+    .chapter-search input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,139,255,0.3); border-radius: 8px; padding: 8px; color: #fff; }
+    .chapters-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .chapter-item { background: rgba(168,139,255,0.08); border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: 0.3s; }
+    .chapter-item:hover { background: rgba(168,139,255,0.2); }
 
-  .library-btn {
-    display: inline-block;
-    background: rgba(168,139,255,0.2);
-    color: #eaeaea;
-    border: 1px solid rgba(168,139,255,0.4);
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
-
-  /* --- التعليقات --- */
-  .comment-box textarea {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    color: #fff;
-    border: 1px solid rgba(168,139,255,0.3);
-    border-radius: 8px;
-    padding: 10px;
-    resize: none;
-  }
-  .comment-box button {
-    margin-top: 8px;
-    background: rgba(168,139,255,0.2);
-    color: #cbb9ff;
-    border: 1px solid rgba(168,139,255,0.3);
-    border-radius: 8px;
-    padding: 6px 12px;
-    cursor: pointer;
-  }
-  .comment {
-    background: rgba(255,255,255,0.03);
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 8px;
-    font-size: 14px;
-  }
-
-  /* --- الفصول --- */
-  .chapter-search input {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(168,139,255,0.3);
-    border-radius: 8px;
-    padding: 8px;
-    color: #fff;
-    margin-bottom: 12px;
-  }
-  .chapter-item {
-    background: rgba(168,139,255,0.08);
-    border-radius: 8px;
-    padding: 10px;
-    text-align: center;
-    cursor: pointer;
-    margin-bottom: 8px;
-  }
-  .chapter-item:hover {
-    background: rgba(168,139,255,0.2);
-  }
-</style>
+    footer { text-align: center; padding: 20px; color: #666; font-size: 14px; z-index: 10; position: relative; }
+  </style>
 </head>
 
 <body>
-<div class="symbols" id="symbols"></div>
+  <div class="fog"></div>
+  <div class="symbols" id="symbols"></div>
 
-<header>
-  <div class="back-btn" onclick="history.back()">⮌ عودة</div>
-  <div class="logo-text">Manga Sanctum</div>
-</header>
+  <header>
+    <div class="left-section">
+      <div class="back-btn" onclick="history.back()">⮌ عودة</div>
+      <div class="logo-text">Manga Sanctum</div>
+    </div>
+    <div class="logo"><div class="logo-box">MS</div></div>
+  </header>
 
-<main>
-  <div class="manga-header">
-    <img id="mangaCover" src="" alt="غلاف المانجا">
-    <div class="manga-title" id="mangaTitle"></div>
-    <div id="tagsContainer" class="tags-container"></div>
+  <main>
+    <img id="cover" class="cover" src="" alt="غلاف المانجا">
+    <h2 id="title"></h2>
 
-    <button class="library-btn" onclick="addToLibrary()">📚 أضف إلى مكتبتي</button>
-  </div>
-
-  <div class="tab-buttons">
-    <button id="detailsBtn" class="active" onclick="switchTab('details')">التفاصيل</button>
-    <button id="chaptersBtn" onclick="switchTab('chapters')">الفصول</button>
-  </div>
-
-  <!-- ✅ تبويب التفاصيل (الوصف + التقييم + التعليقات) -->
-  <div id="details" class="tab-content active">
-    <div class="manga-description" id="mangaDesc"></div>
-
-    <div class="rating-section">
-      <div id="stars"></div>
-      <div id="ratingInfo" class="rating-info"></div>
+    <div class="tab-buttons">
+      <button id="detailsBtn" class="active" onclick="switchTab('details')">التفاصيل</button>
+      <button id="chaptersBtn" onclick="switchTab('chapters')">الفصول</button>
     </div>
 
-    <div class="comment-box">
-      <textarea id="commentInput" rows="3" placeholder="اكتب تعليقك..."></textarea>
-      <button onclick="addComment()">إضافة تعليق</button>
+    <div id="details" class="tab-content active">
+      <p id="description"></p>
+      <div id="tags" class="tags"></div>
     </div>
-    <div id="commentsList"></div>
-  </div>
 
-  <!-- ✅ تبويب الفصول -->
-  <div id="chapters" class="tab-content">
-    <div class="chapter-search">
-      <input type="text" id="chapterSearch" placeholder="ابحث برقم أو عنوان الفصل..." oninput="filterChapters()">
+    <div id="chapters" class="tab-content">
+      <div class="chapter-search">
+        <input type="text" id="chapterSearch" placeholder="ابحث برقم أو عنوان الفصل..." oninput="filterChapters()">
+      </div>
+      <div id="chaptersList" class="chapters-list"></div>
     </div>
-    <div id="chaptersList"></div>
-  </div>
-</main>
+  </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <footer>© 2025 Manga Sanctum | Realm of Shadows & Light</footer>
 
-const mangaId = new URLSearchParams(window.location.search).get("manga_id");
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const mangaId = new URLSearchParams(window.location.search).get("manga_id");
 
-/* --- الرموز --- */
-const SYMBOLS = ["☽","✦","✶","⛧","☥","♆","卍","⚚"];
-function spawnSymbols() {
-  const c = document.getElementById("symbols");
-  for (let i=0;i<20;i++){
-    const s=document.createElement("div");
-    s.className="symbol";
-    s.textContent=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
-    s.style.left=Math.random()*100+"%";
-    s.style.animationDelay=Math.random()*30+"s";
-    s.style.fontSize=16+Math.random()*24+"px";
-    c.appendChild(s);
-  }
-}
-spawnSymbols();
+    function spawnSymbols() {
+      const SYMBOLS = ["☽","✦","✶","⛧","☥","♆","卍","⚚"];
+      const c = document.getElementById("symbols");
+      for (let i=0;i<20;i++){
+        const s=document.createElement("div");
+        s.className="symbol";
+        s.textContent=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+        s.style.left=Math.random()*100+"%";
+        s.style.animationDelay=Math.random()*30+"s";
+        s.style.fontSize=16+Math.random()*24+"px";
+        c.appendChild(s);
+      }
+    }
 
-/* --- تبويبات --- */
-function switchTab(tab){
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-buttons button').forEach(b=>b.classList.remove('active'));
-  document.getElementById(tab).classList.add('active');
-  document.getElementById(tab+"Btn").classList.add('active');
-}
+    function switchTab(tab) {
+      document.querySelectorAll(".tab-buttons button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      document.getElementById(tab).classList.add("active");
+      document.getElementById(tab + "Btn").classList.add("active");
+    }
 
-/* --- تحميل المستخدم الحالي --- */
-let currentUser = null;
-async function loadCurrentUser(){
-  const { data: { user } } = await supabase.auth.getUser();
-  if(user){
-    const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    currentUser = data;
-  }
-}
-await loadCurrentUser();
+    async function loadMangaInfo() {
+      const { data: manga, error } = await supabase
+        .from("manga_list")
+        .select("title, description, cover_url, tags")
+        .eq("id", mangaId)
+        .single();
+      if (error || !manga) return console.error(error);
 
-/* --- تحميل المانجا --- */
-async function loadManga(){
-  const { data, error } = await supabase.from("manga_list").select("*").eq("id", mangaId).single();
-  if(error || !data) return console.error(error);
-  document.getElementById("mangaTitle").textContent = data.title;
-  document.getElementById("mangaDesc").textContent = data.description || "لا يوجد وصف متاح.";
-  document.getElementById("mangaCover").src = data.cover_url;
+      document.getElementById("title").textContent = manga.title;
+      document.getElementById("description").textContent = manga.description || "لا يوجد وصف متاح.";
+      document.getElementById("cover").src = manga.cover_url;
 
-  const tagsContainer = document.getElementById('tagsContainer');
-  tagsContainer.innerHTML = '';
-  if(data.tags){
-    data.tags.split(',').forEach(tag=>{
-      const t=document.createElement('div');
-      t.className='tag';
-      t.textContent=tag.trim();
-      tagsContainer.appendChild(t);
-    });
-  }
+      const tagsContainer = document.getElementById("tags");
+      tagsContainer.innerHTML = "";
+      if (manga.tags) {
+        const tags = manga.tags.split(",").map(t => t.trim()).filter(Boolean);
+        tags.forEach(tag => {
+          const span = document.createElement("span");
+          span.className = "tag";
+          span.textContent = tag;
+          tagsContainer.appendChild(span);
+        });
+      }
+    }
 
-  loadRating();
-  loadComments();
-  loadChapters();
-}
-loadManga();
+    async function loadChapters() {
+      const { data: chapters, error } = await supabase
+        .from("chapters")
+        .select("id, title, number")
+        .eq("manga_id", mangaId)
+        .order("number", { ascending: true });
+      if (error) return console.error(error);
 
-/* --- التقييم --- */
-async function loadRating(){
-  const { data } = await supabase.from("manga_ratings").select("rating").eq("manga_id", mangaId);
-  const total = data.length;
-  let avg = total>0 ? (data.reduce((sum,r)=>sum+r.rating,0)/total).toFixed(1) : 0;
+      window.allChapters = chapters || [];
+      renderChapters(window.allChapters);
+    }
 
-  const stars = document.getElementById("stars");
-  stars.innerHTML = '';
-  for(let i=1;i<=5;i++){
-    const s=document.createElement("span");
-    s.className="star"+(i<=avg?' active':'');
-    s.textContent='★';
-    s.onclick=()=>rateManga(i);
-    stars.appendChild(s);
-  }
-  document.getElementById("ratingInfo").textContent = `${avg} من 5 (${total} تقييم)`;
-}
+    function renderChapters(chapters) {
+      const list = document.getElementById("chaptersList");
+      list.innerHTML = "";
+      if (!chapters.length) { list.innerHTML = "<p>لا توجد فصول بعد.</p>"; return; }
+      chapters.forEach(ch => {
+        const div = document.createElement("div");
+        div.className = "chapter-item";
+        div.textContent = `الفصل ${ch.number}: ${ch.title}`;
+        div.onclick = () => window.location.href = `index9.html?manga_id=${mangaId}&chapter_id=${ch.id}`;
+        list.appendChild(div);
+      });
+    }
 
-async function rateManga(r){
-  if(!currentUser) return alert("يرجى تسجيل الدخول أولاً.");
-  await supabase.from("manga_ratings").upsert({ manga_id:mangaId, user_id:currentUser.id, rating:r });
-  loadRating();
-}
+    function filterChapters() {
+      const q = document.getElementById("chapterSearch").value.trim().toLowerCase();
+      const filtered = window.allChapters.filter(c => c.title.toLowerCase().includes(q) || String(c.number).includes(q));
+      renderChapters(filtered);
+    }
 
-/* --- التعليقات --- */
-async function loadComments(){
-  const { data } = await supabase.from("comments").select("*").eq("manga_id", mangaId).order('created_at',{ascending:false});
-  const list=document.getElementById("commentsList");
-  list.innerHTML='';
-  data.forEach(c=>{
-    const div=document.createElement("div");
-    div.className="comment";
-    div.innerHTML=`<b>${c.username}</b>: ${c.content}`;
-    list.appendChild(div);
-  });
-}
-
-async function addComment(){
-  const content=document.getElementById("commentInput").value.trim();
-  if(!content) return;
-  if(!currentUser) return alert("يرجى تسجيل الدخول أولاً.");
-
-  await supabase.from("comments").insert({
-    manga_id:mangaId,
-    username: currentUser.username || "مجهول",
-    content
-  });
-  document.getElementById("commentInput").value='';
-  loadComments();
-}
-
-/* --- الفصول --- */
-let chaptersData=[];
-async function loadChapters(){
-  const { data } = await supabase.from("chapters").select("*").eq("manga_id", mangaId).order('number',{ascending:true});
-  chaptersData=data||[];
-  renderChapters();
-}
-function renderChapters(filter=''){
-  const list=document.getElementById("chaptersList");
-  list.innerHTML='';
-  chaptersData.filter(c=>c.title.includes(filter)||c.number.toString().includes(filter)).forEach(c=>{
-    const div=document.createElement("div");
-    div.className="chapter-item";
-    div.textContent=`الفصل ${c.number} - ${c.title}`;
-    div.onclick=()=>window.location.href=`chapter.html?chapter_id=${c.id}`;
-    list.appendChild(div);
-  });
-}
-function filterChapters(){
-  const val=document.getElementById("chapterSearch").value.trim();
-  renderChapters(val);
-}
-
-/* --- المكتبة --- */
-function addToLibrary(){
-  alert("تمت إضافة المانجا إلى مكتبتك!");
-}
-</script>
+    spawnSymbols();
+    loadMangaInfo();
+    loadChapters();
+  </script>
 </body>
 </html>
