@@ -1,0 +1,39 @@
+<main>
+  <div id="mangaHeader" class="manga-header">
+    <img id="cover" src="" alt="غلاف المانجا">
+    <div class="manga-title" id="title">جار التحميل...</div>
+  </div>
+
+  <!-- أزرار التبويبات -->
+  <div class="tab-buttons" style="display:flex; justify-content:center; gap:10px; margin-top:20px;">
+    <button id="detailsBtn" class="active" onclick="switchTab('details')">التفاصيل</button>
+    <button id="chaptersBtn" onclick="switchTab('chapters')">الفصول</button>
+  </div>
+
+  <!-- تبويب التفاصيل -->
+  <div id="details" class="tab-content active" style="text-align:center; margin-top:20px;">
+    <!-- الوصف محفوظ في مكانه الأصلي داخل جهة التفاصيل -->
+    <div class="manga-description" id="description"></div>
+
+    <!-- الوسوم -->
+    <div id="tagsContainer" class="tags-container"></div>
+    
+    <!-- هنا يمكن إضافة لاحقًا: التقييم، التعليقات، زر المكتبة -->
+  </div>
+
+  <!-- تبويب الفصول -->
+  <div id="chapters" class="tab-content" style="margin-top:20px;">
+    <div class="chapter-list" id="chapterList">
+      <div style="text-align:center; padding:20px;">جار تحميل الفصول...</div>
+    </div>
+  </div>
+</main>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll(".tab-buttons button").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+  document.getElementById(tab).classList.add("active");
+  document.getElementById(tab + "Btn").classList.add("active");
+}
+</script>
