@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>Manga Sanctum - عرض المانجا</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="images/book.png" />
+  <style>
+    *{box-sizing:border-box;transition:0.25s}
+    body{
+      margin:0;font-family:"Cairo",sans-serif;
+      background:radial-gradient(circle at 50% 10%,#0b0b10,#050505 90%);
+      color:#eaeaea; min-height:100vh; overflow-x:hidden; position:relative;
+    }
+
+    /* fog */
+    .fog{position:fixed;top:0;left:0;width:200%;height:200%;background:url('images/fog.png') repeat;opacity:0.15;animation:fogMove 120s linear infinite;z-index:0;pointer-events:none;transform:translate(-25%,-25%)}
+    @keyframes fogMove{0%{background-position:0 0}50%{background-position:1000px 800px}100%{background-position:0 0}}
+
+    /* symbols */
+    .symbols{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:hidden}
+    .symbol{position:absolute;color:rgba(168,139,255,0.08);font-size:22px;animation:floatSymbol 30s linear infinite;user-select:none}
+    @keyframes floatSymbol{0%{transform:translateY(100vh) rotate(0deg);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-10vh) rotate(360deg);opacity:0}}
+
+    header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 20px;background:rgba(10,10,15,0.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,0.05);
+      position:sticky;top:0;z-index:10;
+    }
+    .left-section{display:flex;align-items:center;gap:10px}
+    .back-btn{color:#eaeaea;font-size:20px;cursor:pointer;padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.05)}
+    .back-btn:hover{background:rgba(255,255,255,0.12)}
+    .logo-text{font-weight:800;font-size:26px;color:#d4c3ff;letter-spacing:1px;filter:drop-shadow(0 0 10px rgba(168,139,255,0.7));user-select:none}
+    .logo-box{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#a88bff,#e6c07b);display:flex;align-items:center;justify-content:center;font-weight:900;color:#0b0710;font-size:21px;box-shadow:0 0 10px rgba(168,139,255,0.5)}
+
+    main{padding:20px;position:relative;z-index:5}
+
+    .manga-header{display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 20px 12px;position:relative}
+    .manga-header::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at center, rgba(168,139,255,0.06), transparent 70%);z-index:1}
+    .cover{width:220px;height:310px;object-fit:cover;border-radius:14px;box-shadow:0 0 50px rgba(168,139,255,0.35);z-index:2;position:relative}
+    .manga-title{font-size:30px;font-weight:800;margin-top:14px;background:linear-gradient(90deg,#a88bff,#e6c07b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 10px rgba(168,139,255,0.5);z-index:2;position:relative}
+    .manga-description{max-width:800px;margin-top:14px;color:#bdb3d6;font-size:16px;line-height:1.8;z-index:2;position:relative}
+
+    .tags-container{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;z-index:2}
+    .tag{background:rgba(168,139,255,0.1);border:1px solid rgba(168,139,255,0.3);color:#cbb9ff;padding:6px 14px;border-radius:20px;font-size:14px;cursor:pointer}
+    .tag:hover{background:rgba(168,139,255,0.25);color:#fff;transform:scale(1.05)}
+
+    /* rating area */
+    .rating-block{margin-top:18px;text-align:center;z-index:3}
+    .stars-row{display:inline-block;letter-spacing:6px;font-size:30px;user-select:none}
+    .stars-row span{cursor:pointer;color:#444;display:inline-block;transform:translateY(0)}
+    .stars-row span.filled{color:#FFD700;text-shadow:0 0 10px rgba(255,215,0,0.6)}
+    .stars-row span.half{
+      /* half fill via gradient clipped to text */
+      background:linear-gradient(90deg,#FFD700 50%, #444 50%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      text-shadow:0 0 6px rgba(255,215,0,0.45);
+    }
+    .rating-value{color:#cbb9ff;margin-top:6px;font-size:15px}
+
+    /* tabs (Details / Chapters) */
+    .tabs{display:flex;gap:10px;justify-content:center;margin-top:18px}
+    .tabs button{background:rgba(168,139,255,0.1);border:1px solid rgba(168,139,255,0.3);color:#cbb9ff;padding:10px 18px;border-radius:8px;cursor:pointer}
+    .tabs button.active{background:rgba(168,139,255,0.3)}
+
+    .tab-content{display:none;margin-top:16px}
+    .tab-content.active{display:block}
+
+    .comments-area{max-width:760px;margin:14px auto 0;text-align:right}
+    .comment{background:rgba(255,255,255,0.03);padding:10px;border-radius:8px;margin-bottom:8px;font-size:14px}
+
+    .comment-form{display:flex;gap:8px;justify-content:center;margin-top:10px}
+    .comment-form input{width:60%;padding:8px;border-radius:8px;border:1px solid rgba(168,139,255,0.2);background:rgba(255,255,255,0.03);color:#fff}
+    .comment-form button{padding:8px 12px;border-radius:8px;border:none;background:linear-gradient(90deg,#a88bff,#e6c07b);color:#0b0710;cursor:pointer}
+
+    /* chapters */
+    .search-bar{max-width:600px;margin:16px auto;display:flex;gap:10px;justify-content:center}
+    .search-bar input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(168,139,255,0.2);background:rgba(255,255,255,0.03);color:#fff}
+    .chapter-list{max-width:760px;margin:10px auto;background:rgba(255,255,255,0.03);border-radius:12px;padding:8px;box-shadow:0 0 18px rgba(168,139,255,0.15)}
+    .chapter-item{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+    .chapter-item:hover{background:rgba(168,139,255,0.06)}
+    .chapter-item .num{color:#a88bff;font-weight:700;margin-left:12px}
+
+    footer{padding:18px;text-align:center;color:#666;font-size:13px;margin-top:30px}
+    @media(max-width:720px){
+      .stars-row{font-size:24px;letter-spacing:4px}
+      .manga-title{font-size:22px}
+      .cover{width:180px;height:250px}
+    }
+  </style>
+</head>
+<body>
+  <div class="fog"></div>
+  <div class="symbols" id="symbols"></div>
+
+  <header>
+    <div class="left-section">
+      <div class="back-btn" onclick="history.back()">⮌ عودة</div>
+      <div class="logo-text">Manga Sanctum</div>
+    </div>
+    <div class="logo-box">MS</div>
+  </header>
+
+  <main>
+    <section class="manga-header" id="mangaHeader">
+      <img id="cover" class="cover" src="" alt="غلاف المانجا">
+      <div class="manga-title" id="title">جار التحميل...</div>
+
+      <!-- rating block (user row above, avg row below) -->
+      <div class="rating-block">
+        <!-- user editable row (10 half-star positions) -->
+        <div id="userStars" class="stars-row" aria-hidden="false"></div>
+        <!-- average rating display (visual) -->
+        <div id="avgStars" class="stars-row" style="margin-top:6px;"></div>
+        <div id="ratingNumeric" class="rating-value"></div>
+      </div>
+
+      <!-- description must remain in details tab but we keep it visible area and will place it inside Details tab as well.
+           To satisfy "description must stay in the original place within details", we'll keep it here and also move visible description into Details tab as same node. -->
+      <div id="description" class="manga-description"></div>
+
+      <div id="tagsContainer" class="tags-container" aria-hidden="false"></div>
+    </section>
+
+    <div class="tabs" role="tablist" aria-label="تبويبات">
+      <button id="detailsBtn" class="active" onclick="openTab('details')">التفاصيل</button>
+      <button id="chaptersBtn" onclick="openTab('chapters')">الفصول</button>
+    </div>
+
+    <!-- Details tab -->
+    <div id="details" class="tab-content active" role="tabpanel" aria-labelledby="detailsBtn">
+      <!-- ensure description is shown here as required (we reuse same element) -->
+      <div style="max-width:860px;margin:10px auto;text-align:center">
+        <!-- description already printed in header; keep it here again as required (same node) -->
+        <!-- comments -->
+        <div class="comments-area" id="commentsArea">
+          <div style="text-align:center;color:#cbb9ff;margin-bottom:8px;font-weight:700">التعليقات</div>
+          <div id="commentsList"></div>
+
+          <div class="comment-form">
+            <input id="commentInput" placeholder="اكتب تعليقك..." />
+            <button id="addCommentBtn">أضف التعليق</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chapters tab -->
+    <div id="chapters" class="tab-content" role="tabpanel" aria-labelledby="chaptersBtn">
+      <div class="search-bar">
+        <input id="chapterSearch" placeholder="ابحث برقم أو عنوان الفصل..." />
+      </div>
+      <div id="chaptersList" class="chapter-list"></div>
+    </div>
+  </main>
+
+  <footer>© 2025 Manga Sanctum | Realm of Shadows & Light</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ----- CONFIG: ضع مفتاح Supabase العمومي هنا -----
+    const SUPABASE_URL = "https://dxpqkojigblqgwqxwbmg.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"; // <-- استبدل هذا بالمفتاح العمومي (anon) لمشروعك
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const mangaId = new URLSearchParams(window.location.search).get("manga_id");
+
+    // Spawn decorative symbols
+    function spawnSymbols() {
+      const SYMBOLS = ["☽","✦","✶","⛧","☥","♆","卍","⚚"];
+      const c = document.getElementById("symbols");
+      for (let i=0;i<20;i++){
+        const s = document.createElement("div");
+        s.className = "symbol";
+        s.textContent = SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+        s.style.left = (Math.random()*100) + "%";
+        s.style.top = (Math.random()*100) + "%";
+        s.style.fontSize = (14 + Math.random()*28) + "px";
+        s.style.animationDelay = (Math.random()*30) + "s";
+        c.appendChild(s);
+      }
+    }
+
+    // get (or create) user identifier: uses supabase auth user if logged, otherwise fallback to local uuid
+    async function getCurrentUser() {
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+          // fetch profile username if available
+          const { data: profile } = await supabase.from('profiles').select('username').eq('id', data.user.id).single().catch(()=>({data:null}));
+          return { id: data.user.id, username: profile?.username || data.user.email || null };
+        }
+      } catch(e) {
+        // ignore
+      }
+      // fallback to local user id
+      let id = localStorage.getItem("user_id");
+      if (!id) { id = crypto.randomUUID(); localStorage.setItem("user_id", id); }
+      const localName = localStorage.getItem("user_name") || null;
+      return { id, username: localName };
+    }
+
+    // Render stars helper: value is 0..10 (integer for half-stars)
+    function renderStarRow(containerEl, value, options = {}) {
+      // options: editable (bool), onSelect(fn), disabled(bool)
+      containerEl.innerHTML = "";
+      for (let pos = 1; pos <= 10; pos++) {
+        const span = document.createElement("span");
+        // determine fill: filled if pos <= floor(value)
+        // half handling: if value fractional, value passed as integer (e.g., 7 -> 7)
+        if (pos <= value) {
+          span.classList.add("filled");
+          span.textContent = "★";
+        } else {
+          span.textContent = "★";
+        }
+
+        if (options.editable && !options.disabled) {
+          // clicking sets rating = pos (1..10). But we want each pos to represent half-star.
+          span.style.cursor = "pointer";
+          span.addEventListener("click", async () => {
+            // call callback
+            if (typeof options.onSelect === "function") {
+              await options.onSelect(pos); // pos is 1..10
+            }
+          });
+          span.addEventListener("mouseover", () => {
+            // preview - highlight upto pos
+            const siblings = containerEl.querySelectorAll("span");
+            siblings.forEach((s,i)=> {
+              s.classList.toggle("filled", (i+1) <= pos);
+            });
+          });
+          span.addEventListener("mouseout", () => {
+            // reset to actual value
+            const siblings = containerEl.querySelectorAll("span");
+            siblings.forEach((s,i)=> {
+              s.classList.toggle("filled", (i+1) <= value);
+            });
+          });
+        } else {
+          span.style.cursor = "default";
+        }
+
+        containerEl.appendChild(span);
+        // add small gap after each pair (full star)
+        if (pos % 2 === 0) containerEl.appendChild(document.createTextNode(" "));
+      }
+    }
+
+    // Render average visually allowing half-star look
+    function renderAvgRow(containerEl, avgFloat) {
+      // avgFloat is e.g. 8.7 -> we want to map to 8.7 out of 10
+      // For display, integer part floor(avgFloat) gives fully filled half-stars.
+      // For fractional 0.5 increments, we mark next half as filled (we don't implement fancy half-gradient; we fill by counting).
+      const valueRounded = Math.round(avgFloat * 10) / 10; // one decimal
+      // Represent as integer half-star positions: e.g., 8.7 -> 8.7 -> round to nearest 0.5? But user asked every 0.5 = 1 point.
+      // We'll display filled positions where pos <= floor(avgFloat) and for fractional >= .5 fill next pos.
+      const floorPos = Math.floor(valueRounded);
+      const frac = valueRounded - floorPos;
+      // We'll compute "filledCount" as floor(valueRounded) and if frac >= 0.5 add one more filled half.
+      const filledCount = floorPos + (frac >= 0.5 ? 1 : 0);
+
+      containerEl.innerHTML = "";
+      for (let pos = 1; pos <= 10; pos++) {
+        const span = document.createElement("span");
+        span.textContent = "★";
+        if (pos <= filledCount) span.classList.add("filled");
+        containerEl.appendChild(span);
+        if (pos % 2 === 0) containerEl.appendChild(document.createTextNode(" "));
+      }
+    }
+
+    // Load manga info, tags, description
+    async function loadMangaInfo() {
+      if (!mangaId) return;
+      const { data: manga, error } = await supabase
+        .from('manga_list')
+        .select('title, description, cover_url, tags')
+        .eq('id', mangaId)
+        .single();
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+      document.getElementById('title').textContent = manga.title || "بدون عنوان";
+      document.getElementById('description').textContent = manga.description || "لا يوجد وصف متاح.";
+      document.getElementById('cover').src = manga.cover_url || "images/book.png";
+
+      // tags
+      const tagsEl = document.getElementById('tagsContainer');
+      tagsEl.innerHTML = "";
+      if (manga.tags) {
+        const tags = manga.tags.split(',').map(t=>t.trim()).filter(Boolean);
+        tags.forEach(tag => {
+          const d = document.createElement('div');
+          d.className = 'tag';
+          d.textContent = tag;
+          d.onclick = () => { window.location.href = `index13.html?tag=${encodeURIComponent(tag)}`; };
+          tagsEl.appendChild(d);
+        });
+      }
+    }
+
+    // Load ratings (avg) and user rating state
+    async function loadRatingsUI() {
+      // average
+      const { data: ratingsData, error } = await supabase
+        .from('manga_ratings')
+        .select('rating')
+        .eq('manga_id', mangaId);
+
+      if (error) { console.error(error); return; }
+      const ratings = ratingsData?.map(r => parseFloat(r.rating)) || [];
+      const avg = ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length) : 0;
+      // display avg numeric as one decimal
+      const avgText = avg ? (Math.round(avg*10)/10).toFixed(1) : "0.0";
+      document.getElementById('ratingNumeric').textContent = `(${avgText} / 10)`;
+
+      // avgStars
+      renderAvgRow(document.getElementById('avgStars'), parseFloat(avg));
+
+      // user rating
+      const me = await getCurrentUser();
+      let userRating = 0;
+      if (me?.id) {
+        // attempt to find rating by user (by user_id). If using local fallback, check local storage saved rating (for local users)
+        // If using authenticated user, check DB row
+        if (me.id && me.id.length === 36 && me.username !== undefined) {
+          // could be local or supabase uuid. We'll try DB:
+        }
+        try {
+          const { data: userRow } = await supabase
+            .from('manga_ratings')
+            .select('rating, user_id')
+            .eq('manga_id', mangaId)
+            .eq('user_id', me.id)
+            .maybeSingle();
+          if (userRow && userRow.rating !== undefined && userRow.rating !== null) {
+            userRating = parseFloat(userRow.rating);
+          } else {
+            // fallback: if local user (not in DB), check localStorage
+            const localKey = `manga_${mangaId}_rating_${me.id}`;
+            const l = localStorage.getItem(localKey);
+            if (l) userRating = parseFloat(l);
+          }
+        } catch(e) {
+          console.error(e);
+        }
+      }
+
+      // if userRating > 0 -> render top row disabled (user can't change)
+      const userStarsEl = document.getElementById('userStars');
+      if (userRating && userRating > 0) {
+        renderStarRow(userStarsEl, Math.round(userRating), { editable:false, disabled:true });
+        // disable hovering by removing any pointer events
+        userStarsEl.style.pointerEvents = 'none';
+      } else {
+        // user hasn't rated: make editable; clicking saves value (1..10) and then disable
+        renderStarRow(userStarsEl, 0, { editable:true, disabled:false, onSelect: async (pos) => {
+          // pos 1..10 => rating value is pos (represents half-star units) => store as numeric (e.g., 7 -> 7.0)
+          await saveUserRating(pos);
+          // disable the row to prevent change
+          renderStarRow(userStarsEl, pos, { editable:false, disabled:true });
+          userStarsEl.style.pointerEvents = 'none';
+          // refresh avg
+          await loadRatingsUI();
+        }});
+      }
+    }
+
+    async function saveUserRating(pos) {
+      const me = await getCurrentUser();
+      if (!me || !me.id) {
+        alert('يجب تسجيل الدخول أو تفعيل المستخدم المحلي للقدرة على التقييم.');
+        return;
+      }
+      // pos is integer 1..10 mapping to rating value (1..10)
+      const ratingValue = pos; // numeric (we keep as numeric value)
+      // upsert into manga_ratings
+      const payload = {
+        manga_id: parseInt(mangaId),
+        user_id: me.id,
+        rating: ratingValue
+      };
+      const { error } = await supabase.from('manga_ratings').upsert(payload, { onConflict: ['manga_id','user_id'] });
+      if (error) {
+        console.error(error);
+        alert('حدث خطأ أثناء حفظ التقييم.');
+      } else {
+        // also store locally for fallback
+        try { localStorage.setItem(`manga_${mangaId}_rating_${me.id}`, String(ratingValue)); } catch(e){}
+      }
+    }
+
+    // Comments
+    async function loadComments() {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('id, username, content, created_at')
+        .eq('manga_id', mangaId)
+        .order('created_at', { ascending: false });
+      if (error) { console.error(error); return; }
+      const list = document.getElementById('commentsList');
+      list.innerHTML = "";
+      if (!data || data.length === 0) {
+        list.innerHTML = '<div style="color:#777;padding:10px;text-align:center">لا توجد تعليقات بعد.</div>';
+        return;
+      }
+      data.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'comment';
+        const time = new Date(c.created_at).toLocaleString();
+        div.innerHTML = `<div style="font-weight:700;color:#f9c92d">${escapeHtml(c.username)}</div>
+                         <div style="margin-top:6px">${escapeHtml(c.content)}</div>
+                         <div style="font-size:11px;color:#999;margin-top:6px;text-align:left">${time}</div>`;
+        list.appendChild(div);
+      });
+    }
+
+    // add comment
+    document.addEventListener('click', (e) => {
+      // delegated inits later
+    });
+
+    async function addCommentHandler() {
+      const input = document.getElementById('commentInput');
+      const text = (input.value || "").trim();
+      if (!text) return alert('اكتب تعليقاً أولاً.');
+      // username: if logged in and profiles table exists, use profile username; else prompt (and save locally)
+      const me = await getCurrentUser();
+      let username = "مستخدم";
+      if (me && me.username) username = me.username;
+      else if (me && me.id) {
+        // try to fetch profile username
+        const { data: prof } = await supabase.from('profiles').select('username').eq('id', me.id).maybeSingle();
+        if (prof && prof.username) username = prof.username;
+        else {
+          // prompt and save locally
+          const n = prompt('اسمك لعرضه مع التعليق:', localStorage.getItem('user_name') || "");
+          if (n) { username = n; localStorage.setItem('user_name', n); }
+        }
+      } else {
+        const n = prompt('اسمك لعرضه مع التعليق (غير مطلوب):', localStorage.getItem('user_name') || "");
+        if (n) { username = n; localStorage.setItem('user_name', n); }
+      }
+
+      const payload = { manga_id: parseInt(mangaId), username, content: text };
+      const { error } = await supabase.from('comments').insert([payload]);
+      if (error) { console.error(error); alert('حدث خطأ أثناء إضافة التعليق.'); return; }
+      input.value = '';
+      await loadComments();
+    }
+
+    // Chapters
+    let allChapters = [];
+    async function loadChapters() {
+      const me = await getCurrentUser();
+      const { data: chapters, error } = await supabase.from('chapters').select('id, title, number').eq('manga_id', mangaId).order('number', { ascending: true });
+      if (error) { console.error(error); return; }
+      allChapters = chapters || [];
+      // fetch read chapters if user exists
+      let readIds = [];
+      if (me && me.id) {
+        try {
+          const { data: reads } = await supabase.from('chapter_reads').select('chapter_id').eq('user_id', me.id);
+          readIds = (reads || []).map(r => r.chapter_id);
+        } catch(e) { /* ignore */ }
+      }
+      renderChapters(allChapters, readIds);
+      // wire search input
+      document.getElementById('chapterSearch').addEventListener('input', (ev) => {
+        const q = ev.target.value.trim().toLowerCase();
+        const filtered = allChapters.filter(c => (c.title||'').toLowerCase().includes(q) || String(c.number).includes(q));
+        renderChapters(filtered, readIds);
+      });
+    }
+
+    function renderChapters(chapters, readIds = []) {
+      const container = document.getElementById('chaptersList');
+      container.innerHTML = "";
+      if (!chapters || chapters.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:#777">لا توجد فصول بعد.</div>';
+        return;
+      }
+      chapters.forEach(ch => {
+        const div = document.createElement('div');
+        div.className = 'chapter-item';
+        div.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+            <div style="text-align:right;flex:1">
+              <div style="font-size:14px;color:#eaeaea">${escapeHtml(ch.title || '')}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="num">الفصل ${ch.number}</div>
+            </div>
+          </div>`;
+        if (readIds.includes(ch.id)) {
+          div.style.boxShadow = "0 0 14px rgba(168,139,255,0.35)";
+          div.style.background = "rgba(168,139,255,0.06)";
+          const tick = document.createElement('div'); tick.textContent = "✅"; tick.style.marginLeft = "10px";
+        }
+        div.addEventListener('click', () => {
+          window.location.href = `index9.html?manga_id=${mangaId}&chapter_id=${ch.id}`;
+        });
+        container.appendChild(div);
+      });
+    }
+
+    // helpers
+    function escapeHtml(s) {
+      if (!s) return "";
+      return s.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    // tab switch
+    function openTab(id) {
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(id + 'Btn')?.classList?.add('active'); // if exists
+      document.getElementById(id)?.classList.add('active');
+      // ensure details shows description etc (we keep same nodes)
+      // if user lands on chapters, focus search
+      if (id === 'chapters') document.getElementById('chapterSearch').focus();
+    }
+
+    // init the page
+    (async function init(){
+      spawnSymbols();
+      await loadMangaInfo();
+      await loadRatingsUI();
+      await loadComments();
+      await loadChapters();
+
+      // wire comment button
+      document.getElementById('addCommentBtn').addEventListener('click', addCommentHandler);
+
+      // make sure clicking userStars when editable handled inside renderStarRow via onSelect
+    })();
+  </script>
+</body>
+</html>
