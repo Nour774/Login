@@ -77,12 +77,10 @@ footer{padding:18px;text-align:center;color:#666;font-size:13px;margin-top:30px}
     <button id="chaptersBtn" onclick="openTab('chapters')">الفصول</button>
   </div>
 
-  <!-- تفاصيل -->
   <div id="details" class="tab-content active">
     <div class="rating-block">
       <div style="margin-bottom:6px;font-weight:700;color:#cbb9ff">تقييمك:</div>
       <div id="userStars" class="stars-row" aria-label="تقييمك"></div>
-
       <div style="margin-top:12px;margin-bottom:6px;font-weight:700;color:#cbb9ff">متوسط التقييمات:</div>
       <div id="avgStars" class="stars-row" aria-label="متوسط التقييم"></div>
     </div>
@@ -100,7 +98,6 @@ footer{padding:18px;text-align:center;color:#666;font-size:13px;margin-top:30px}
     </div>
   </div>
 
-  <!-- فصول -->
   <div id="chapters" class="tab-content">
     <div class="search-bar">
       <input id="chapterSearch" placeholder="ابحث برقم أو عنوان الفصل..." />
@@ -115,8 +112,8 @@ footer{padding:18px;text-align:center;color:#666;font-size:13px;margin-top:30px}
 <script>
 const SUPABASE_URL="https://dxpqkojigblqgwqxwbmg.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const mangaId=new URLSearchParams(window.location.search).get('manga_id');
+const supabase = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const mangaId = new URLSearchParams(window.location.search).get('manga_id');
 
 function spawnSymbols(){
   const SYMBOLS=["☽","✦","✶","⛧","☥","♆","卍","⚚"];
@@ -156,12 +153,40 @@ function renderStars(container,value,editable=false,onSelect=null){
     span.textContent='★';
     if(i<full) span.classList.add('full');
     else if(i===full && half) span.classList.add('half');
-    if(editable && onSelect){
+    if(editable){
       span.style.cursor='pointer';
-      span.addEventListener('click',()=>onSelect(i+1));
+      span.addEventListener('click',async ()=>{ if(onSelect) await onSelect(i+1); });
     }
     container.appendChild(span);
+    if(i<4) container.appendChild(document.createTextNode(' '));
   }
+}
+
+async function loadMangaInfo(){
+  if(!mangaId) return;
+  const { data,error } = await supabase.from('manga_list').select('title,description,cover_url,tags').eq('id',mangaId).maybeSingle();
+  if(error){ console.error(error); return; }
+  if(!data) return;
+  document.getElementById('title').textContent=data.title||'بدون عنوان';
+  document.getElementById('cover').src=data.cover_url || 'images/default_cover.png';
+  const tagsEl=document.getElementById('tagsContainer');
+  if(data.tags?.length) data.tags.forEach(t=>{ const div=document.createElement('div'); div.className='tag'; div.textContent=t; tagsEl.appendChild(div); });
+  document.getElementById('description').textContent=data.description||'لا توجد وصف بعد';
+}
+
+async function loadChapters(){
+  if(!mangaId) return;
+  const { data:errorData } = await supabase.from('chapters').select('*').eq('manga_id',mangaId).order('num',{ascending:true});
+  const list = document.getElementById('chaptersList');
+  if(!errorData || errorData.length===0){ list.innerHTML='<div style="text-align:center;color:#888;margin:12px">لا توجد فصول بعد</div>'; return; }
+  list.innerHTML='';
+  errorData.forEach(ch=>{
+    const div=document.createElement('div');
+    div.className='chapter-item';
+    div.innerHTML=`<div>${ch.title}</div><div class="num">#${ch.num}</div>`;
+    div.onclick=()=>{ window.location.href='index9.html?chapter_id='+ch.id; };
+    list.appendChild(div);
+  });
 }
 
 function openTab(tab){
@@ -172,120 +197,9 @@ function openTab(tab){
   else document.getElementById('chaptersBtn').classList.add('active');
 }
 
-async function loadRatings(){
-  if(!mangaId) return;
-  const me=await getCurrentUser();
-  let userRating=0;
-
-  // تقييم المستخدم الحالي
-  if(me && me.id){
-    const { data: row } = await supabase
-      .from('manga_ratings')
-      .select('rating')
-      .eq('manga_id',mangaId)
-      .eq('user_id',me.id)
-      .maybeSingle();
-    if(row && row.rating) userRating=row.rating;
-  }
-
-  // متوسط التقييمات
-  const { data: avgData } = await supabase
-    .from('manga_ratings')
-    .select('rating')
-    .eq('manga_id',mangaId);
-
-  let avg=0;
-  let cnt=0;
-  if(avgData && avgData.length>0){
-    cnt=avgData.length;
-    let sum=0;
-    avgData.forEach(r=>sum+=r.rating);
-    avg=sum/cnt;
-  }
-
-  // عرض متوسط التقييم بصريًا
-  const avgStarsContainer=document.getElementById('avgStars');
-  renderStars(avgStarsContainer,avg,false);
-  const txt=document.createElement('div');
-  txt.className='rating-value';
-  txt.textContent=`(${(avg*2).toFixed(1)}/10 من ${cnt} تقييم)`;
-  avgStarsContainer.appendChild(txt);
-
-  // عرض نجوم المستخدم
-  renderStars(document.getElementById('userStars'),userRating,true,async newVal=>{
-    if(!me.isAuth) return alert('يجب تسجيل الدخول للتقييم.');
-    const payload={ manga_id:parseInt(mangaId), user_id:me.id, rating:newVal };
-    await supabase.from('manga_ratings').upsert(payload,{ onConflict:['manga_id','user_id'] });
-    await loadRatings();
-  });
-}
-
-async function loadManga(){
-  if(!mangaId) return;
-  const { data } = await supabase.from('mangas').select('*').eq('id',mangaId).maybeSingle();
-  if(data){
-    document.getElementById('cover').src=data.cover_url;
-    document.getElementById('title').textContent=data.title;
-    document.getElementById('description').textContent=data.description;
-    const tagsContainer=document.getElementById('tagsContainer');
-    if(data.tags) data.tags.split(',').forEach(t=>{
-      const el=document.createElement('div');
-      el.className='tag'; el.textContent=t; tagsContainer.appendChild(el);
-    });
-  }
-}
-
-async function loadChapters(){
-  if(!mangaId) return;
-  const { data } = await supabase.from('chapters').select('*').eq('manga_id',mangaId).order('num',{ascending:true});
-  const container=document.getElementById('chaptersList');
-  container.innerHTML='';
-  if(data){
-    data.forEach(ch=>{
-      const div=document.createElement('div');
-      div.className='chapter-item';
-      div.innerHTML=`<span class="num">#${ch.num}</span><span>${ch.title}</span>`;
-      div.addEventListener('click',()=>window.location.href=`index9.html?chapter_id=${ch.id}`);
-      container.appendChild(div);
-    });
-  }
-  const searchInput=document.getElementById('chapterSearch');
-  searchInput.addEventListener('input',()=>{
-    const filter=searchInput.value.toLowerCase();
-    Array.from(container.children).forEach(c=>{
-      c.style.display=c.textContent.toLowerCase().includes(filter)?'flex':'none';
-    });
-  });
-}
-
-async function loadComments(){
-  if(!mangaId) return;
-  const { data } = await supabase.from('comments').select('*').eq('manga_id',mangaId).order('created_at',{ascending:true});
-  const container=document.getElementById('commentsList');
-  container.innerHTML='';
-  if(data){
-    data.forEach(c=>{
-      const div=document.createElement('div'); div.className='comment';
-      div.innerHTML=`<b>${c.username||'زائر'}:</b> ${c.text}`;
-      container.appendChild(div);
-    });
-  }
-}
-
-document.getElementById('addCommentBtn').addEventListener('click',async()=>{
-  const input=document.getElementById('commentInput');
-  if(!input.value) return;
-  const me=await getCurrentUser();
-  await supabase.from('comments').insert([{ manga_id:parseInt(mangaId), user_id:me.id, username:me.username||'زائر', text:input.value }]);
-  input.value='';
-  await loadComments();
-});
-
 spawnSymbols();
-loadManga();
-loadRatings();
+loadMangaInfo();
 loadChapters();
-loadComments();
 </script>
 </body>
 </html>
