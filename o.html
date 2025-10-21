@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Manga Sanctum</title>
+<style>
+body {
+  background: #0e0e0e;
+  color: #fff;
+  font-family: "Cairo", sans-serif;
+  margin: 0;
+  padding: 0;
+}
+header {
+  background: #1b1b1b;
+  text-align: center;
+  padding: 14px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.logo-text {
+  font-size: 30px;
+  font-weight: 800;
+  color: #a88bff;
+}
+main {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 0 10px;
+}
+.section {
+  background: #181818;
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+h2 {
+  color: #c5a6ff;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+.chapter-item {
+  background: #222;
+  margin: 6px 0;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.chapter-item:hover {
+  background: #2a2a2a;
+}
+.star {
+  font-size: 26px;
+  cursor: pointer;
+  color: #777;
+  transition: color 0.2s;
+}
+.star.active {
+  color: gold;
+}
+.comment {
+  border-bottom: 1px solid #333;
+  padding: 8px 0;
+}
+.comment strong {
+  color: #a88bff;
+}
+#commentInput {
+  width: 100%;
+  border-radius: 8px;
+  padding: 10px;
+  background: #2b2b2b;
+  border: none;
+  color: #fff;
+  margin-top: 8px;
+}
+button {
+  background: #a88bff;
+  border: none;
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+button:hover {
+  background: #9376ff;
+}
+
+@media(max-width:720px){
+  .logo-text{font-size:20px !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-text">Manga Sanctum</div>
+</header>
+
+<main>
+  <div class="section" id="info">
+    <h2>معلومات المانجا</h2>
+    <div id="mangaTitle"></div>
+  </div>
+
+  <div class="section">
+    <h2>تقييم المستخدمين</h2>
+    <div id="avgStars"></div>
+    <div id="ratingNumeric" style="margin-top:6px;color:#aaa"></div>
+    <hr style="border-color:#333;margin:10px 0;">
+    <div id="userStars"></div>
+  </div>
+
+  <div class="section">
+    <h2>الفصول</h2>
+    <div id="chaptersList"></div>
+  </div>
+
+  <div class="section">
+    <h2>التعليقات</h2>
+    <div id="commentsList"></div>
+    <textarea id="commentInput" placeholder="أضف تعليقك..."></textarea>
+    <button onclick="addComment()">إرسال</button>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabaseUrl = "https://YOUR_PROJECT.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
+const mangaId = new URLSearchParams(location.search).get('manga_id');
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  loadManga();
+  loadRatings();
+  loadChapters();
+  loadComments();
+});
+
+function escapeHtml(text){ return text?.replace(/[&<>"]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])) || ""; }
+
+// ---------------- التقييم ----------------
+function renderStarRow5(container, current, clickable, callback){
+  container.innerHTML = '';
+  for (let i=1;i<=10;i++){
+    const s=document.createElement('span');
+    s.textContent='★';
+    s.className='star'+(i<=current?' active':'');
+    if(clickable){
+      s.onclick=()=>{ callback(i); };
+      s.onmouseenter=()=>highlight(i);
+      s.onmouseleave=()=>highlight(current);
+    }
+    container.appendChild(s);
+  }
+  function highlight(n){
+    [...container.children].forEach((e,idx)=>{
+      e.classList.toggle('active', idx < n);
+    });
+  }
+}
+
+async function loadRatings(){
+  if (!mangaId) return;
+
+  // حساب المتوسط
+  const { data: avgData } = await supabase
+    .from('manga_ratings')
+    .select('avg(rating) as avg, count(rating) as cnt')
+    .eq('manga_id', mangaId)
+    .single();
+  const avg = avgData?.avg ? parseFloat(avgData.avg) : 0;
+  const avgRounded = Math.round(avg * 10) / 10;
+  renderStarRow5(document.getElementById('avgStars'), Math.round(avgRounded), false);
+  document.getElementById('ratingNumeric').textContent = `(${avgRounded.toFixed(1)} / 10)`;
+
+  // تحقق من المستخدم
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) {
+    renderStarRow5(document.getElementById('userStars'), 0, false);
+    document.getElementById('userStars').innerHTML += "<div style='font-size:14px;color:#888;margin-top:6px'>يجب تسجيل الدخول للتقييم</div>";
+    return;
+  }
+
+  const userId = auth.user.id;
+  let userRating = 0;
+  const { data: row } = await supabase
+    .from('manga_ratings')
+    .select('rating')
+    .eq('manga_id', mangaId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (row && row.rating) userRating = parseInt(row.rating);
+
+  renderStarRow5(document.getElementById('userStars'), userRating, true, async (newVal)=>{
+    const { error } = await supabase.from('manga_ratings')
+      .upsert({ manga_id: parseInt(mangaId), user_id: userId, rating: newVal }, { onConflict: ['manga_id','user_id'] });
+    if (!error) loadRatings();
+  });
+}
+
+// ---------------- الفصول ----------------
+async function loadChapters(){
+  const { data: list } = await supabase.from('chapters').select('*').eq('manga_id', mangaId).order('number', { ascending: false });
+  renderChapters(list);
+}
+function renderChapters(list){
+  const container = document.getElementById('chaptersList');
+  container.innerHTML = '';
+  if (!list || list.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#777;padding:14px">لا توجد فصول بعد.</div>';
+    return;
+  }
+
+  list.forEach(ch=>{
+    const div = document.createElement('div');
+    div.className = 'chapter-item';
+    div.innerHTML = `
+      <div style="flex:1;text-align:right;">
+        <span style="color:#a88bff;font-weight:700;">الفصل ${ch.number}</span> — 
+        <span style="color:#eaeaea;font-size:14px">${escapeHtml(ch.title || '')}</span>
+      </div>`;
+    div.addEventListener('click', ()=> window.location.href = `index9.html?manga_id=${mangaId}&chapter_id=${ch.id}`);
+    container.appendChild(div);
+  });
+}
+
+// ---------------- التعليقات ----------------
+async function loadComments(){
+  const { data: comments } = await supabase
+    .from('comments')
+    .select('username, content, created_at')
+    .eq('manga_id', mangaId)
+    .order('created_at', { ascending: false });
+  const container = document.getElementById('commentsList');
+  container.innerHTML = '';
+  if (!comments || comments.length===0){
+    container.innerHTML='<div style="text-align:center;color:#888;">لا توجد تعليقات بعد.</div>';
+    return;
+  }
+  comments.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='comment';
+    d.innerHTML=`<strong>${escapeHtml(c.username)}</strong>: ${escapeHtml(c.content)}`;
+    container.appendChild(d);
+  });
+}
+
+async function addComment(){
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) {
+    alert("يجب تسجيل الدخول لكتابة تعليق.");
+    return;
+  }
+
+  const input = document.getElementById('commentInput');
+  const text = (input.value||'').trim();
+  if (!text) return alert('الرجاء كتابة تعليق.');
+
+  const { data: profile } = await supabase.from('profiles')
+    .select('username')
+    .eq('id', auth.user.id)
+    .maybeSingle();
+
+  const username = profile?.username || auth.user.email || "مستخدم";
+  const payload = { manga_id: parseInt(mangaId), username, content: text };
+  const { error } = await supabase.from('comments').insert([payload]);
+  if (!error) {
+    input.value = '';
+    loadComments();
+  }
+}
+
+// ---------------- المانجا ----------------
+async function loadManga(){
+  const { data } = await supabase.from('manga_list').select('*').eq('id', mangaId).single();
+  if (data) document.getElementById('mangaTitle').textContent = data.title;
+}
+</script>
+</body>
+</html>
