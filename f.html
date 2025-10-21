@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <title>Manga Sanctum - عرض المانجا</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="images/book.png">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" href="images/book.png" />
 <style>
 *{box-sizing:border-box;transition:0.25s}
 body{margin:0;font-family:"Cairo",sans-serif;background:radial-gradient(circle at 50% 10%,#0b0b10,#050505 90%);color:#eaeaea;min-height:100vh;overflow-x:hidden;position:relative}
@@ -77,13 +77,14 @@ footer{padding:18px;text-align:center;color:#666;font-size:13px;margin-top:30px}
     <button id="chaptersBtn" onclick="openTab('chapters')">الفصول</button>
   </div>
 
+  <!-- تفاصيل -->
   <div id="details" class="tab-content active">
     <div class="rating-block">
       <div style="margin-bottom:6px;font-weight:700;color:#cbb9ff">تقييمك:</div>
-      <div id="userStars" class="stars-row"></div>
+      <div id="userStars" class="stars-row" aria-label="تقييمك"></div>
 
       <div style="margin-top:12px;margin-bottom:6px;font-weight:700;color:#cbb9ff">متوسط التقييمات:</div>
-      <div id="avgStars" class="stars-row"></div>
+      <div id="avgStars" class="stars-row" aria-label="متوسط التقييم"></div>
     </div>
 
     <div id="description" class="manga-description"></div>
@@ -99,6 +100,7 @@ footer{padding:18px;text-align:center;color:#666;font-size:13px;margin-top:30px}
     </div>
   </div>
 
+  <!-- فصول -->
   <div id="chapters" class="tab-content">
     <div class="search-bar">
       <input id="chapterSearch" placeholder="ابحث برقم أو عنوان الفصل..." />
@@ -113,33 +115,154 @@ footer{padding:18px;text-align:center;color:#666;font-size:13px;margin-top:30px}
 <script>
 const SUPABASE_URL="https://dxpqkojigblqgwqxwbmg.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
-const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const mangaId=new URLSearchParams(window.location.search).get('manga_id');
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const mangaId = new URLSearchParams(location.search).get('manga_id');
 
+// رموز عائمة
+const SYMBOLS = ["☽","✦","✶","⛧","☥","♆","卍","⚚"];
 function spawnSymbols(){
-  const SYMBOLS=["☽","✦","✶","⛧","☥","♆","卍","⚚"];
-  const c=document.getElementById('symbols');
+  const c = document.getElementById("symbols");
   for(let i=0;i<20;i++){
-    const s=document.createElement('div');
-    s.className='symbol';
+    const s=document.createElement("div");
+    s.className="symbol";
     s.textContent=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
-    s.style.left=(Math.random()*100)+'%';
-    s.style.top=(Math.random()*100)+'%';
-    s.style.fontSize=(14+Math.random()*28)+'px';
-    s.style.animationDelay=(Math.random()*30)+'s';
+    s.style.left=Math.random()*100+"%";
+    s.style.top=Math.random()*100+"%";
+    s.style.fontSize=(14+Math.random()*30)+"px";
+    s.style.animationDuration=(20+Math.random()*20)+"s";
     c.appendChild(s);
   }
 }
+spawnSymbols();
 
-function openTab(id){
-  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+// Tabs
+function openTab(tabName){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
-  if(id==='details') document.getElementById('detailsBtn').classList.add('active');
-  else document.getElementById('chaptersBtn').classList.add('active');
+  document.getElementById(tabName).classList.add('active');
+  document.querySelector(`#${tabName}Btn`).classList.add('active');
 }
 
-spawnSymbols();
+// عرض النجوم
+function renderStars(container, value, editable=false, callback){
+  container.innerHTML='';
+  for(let i=1;i<=5;i++){
+    const span=document.createElement('span');
+    if(value>=i) span.className='full';
+    else if(value>=i-0.5) span.className='half';
+    else span.className='';
+    span.innerHTML='&#9733;';
+    if(editable){
+      span.style.cursor='pointer';
+      span.addEventListener('click',()=>{callback(i);});
+    }
+    container.appendChild(span);
+  }
+}
+
+// تحميل بيانات المانجا
+async function loadManga(){
+  const { data } = await supabase.from('mangas').select('*').eq('id',mangaId).maybeSingle();
+  if(!data) return alert('لم يتم العثور على المانجا.');
+  document.getElementById('cover').src=data.cover_url;
+  document.getElementById('title').textContent=data.title;
+  document.getElementById('description').textContent=data.description||'لا يوجد وصف حالياً.';
+  // الوسوم
+  const tagsC=document.getElementById('tagsContainer');
+  tagsC.innerHTML='';
+  (data.tags||[]).forEach(tag=>{
+    const t=document.createElement('div'); t.className='tag'; t.textContent=tag; tagsC.appendChild(t);
+  });
+  await loadRatings();
+  await loadChapters();
+  await loadComments();
+}
+
+// التقييمات
+async function loadRatings(){
+  if(!mangaId) return;
+  const me = await getCurrentUser();
+  let userRating=0;
+
+  // تقييم المستخدم
+  if(me && me.id){
+    const { data: row } = await supabase.from('manga_ratings')
+      .select('rating').eq('manga_id',mangaId).eq('user_id',me.id).maybeSingle();
+    if(row && row.rating) userRating=row.rating;
+  }
+
+  // متوسط التقييم
+  const { data: avgData } = await supabase.from('manga_ratings').select('rating').eq('manga_id',mangaId);
+  let avg=0, cnt=0;
+  if(avgData && avgData.length>0){
+    cnt=avgData.length;
+    let sum=0; avgData.forEach(r=>sum+=r.rating);
+    avg = (sum/cnt)*2; // من 1-5 إلى 0-10
+  }
+
+  // عرض النجوم
+  renderStars(document.getElementById('avgStars'), avg/2);
+  const avgText=document.createElement('div');
+  avgText.className='rating-value';
+  avgText.textContent=`(${avg.toFixed(1)}/10) من ${cnt} تقييم`;
+  document.getElementById('avgStars').appendChild(avgText);
+
+  // نجوم المستخدم
+  renderStars(document.getElementById('userStars'), userRating, true, async newVal=>{
+    if(!me?.isAuth) return alert('يجب تسجيل الدخول للتقييم.');
+    const payload={manga_id:parseInt(mangaId),user_id:me.id,rating:newVal};
+    await supabase.from('manga_ratings').upsert(payload,{onConflict:['manga_id','user_id']});
+    await loadRatings();
+  });
+}
+
+// الفصول
+async function loadChapters(){
+  const { data } = await supabase.from('chapters').select('*').eq('manga_id',mangaId).order('number',{ascending:false});
+  const list=document.getElementById('chaptersList');
+  list.innerHTML='';
+  if(data) data.forEach(ch=>{
+    const div=document.createElement('div'); div.className='chapter-item';
+    div.innerHTML=`<span class="num">#${ch.number}</span> ${ch.title||'بدون عنوان'}`;
+    div.onclick=()=>location.href=`chapter.html?chapter_id=${ch.id}`;
+    list.appendChild(div);
+  });
+  document.getElementById('chapterSearch').oninput=e=>{
+    const val=e.target.value.toLowerCase();
+    Array.from(list.children).forEach(item=>{
+      item.style.display = item.textContent.toLowerCase().includes(val)?'flex':'none';
+    });
+  };
+}
+
+// التعليقات
+async function loadComments(){
+  const { data } = await supabase.from('comments').select('id,user_id,content,created_at').eq('manga_id',mangaId).order('created_at',{ascending:false});
+  const list=document.getElementById('commentsList');
+  list.innerHTML='';
+  if(data) data.forEach(c=>{
+    const div=document.createElement('div'); div.className='comment';
+    div.textContent=c.content;
+    list.appendChild(div);
+  });
+}
+document.getElementById('addCommentBtn').onclick=async()=>{
+  const inp=document.getElementById('commentInput');
+  const txt=inp.value.trim(); if(!txt) return;
+  const me=await getCurrentUser();
+  if(!me?.isAuth) return alert('يجب تسجيل الدخول للتعليق.');
+  await supabase.from('comments').insert([{manga_id:parseInt(mangaId),user_id:me.id,content:txt}]);
+  inp.value='';
+  await loadComments();
+}
+
+// مستخدم وهمي
+async function getCurrentUser(){
+  return {id:1,isAuth:true}; // لتجربة
+}
+
+// بدء التحميل
+loadManga();
 </script>
 </body>
 </html>
