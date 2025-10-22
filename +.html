@@ -265,58 +265,50 @@ async function addComment(){
 }
 
 async function loadChapters() {
-  try {
-    if (!mangaId) return;
+  if (!mangaId) return;
 
-    const { data, error } = await supabase
-      .from("chapters")
-      .select("id, title, chapter_num")
-      .eq("manga_id", mangaId)
-      .order("chapter_num", { ascending: true });
+  // جلب الفصول حسب العمود "number"
+  const { data, error } = await supabase
+    .from("chapters")
+    .select("id, title, number")
+    .eq("manga_id", mangaId)
+    .order("number", { ascending: true }); // ترتيب حسب رقم الفصل
 
-    const list = document.getElementById("chaptersList");
-    list.innerHTML = "";
+  const list = document.getElementById("chaptersList");
+  list.innerHTML = "";
 
-    if (error) {
-      console.error("خطأ في جلب الفصول:", error);
-      list.innerHTML =
-        '<div style="text-align:center;color:#777">حدث خطأ أثناء تحميل الفصول.</div>';
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      list.innerHTML =
-        '<div style="text-align:center;color:#777">لا توجد فصول بعد.</div>';
-      return;
-    }
-
-    data.forEach((c) => {
-      const div = document.createElement("div");
-      div.className = "chapter-item";
-      div.innerHTML = `<div><span class="num">الفصل ${c.chapter_num}</span>${escapeHtml(
-        c.title || ""
-      )}</div>`;
-      div.addEventListener("click", () =>
-        (window.location.href = `chapter.html?chapter_id=${c.id}`)
-      );
-      list.appendChild(div);
-    });
-
-    // 🔍 تفعيل البحث داخل قائمة الفصول
-    const search = document.getElementById("chapterSearch");
-    if (search) {
-      search.addEventListener("input", (e) => {
-        const val = e.target.value.toLowerCase();
-        Array.from(list.children).forEach((item) => {
-          item.style.display = item.textContent.toLowerCase().includes(val)
-            ? "flex"
-            : "none";
-        });
-      });
-    }
-  } catch (err) {
-    console.error("استثناء غير متوقع أثناء تحميل الفصول:", err);
+  if (error) {
+    console.error(error);
+    list.innerHTML = `<div style="text-align:center;color:#777">حدث خطأ أثناء تحميل الفصول.</div>`;
+    return;
   }
+
+  if (!data || data.length === 0) {
+    list.innerHTML = `<div style="text-align:center;color:#777">لا توجد فصول بعد.</div>`;
+    return;
+  }
+
+  data.forEach((c) => {
+    const div = document.createElement("div");
+    div.className = "chapter-item";
+    const num = c.number ? `الفصل ${c.number}` : "فصل غير مرقم";
+    div.innerHTML = `<div><span class="num">${num}</span>${escapeHtml(c.title || "")}</div>`;
+    div.addEventListener("click", () => {
+      window.location.href = `chapter.html?chapter_id=${c.id}`;
+    });
+    list.appendChild(div);
+  });
+
+  // تفعيل البحث
+  const searchInput = document.getElementById("chapterSearch");
+  searchInput.addEventListener("input", (e) => {
+    const val = e.target.value.toLowerCase();
+    Array.from(list.children).forEach((item) => {
+      item.style.display = item.textContent.toLowerCase().includes(val)
+        ? "flex"
+        : "none";
+    });
+  });
 }
 
 
