@@ -256,9 +256,10 @@ async function addComment(){
 
 async function loadChapters(){
   if(!mangaId) return;
+
   const { data, error } = await supabase
     .from('chapters')
-    .select('number,title')
+    .select('id,number,title')  // استدعاء id لكل فصل
     .eq('manga_id', mangaId)
     .order('number', { ascending: true });
 
@@ -276,13 +277,13 @@ async function loadChapters(){
     div.className='chapter-item';
     div.innerHTML = `<div><span class="num">الفصل ${c.number}</span> ${escapeHtml(c.title||'')}</div>`;
     
+    // تعديل الرابط ليمرر manga_id و chapter_id
     div.addEventListener('click', ()=> {
       const params = new URLSearchParams({
         manga_id: mangaId,
-        number: c.number,
-        title: c.title || ''
+        chapter_id: c.id
       });
-      window.location.href = `read.html?${params.toString()}`;
+      window.location.href = `https://nour774.github.io/Login/read.html?${params.toString()}`;
     });
 
     list.appendChild(div);
