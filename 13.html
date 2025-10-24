@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>Manga Sanctum - عرض المانجا</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" href="images/book.png" />
+<style>
+*{box-sizing:border-box;transition:0.25s}
+body{margin:0;font-family:"Cairo",sans-serif;background:radial-gradient(circle at 50% 10%,#0b0b10,#050505 90%);color:#eaeaea;min-height:100vh;overflow-x:hidden;position:relative}
+.fog{position:fixed;top:0;left:0;width:200%;height:200%;background:url('images/fog.png') repeat;opacity:0.15;animation:fogMove 120s linear infinite;z-index:0;pointer-events:none;transform:translate(-25%,-25%)}
+@keyframes fogMove{0%{background-position:0 0}50%{background-position:1000px 800px}100%{background-position:0 0}}
+.symbols{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:hidden}
+.symbol{position:absolute;color:rgba(168,139,255,0.08);font-size:22px;animation:floatSymbol 30s linear infinite;user-select:none}
+@keyframes floatSymbol{0%{transform:translateY(100vh) rotate(0deg);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-10vh) rotate(360deg);opacity:0}}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(10,10,15,0.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,0.05);position:sticky;top:0;z-index:10}
+.left-section{display:flex;align-items:center;gap:10px}
+.back-btn{color:#eaeaea;font-size:20px;cursor:pointer;padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.05)}
+.back-btn:hover{background:rgba(255,255,255,0.12)}
+.logo-text{font-weight:800;font-size:26px;color:#d4c3ff;letter-spacing:1px;filter:drop-shadow(0 0 10px rgba(168,139,255,0.7));user-select:none}
+.logo-box{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#a88bff,#e6c07b);display:flex;align-items:center;justify-content:center;font-weight:900;color:#0b0710;font-size:21px;box-shadow:0 0 10px rgba(168,139,255,0.5)}
+main{padding:20px;position:relative;z-index:5}
+.manga-header{display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 20px 12px;position:relative}
+.manga-header::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at center, rgba(168,139,255,0.06), transparent 70%);z-index:1}
+.cover{width:220px;height:310px;object-fit:cover;border-radius:14px;box-shadow:0 0 50px rgba(168,139,255,0.35);z-index:2;position:relative}
+.manga-title{font-size:30px;font-weight:800;margin-top:14px;background:linear-gradient(90deg,#a88bff,#e6c07b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 10px rgba(168,139,255,0.5);z-index:2;position:relative}
+.tabs{display:flex;gap:10px;justify-content:center;margin-top:18px}
+.tabs button{background:rgba(168,139,255,0.1);border:1px solid rgba(168,139,255,0.3);color:#cbb9ff;padding:10px 18px;border-radius:8px;cursor:pointer}
+.tabs button.active{background:rgba(168,139,255,0.3)}
+.tab-content{display:none;margin-top:16px}
+.tab-content.active{display:block}
+.manga-description{max-width:900px;margin:14px auto;color:#bdb3d6;font-size:16px;line-height:1.8;text-align:center}
+.tags-container{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.tag{background:rgba(168,139,255,0.1);border:1px solid rgba(168,139,255,0.3);color:#cbb9ff;padding:6px 14px;border-radius:20px;font-size:14px;cursor:pointer}
+.tag:hover{background:rgba(168,139,255,0.25);color:#fff;transform:scale(1.05)}
+.icon-bar{display:flex;justify-content:center;gap:40px;margin-bottom:20px;margin-top:20px}
+.icon-item{text-align:center;cursor:pointer;transition:0.3s}
+.icon-item div:first-child{font-size:30px;transition:0.3s}
+.icon-item:hover div:first-child{transform:scale(1.3);filter:drop-shadow(0 0 10px #a88bff)}
+.icon-item:hover div:last-child{color:#fff}
+.thank-message{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(0);background:linear-gradient(90deg,#a88bff,#e6c07b);color:#0b0710;padding:10px 22px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 0 14px rgba(168,139,255,0.6);opacity:0;transition:opacity 0.6s ease,transform 0.6s ease;z-index:100}
+.thank-message.show{opacity:1;transform:translateX(-50%) translateY(-10px)}
+footer{padding:18px;text-align:center;color:#666;font-size:13px;margin-top:30px}
+</style>
+</head>
+<body>
+<div class="fog"></div>
+<div class="symbols" id="symbols"></div>
+<header>
+  <div class="left-section">
+    <div class="back-btn" onclick="history.back()">⮌ عودة</div>
+    <div class="logo-text">Manga Sanctum</div>
+  </div>
+  <div class="logo-box">MS</div>
+</header>
+<main>
+  <section class="manga-header">
+    <img id="cover" class="cover" src="" alt="غلاف المانجا">
+    <div id="title" class="manga-title">جار التحميل...</div>
+  </section>
+
+  <div class="tabs">
+    <button id="detailsBtn" class="active" onclick="openTab('details')">التفاصيل</button>
+    <button id="chaptersBtn" onclick="openTab('chapters')">الفصول</button>
+  </div>
+
+  <!-- تبويب التفاصيل الجديد -->
+  <div id="details" class="tab-content active">
+    <div class="icon-bar">
+      <div class="icon-item" onclick="goToComments()">
+        <div style="color:#a88bff">💬</div>
+        <div style="color:#cbb9ff;font-size:14px;margin-top:4px">التعليقات</div>
+      </div>
+      <div class="icon-item" onclick="addToLibrary()">
+        <div style="color:#e6c07b">➕</div>
+        <div style="color:#cbb9ff;font-size:14px;margin-top:4px">أضف للمكتبة</div>
+      </div>
+      <div class="icon-item" onclick="openRatingModal()">
+        <div style="color:#FFD700">⭐</div>
+        <div style="color:#cbb9ff;font-size:14px;margin-top:4px">تقييمك</div>
+      </div>
+    </div>
+
+    <div id="description" class="manga-description">لا يوجد وصف متاح.</div>
+    <div id="tagsContainer" class="tags-container"></div>
+  </div>
+
+  <!-- تبويب الفصول -->
+  <div id="chapters" class="tab-content">
+    <div class="search-bar">
+      <input id="chapterSearch" placeholder="ابحث برقم أو عنوان الفصل..." />
+    </div>
+    <div id="chaptersList" class="chapter-list"></div>
+  </div>
+</main>
+
+<footer>© 2025 Manga Sanctum | Realm of Shadows & Light</footer>
+
+<!-- نافذة التقييم المنبثقة -->
+<div id="ratingModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);justify-content:center;align-items:center;z-index:50">
+  <div style="background:#111;padding:20px;border-radius:12px;max-width:360px;width:90%;text-align:center;position:relative">
+    <div style="position:absolute;top:10px;right:12px;cursor:pointer;font-size:20px" onclick="closeRatingModal()">✖</div>
+    <div style="font-weight:700;font-size:18px;margin-bottom:12px;color:#cbb9ff">قيم المانجا</div>
+    <div id="modalUserStars" class="stars-row" style="justify-content:center;margin-bottom:10px"></div>
+    <button onclick="submitRating()" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(90deg,#a88bff,#e6c07b);color:#0b0710;cursor:pointer">تأكيد التقييم</button>
+  </div>
+</div>
+
+<div id="thankMsg" class="thank-message">⭐ تم حفظ تقييمك بنجاح!</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://dxpqkojigblqgwqxwbmg.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg";
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const mangaId=new URLSearchParams(window.location.search).get('manga_id');
+
+function spawnSymbols(){
+  const SYMBOLS=["☽","✦","✶","⛧","☥","♆","卍","⚚"];
+  const c=document.getElementById('symbols'); c.innerHTML='';
+  for(let i=0;i<20;i++){
+    const s=document.createElement('div'); s.className='symbol';
+    s.textContent=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+    s.style.left=(Math.random()*100)+'%'; s.style.top=(Math.random()*100)+'%';
+    s.style.fontSize=(12+Math.random()*22)+'px';
+    s.style.animationDuration=(20+Math.random()*25)+'s';
+    c.appendChild(s);
+  }
+}
+
+function openTab(tab){document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+document.getElementById(tab).classList.add('active');document.getElementById(tab+'Btn').classList.add('active');}
+
+async function loadMangaInfo(){
+  const {data: manga} = await supabase.from('manga').select('*').eq('id', mangaId).maybeSingle();
+  if(!manga) return;
+  document.getElementById('cover').src=manga.cover_url;
+  document.getElementById('title').textContent=manga.title;
+  document.getElementById('description').textContent=manga.description||'لا يوجد وصف متاح.';
+  const tagsContainer=document.getElementById('tagsContainer'); tagsContainer.innerHTML='';
+  (manga.tags||[]).forEach(tag=>{
+    const t=document.createElement('div'); t.className='tag'; t.textContent=tag;
+    t.onclick=()=>alert('بحث عن: '+tag); tagsContainer.appendChild(t);
+  });
+  loadChapters();
+}
+
+async function loadChapters(){
+  const {data: chapters}=await supabase.from('chapters').select('*').eq('manga_id',mangaId).order('id',{ascending:false});
+  const list=document.getElementById('chaptersList'); list.innerHTML='';
+  chapters?.forEach(ch=>{
+    const el=document.createElement('div'); el.className='chapter-item';
+    el.textContent=`${ch.number} - ${ch.title}`; el.onclick=()=>window.location.href=`read.html?chapter_id=${ch.id}`;
+    list.appendChild(el);
+  });
+}
+
+async function addToLibrary(){
+  const me = await getCurrentUser();
+  await supabase.from('library').upsert({manga_id:parseInt(mangaId),user_id:me.id},{onConflict:['manga_id','user_id']});
+  showThankMessage();
+}
+
+function goToComments(){window.location.href=`comments.html?manga_id=${mangaId}`;}
+function openRatingModal(){document.getElementById('ratingModal').style.display='flex';loadModalStars();}
+function closeRatingModal(){document.getElementById('ratingModal').style.display='none';}
+
+async function loadModalStars(){
+  const me = await getCurrentUser();
+  const {data:row} = await supabase.from('manga_ratings').select('rating').eq('manga_id',mangaId).eq('user_id',me.id).maybeSingle();
+  const rating = row?.rating || 0;
+  renderStars(document.getElementById('modalUserStars'), rating, true, val=>window.modalSelectedRating=val);
+}
+
+async function submitRating(){
+  const me = await getCurrentUser();
+  if(!window.modalSelectedRating) return;
+  await supabase.from('manga_ratings').upsert({manga_id:parseInt(mangaId),user_id:me.id,rating:window.modalSelectedRating}, {onConflict:['manga_id','user_id']});
+  closeRatingModal();
+  showThankMessage();
+}
+
+function showThankMessage(){
+  const msg=document.getElementById('thankMsg');
+  msg.classList.add('show');
+  setTimeout(()=>msg.classList.remove('show'),3000);
+}
+
+// مساعدة النجوم
+function renderStars(container,value,clickable=false,onClick){
+  container.innerHTML='';
+  for(let i=1;i<=5;i++){
+    const star=document.createElement('span'); star.textContent='★';
+    star.style.color=i<=value?'#FFD700':'#555'; star.style.fontSize='24px'; star.style.cursor=clickable?'pointer':'default';
+    if(clickable) star.onclick=()=>{value=i;onClick(i);renderStars(container,value,true,onClick);};
+    container.appendChild(star);
+  }
+}
+
+async function getCurrentUser(){const {data:user}=await supabase.auth.getUser(); return user;}
+loadMangaInfo();
+</script>
+</body>
+</html>
