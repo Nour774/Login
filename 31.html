@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manga Sanctum - عرض المانجا</title>
+<link rel="icon" href="images/book.png">
+<style>
+*{box-sizing:border-box;transition:0.25s}
+body{margin:0;font-family:"Cairo",sans-serif;background:#111;color:#eee;overflow-x:hidden}
+header{background:#222;padding:15px;text-align:center;font-size:22px;font-weight:700;letter-spacing:1px}
+.container{max-width:900px;margin:auto;padding:20px}
+.manga-info{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+.manga-info img{width:180px;height:250px;object-fit:cover;border-radius:10px;box-shadow:0 0 10px #0004}
+.manga-text{flex:1}
+.rating-box{margin-top:10px;text-align:center}
+.stars{font-size:22px;color:gold;margin-top:5px}
+button{background:#444;border:none;color:#fff;padding:10px 20px;border-radius:8px;cursor:pointer}
+button:hover{background:#666}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000a;align-items:center;justify-content:center;z-index:50}
+.modal-content{background:#222;padding:25px;border-radius:12px;text-align:center;max-width:300px;width:90%}
+.modal-content h3{margin-bottom:10px}
+.modal-content .stars{font-size:26px;margin:10px 0}
+#thankMsg,#loginMsg{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(0);background:#333;padding:12px 22px;border-radius:8px;opacity:0;transition:all .5s}
+#thankMsg{color:#0f0}
+#loginMsg{color:#f55}
+</style>
+</head>
+<body>
+<header>Manga Sanctum</header>
+
+<div class="container">
+  <div class="manga-info">
+    <img id="cover" src="images/book.png" alt="cover">
+    <div class="manga-text">
+      <h2 id="title">عنوان المانجا</h2>
+      <p id="desc">الوصف هنا...</p>
+      <div class="rating-box">
+        <div>متوسط التقييم: <span id="avgRating">0</span>/10</div>
+        <div id="avgStars" class="stars"></div>
+        <div>( <span id="ratingCount">0</span> تقييم )</div><br>
+        <button id="rateBtn" onclick="openRatingModal()">⭐ تقييمك</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة التقييم -->
+<div id="ratingModal" class="modal">
+  <div class="modal-content">
+    <h3>قيّم المانجا</h3>
+    <div id="rateStars" class="stars"></div>
+    <button onclick="closeRatingModal()">إلغاء</button>
+  </div>
+</div>
+
+<div id="thankMsg">✅ تم حفظ تقييمك بنجاح</div>
+<div id="loginMsg">⚠️ يرجى تسجيل الدخول أولاً</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+const supabase = window.supabase.createClient(
+  "https://YOUR-PROJECT.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cHFrb2ppZ2JscWd3cXh3Ym1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTUyMTEsImV4cCI6MjA3NDI3MTIxMX0.KVfAmSbRS1-FIEaX7C_n-GQ-MyaSGa7goKFO9wRtxkg"
+);
+const mangaId = parseInt(new URLSearchParams(location.search).get("id")) || 1;
+let currentUser = null;
+
+/* --- تحميل المستخدم الحالي --- */
+async function getCurrentUser(){
+  const { data } = await supabase.auth.getUser();
+  currentUser = data?.user || null;
+}
+
+/* --- تحميل بيانات المانجا (مثال مبسط) --- */
+async function loadMangaInfo(){
+  const { data, error } = await supabase
+    .from("manga_list")
+    .select("title,description,cover_url")
+    .eq("id", mangaId)
+    .single();
+  if(data){
+    document.getElementById("title").textContent = data.title;
+    document.getElementById("desc").textContent = data.description || "";
+    if(data.cover_url) document.getElementById("cover").src = data.cover_url;
+  }
+}
+
+/* --- تحميل التقييمات --- */
+async function loadRatings(){
+  const { data, error } = await supabase
+    .from("manga_ratings")
+    .select("rating")
+    .eq("manga_id", mangaId);
+
+  if(error){console.error(error);return;}
+
+  if(!data || data.length === 0){
+    document.getElementById("avgRating").textContent = "0";
+    document.getElementById("ratingCount").textContent = "0";
+    document.getElementById("avgStars").innerHTML = "";
+    return;
+  }
+
+  const total = data.reduce((a,b)=>a+b.rating,0);
+  const avg = total / data.length;
+  const avg10 = avg * 2;
+  document.getElementById("avgRating").textContent = avg10.toFixed(1);
+  document.getElementById("ratingCount").textContent = data.length;
+  const fullStars = Math.round(avg);
+  document.getElementById("avgStars").innerHTML = "★".repeat(fullStars) + "☆".repeat(5-fullStars);
+}
+
+/* --- فتح وإغلاق نافذة التقييم --- */
+function openRatingModal(){
+  if(!currentUser){ showLoginMsg(); return; }
+  document.getElementById("ratingModal").style.display="flex";
+}
+function closeRatingModal(){
+  document.getElementById("ratingModal").style.display="none";
+}
+
+/* --- عرض رسالة تسجيل الدخول أولاً --- */
+function showLoginMsg(){
+  const m=document.getElementById("loginMsg");
+  m.style.opacity='1';
+  m.style.transform='translateX(-50%) translateY(-10px)';
+  setTimeout(()=>{m.style.opacity='0';m.style.transform='translateX(-50%) translateY(0)'},2000);
+}
+
+/* --- إنشاء النجوم داخل النافذة --- */
+function renderModalStars(){
+  const box=document.getElementById("rateStars");
+  box.innerHTML="";
+  for(let i=1;i<=5;i++){
+    const s=document.createElement("span");
+    s.textContent="☆";
+    s.style.cursor="pointer";
+    s.onclick=()=>submitRating(i);
+    s.onmouseover=()=>highlightStars(i);
+    box.appendChild(s);
+  }
+}
+function highlightStars(n){
+  const spans=document.querySelectorAll("#rateStars span");
+  spans.forEach((s,idx)=>s.textContent = idx < n ? "★" : "☆");
+}
+
+/* --- إرسال التقييم --- */
+async function submitRating(rating){
+  if(!currentUser){ showLoginMsg(); return; }
+  await supabase.from("manga_ratings")
+    .upsert({ manga_id:mangaId, user_id:currentUser.id, rating },
+            { onConflict:["manga_id","user_id"] });
+  closeRatingModal();
+  const msg=document.getElementById("thankMsg");
+  msg.style.opacity='1';
+  msg.style.transform='translateX(-50%) translateY(-10px)';
+  setTimeout(()=>{msg.style.opacity='0';msg.style.transform='translateX(-50%) translateY(0)'},1800);
+  loadRatings();
+}
+
+/* --- التشغيل عند البدء --- */
+getCurrentUser();
+loadMangaInfo();
+loadRatings();
+renderModalStars();
+</script>
+</body>
+</html>
