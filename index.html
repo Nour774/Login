@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>السماء السوداء - لوحة اختبار الـ API</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; background-color: #121212; color: #e0e0e0; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; background: #1e1e1e; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        select, input, textarea, button { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #333; background: #252525; color: #fff; box-sizing: border-box; }
+        button { background-color: #0076ff; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background-color: #0056b3; }
+        #status { margin-top: 15px; padding: 10px; border-radius: 5px; font-weight: bold; }
+        .success { background: #1b4332; color: #75f5a2; }
+        .info { background: #14213d; color: #4cc9f0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🌌 اختبار محرك تجميع العمليات (15 ثانية)</h2>
+    <p>السيرفر المستهدف: <code>Nour774-blacksky-api.hf.space</code></p>
+    
+    <label>نوع العملية:</label>
+    <select id="action">
+        <option value="create">إضافة ملف جديد (Create)</option>
+        <option value="update">تعديل ملف حالي (Update)</option>
+        <option value="delete">حذف ملف (Delete)</option>
+    </select>
+
+    <label>مسار الملف داخل المستودع (مثال: novels/story1.json):</label>
+    <input type="text" id="filePath" placeholder="novels/chapter1.js" value="novels/test_file.js">
+
+    <label id="contentLabel">محتوى الملف (نص أو JSON):</label>
+    <textarea id="content" rows="6" placeholder="اكتب محتوى الفصل أو الفهرس هنا...">module.exports = { title: "الفصل الأول", content: "بداية السماء السوداء..." };</textarea>
+
+    <button onclick="sendAction()">إرسال العملية للطابور</button>
+
+    <div id="status" style="display:none;"></div>
+</div>
+
+<script>
+    // إخفاء صندوق المحتوى عند اختيار عملية الحذف تلقائياً
+    document.getElementById('action').addEventListener('change', function() {
+        const contentField = document.getElementById('content');
+        const contentLabel = document.getElementById('contentLabel');
+        if (this.value === 'delete') {
+            contentField.style.display = 'none';
+            contentLabel.style.display = 'none';
+        } else {
+            contentField.style.display = 'block';
+            contentLabel.style.display = 'block';
+        }
+    });
+
+    async function sendAction() {
+        const action = document.getElementById('action').value;
+        const filePath = document.getElementById('filePath').value;
+        const content = document.getElementById('content').value;
+        const statusDiv = document.getElementById('status');
+
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'info';
+        statusDiv.innerText = 'جاري إرسال الطلب للسيرفر السحابي...';
+
+        const apiUrl = 'https://Nour774-blacksky-api.hf.space/api/sync';
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: action,
+                    filePath: filePath,
+                    content: action === 'delete' ? null : content
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                statusDiv.className = 'success';
+                statusDiv.innerHTML = `<b>استجابة السيرفر الفورية:</b><br>${result.message}<br><small>تنبيه: انتظر 15 ثانية ثم اذهب لمستودع GitHub لترى الـ Commit المجمع قد ظهر هناك!</small>`;
+            } else {
+                throw new Error(result.error || 'حدث خطأ ما في السيرفر');
+            }
+
+        } catch (error) {
+            statusDiv.style.backgroundColor = '#4a151b';
+            statusDiv.style.color = '#ff8585';
+            statusDiv.innerText = 'خطأ أثناء الاتصال بالـ API: ' + error.message;
+        }
+    }
+</script>
+
+</body>
+</html>
