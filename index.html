@@ -3,96 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>السماء السوداء - اختبار الـ API</title>
+    <title>السماء السوداء - لوحة التحكم الذكية</title>
     <style>
-        body { font-family: Tahoma, sans-serif; background-color: #121212; color: #e0e0e0; padding: 20px; text-align: center; }
-        .container { max-width: 600px; margin: 0 auto; background: #1e1e1e; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        select, input, textarea, button { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #333; background: #252525; color: #fff; box-sizing: border-box; }
-        button { background-color: #0076ff; font-weight: bold; cursor: pointer; border: none; }
-        button:hover { background-color: #0056b3; }
-        #status { margin-top: 15px; padding: 10px; border-radius: 5px; font-weight: bold; }
-        .success { background: #1b4332; color: #75f5a2; }
-        .info { background: #14213d; color: #4cc9f0; }
+        body { font-family: Tahoma, sans-serif; background-color: #0c0c0d; color: #e2e8f0; padding: 20px; }
+        .container { max-width: 700px; margin: 0 auto; background: #131415; padding: 25px; border-radius: 12px; border: 1px solid #27272a; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+        h2 { text-align: center; color: #f8fafc; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #71717a; font-size: 14px; margin-bottom: 25px; }
+        
+        /* أزرار التبويب */
+        .tabs { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #27272a; }
+        .tab-btn { background: none; border: none; color: #a1a1aa; padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .tab-btn.active { color: #3b82f6; border-bottom: 2px solid #3b82f6; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        label { display: block; margin-top: 12px; font-weight: bold; color: #cbd5e1; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #3f3f46; background: #1c1d1f; color: #fff; box-sizing: border-box; }
+        input:focus, select:focus, textarea:focus { border-color: #3b82f6; outline: none; }
+        
+        .row { display: flex; gap: 15px; }
+        .row .field { flex: 1; }
+        
+        button.submit-btn { width: 100%; padding: 12px; margin-top: 25px; border-radius: 6px; border: none; background-color: #2563eb; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button.submit-btn:hover { background-color: #1d4ed8; }
+        
+        #status { margin-top: 20px; padding: 12px; border-radius: 6px; font-weight: bold; text-align: center; display: none; }
+        .success { background: #064e3b; color: #6ee7b7; border: 1px solid #047857; }
+        .info { background: #1e3a8a; color: #93c5fd; border: 1px solid #1d4ed8; }
+        .error { background: #7f1d1d; color: #fca5a5; border: 1px solid #b91c1c; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2> root </h2>
-    <h2>🌌 اختبار محرك تجميع العمليات (15 ثانية)</h2>
-    <p>السيرفر المستهدف: <code>Nour774-blacksky-api.hf.space</code></p>
+    <h2>🌌 محرك إدارة بيانات السماء السوداء</h2>
+    <div class="subtitle">السيرفر المستهدف: <code>nour774-blacksky-api.hf.space</code></div>
     
-    <label>نوع العملية:</label>
-    <select id="action">
-        <option value="create">إضافة ملف جديد (Create)</option>
-        <option value="update">تعديل ملف حالي (Update)</option>
-        <option value="delete">حذف ملف (Delete)</option>
-    </select>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('add-novel-tab', this)">إضافة عمل جديد</button>
+        <button class="tab-btn" onclick="switchTab('add-chapter-tab', this)">إضافة فصل</button>
+        <button class="tab-btn" onclick="switchTab('update-info-tab', this)">تعديل سريع</button>
+    </div>
 
-    <label>مسار الملف داخل المستودع (مثال: novels/story1.json):</label>
-    <input type="text" id="filePath" placeholder="novels/chapter1.js" value="novels/test_file.js">
+    <div id="add-novel-tab" class="tab-content active">
+        <div class="row">
+            <div class="field">
+                <label>الاسم الإنجليزي:</label>
+                <input type="text" id="n_english" value="Sub Sovereign">
+            </div>
+            <div class="field">
+                <label>الاسم العربي:</label>
+                <input type="text" id="n_arabic" value="السيادة الفرعية">
+            </div>
+        </div>
+        <div class="row">
+            <div class="field">
+                <label>الرابط اللطيف (Slug):</label>
+                <input type="text" id="n_slug" value="sub-sovereign">
+            </div>
+            <div class="field">
+                <label>المؤلف:</label>
+                <input type="text" id="n_author" value="Alex">
+            </div>
+        </div>
+        <div class="row">
+            <div class="field">
+                <label>التصنيفات (أرقام مفصولة بفاصلة):</label>
+                <input type="text" id="n_genres" value="1,8">
+            </div>
+            <div class="field">
+                <label>الحالة:</label>
+                <select id="n_status">
+                    <option value="0">مستمرة</option>
+                    <option value="1">مكتملة</option>
+                    <option value="2">متوقفة</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="field">
+                <label>امتداد الغلاف (إذا سيتم رفعه):</label>
+                <select id="n_coverType">
+                    <option value="png">png</option>
+                    <option value="jpg">jpg</option>
+                    <option value="webp">webp</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>رابط غلاف خارجي (اختياري - يلتهم الامتداد):</label>
+                <input type="text" id="n_coverUrl" placeholder="https://... اختياري">
+            </div>
+        </div>
+        <div class="row">
+            <div class="field">
+                <label>معرف الرافع (Uploader ID):</label>
+                <input type="number" id="n_uploaderId" value="905">
+            </div>
+            <div class="field">
+                <label>اسم الرافع:</label>
+                <input type="text" id="n_uploaderUsername" value="Hyeon_Woo">
+            </div>
+        </div>
+        <label>الوصف (Description):</label>
+        <textarea id="n_description" rows="4">قصة تتحدث عن العوالم المتداخلة والسيادة المطلقة المفقودة في الفراغ...</textarea>
+        
+        <button class="submit-btn" onclick="submitNovel()">إنشاء العمل وجدولته فوراً</button>
+    </div>
 
-    <label id="contentLabel">محتوى الملف (نص أو JSON):</label>
-    <textarea id="content" rows="6" placeholder="اكتب محتوى الفصل أو الفهرس هنا...">module.exports = { title: "الفصل الأول", content: "بداية السماء السوداء..." };</textarea>
+    <div id="add-chapter-tab" class="tab-content">
+        <div class="row">
+            <div class="field">
+                <label>معرف العمل الرقمي (Novel ID):</label>
+                <input type="number" id="c_novelId" value="1" placeholder="مثال: 24">
+            </div>
+            <div class="field">
+                <label>رقم الفصل:</label>
+                <input type="number" id="c_num" value="1">
+            </div>
+        </div>
+        <div class="row">
+            <div class="field">
+                <label>عنوان الفصل:</label>
+                <input type="text" id="c_title" value="بداية الفراغ">
+            </div>
+            <div class="field">
+                <label>نوع المحتوى:</label>
+                <select id="c_type">
+                    <option value="text">نصي (رواية)</option>
+                    <option value="images">صور (مانجا)</option>
+                </select>
+            </div>
+        </div>
+        <label>المساهم (Contributor):</label>
+        <input type="text" id="c_contributor" value="Alex_99">
+        
+        <label>محتوى أو معرف بيانات الفصل (Data):</label>
+        <textarea id="c_data" rows="5" placeholder="اكتب نص الفصل هنا، أو حزمة روابط الصور الحاملة للفصل...">هنا يكتب نص الفصل بالكامل الذي سيتم تخزينه في المجلد الفرعي...</textarea>
+        
+        <button class="submit-btn" onclick="submitChapter()">حقن الفصل وتحديث العدادات</button>
+    </div>
 
-    <button onclick="sendAction()">إرسال العملية للطابور</button>
+    <div id="update-info-tab" class="tab-content">
+        <label>معرف العمل المراد تعديله (Novel ID):</label>
+        <input type="number" id="u_novelId" value="1">
+        
+        <label>الحقل المراد تعديله:</label>
+        <select id="u_field">
+            <option value="arabicName">الاسم العربي</option>
+            <option value="englishName">الاسم الإنجليزي</option>
+            <option value="status">الحالة (0، 1، 2)</option>
+            <option value="author">المؤلف</option>
+            <option value="slug">الـ Slug</option>
+        </select>
+        
+        <label>القيمة الجديدة:</label>
+        <input type="text" id="u_newValue" value="الاسم المعدل الجديد">
+        
+        <button class="submit-btn" onclick="submitUpdate()">تطبيق التعديل الفهرسي</button>
+    </div>
 
-    <div id="status" style="display:none;"></div>
+    <div id="status"></div>
 </div>
 
 <script>
-    // إخفاء صندوق المحتوى عند اختيار عملية الحذف تلقائياً
-    document.getElementById('action').addEventListener('change', function() {
-        const contentField = document.getElementById('content');
-        const contentLabel = document.getElementById('contentLabel');
-        if (this.value === 'delete') {
-            contentField.style.display = 'none';
-            contentLabel.style.display = 'none';
-        } else {
-            contentField.style.display = 'block';
-            contentLabel.style.display = 'block';
-        }
-    });
+    const BASE_URL = 'https://nour774-blacksky-api.hf.space/api';
 
-    async function sendAction() {
-        const action = document.getElementById('action').value;
-        const filePath = document.getElementById('filePath').value;
-        const content = document.getElementById('content').value;
+    // التبديل بين التبويبات
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+        document.getElementById('status').style.display = 'none';
+    }
+
+    // دالة الإرسال العامة للـ API
+    async function sendRequest(endpoint, bodyData) {
         const statusDiv = document.getElementById('status');
-
         statusDiv.style.display = 'block';
         statusDiv.className = 'info';
-        statusDiv.innerText = 'جاري إرسال الطلب للسيرفر السحابي...';
-
-        const apiUrl = 'https://nour774-blacksky-api.hf.space/api/sync';
+        statusDiv.innerText = 'جاري ضخ العملية إلى طابور الذاكرة السحابي...';
 
         try {
-            const response = await fetch(apiUrl, {
+            const response = await fetch(`${BASE_URL}/${endpoint}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: action,
-                    filePath: filePath,
-                    content: action === 'delete' ? null : content
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyData)
             });
-
             const result = await response.json();
-
             if (response.ok) {
                 statusDiv.className = 'success';
-                statusDiv.innerHTML = `<b>استجابة السيرفر الفورية:</b><br>${result.message}<br><small>تنبيه: انتظر 15 ثانية ثم اذهب لمستودع GitHub لترى الـ Commit المجمع قد ظهر هناك!</small>`;
+                statusDiv.innerHTML = `<b>نجاح العمل الحسابي:</b><br>${result.message}`;
             } else {
-                throw new Error(result.error || 'حدث خطأ ما في السيرفر');
+                throw new Error(result.error || 'فشلت معالجة الطلب');
             }
-
         } catch (error) {
-            statusDiv.style.backgroundColor = '#4a151b';
-            statusDiv.style.color = '#ff8585';
-            statusDiv.innerText = 'خطأ أثناء الاتصال بالـ API: ' + error.message;
+            statusDiv.className = 'error';
+            statusDiv.innerText = 'خطأ اتصال: ' + error.message;
         }
+    }
+
+    // 1. إرسال إضافة عمل جديد
+    function submitNovel() {
+        const genresArr = document.getElementById('n_genres').value.split(',').map(n => parseInt(n.trim()));
+        const body = {
+            englishName: document.getElementById('n_english').value,
+            arabicName: document.getElementById('n_arabic').value,
+            slug: document.getElementById('n_slug').value,
+            genres: genresArr,
+            status: document.getElementById('n_status').value,
+            rating: 10.0, // تقييم مبدئي مثالي
+            views: 0,
+            author: document.getElementById('n_author').value,
+            coverType: document.getElementById('n_coverType').value,
+            coverUrl: document.getElementById('n_coverUrl').value || null,
+            uploaderId: document.getElementById('n_uploaderId').value,
+            uploaderUsername: document.getElementById('n_uploaderUsername').value,
+            description: document.getElementById('n_description').value
+        };
+        sendRequest('add-novel', body);
+    }
+
+    // 2. إرسال إضافة فصل
+    function submitChapter() {
+        const body = {
+            novelId: document.getElementById('c_novelId').value,
+            chapterNum: parseFloat(document.getElementById('c_num').value),
+            chapterTitle: document.getElementById('c_title').value,
+            chapterType: document.getElementById('c_type').value,
+            contributor: document.getElementById('c_contributor').value,
+            chapterData: document.getElementById('c_data').value
+        };
+        sendRequest('add-chapter', body);
+    }
+
+    // 3. إرسال تعديل سريع
+    function submitUpdate() {
+        let val = document.getElementById('u_newValue').value;
+        // إذا كان الحقل هو الحالة، نقوم بتحويل القيمة لرقم
+        if (document.getElementById('u_field').value === 'status') val = parseInt(val);
+        
+        const body = {
+            novelId: document.getElementById('u_novelId').value,
+            field: document.getElementById('u_field').value,
+            newValue: val
+        };
+        sendRequest('update-info', body);
     }
 </script>
 
