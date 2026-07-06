@@ -3,253 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>السماء السوداء - لوحة التحكم الذكية</title>
+    <title>السماء السوداء - محاكي الضغط والاصطدام المفرط</title>
     <style>
-        body { font-family: Tahoma, sans-serif; background-color: #0c0c0d; color: #e2e8f0; padding: 20px; }
-        .container { max-width: 700px; margin: 0 auto; background: #131415; padding: 25px; border-radius: 12px; border: 1px solid #27272a; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
-        h2 { text-align: center; color: #f8fafc; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #71717a; font-size: 14px; margin-bottom: 25px; }
-        
-        /* أزرار التبويب */
-        .tabs { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #27272a; }
-        .tab-btn { background: none; border: none; color: #a1a1aa; padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .tab-btn.active { color: #3b82f6; border-bottom: 2px solid #3b82f6; }
-        
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        
-        label { display: block; margin-top: 12px; font-weight: bold; color: #cbd5e1; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #3f3f46; background: #1c1d1f; color: #fff; box-sizing: border-box; }
-        input:focus, select:focus, textarea:focus { border-color: #3b82f6; outline: none; }
-        
-        .row { display: flex; gap: 15px; }
-        .row .field { flex: 1; }
-        
-        button.submit-btn { width: 100%; padding: 12px; margin-top: 25px; border-radius: 6px; border: none; background-color: #2563eb; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button.submit-btn:hover { background-color: #1d4ed8; }
-        
-        #status { margin-top: 20px; padding: 12px; border-radius: 6px; font-weight: bold; text-align: center; display: none; }
-        .success { background: #064e3b; color: #6ee7b7; border: 1px solid #047857; }
-        .info { background: #1e3a8a; color: #93c5fd; border: 1px solid #1d4ed8; }
-        .error { background: #7f1d1d; color: #fca5a5; border: 1px solid #b91c1c; }
+        body { font-family: Tahoma, sans-serif; background-color: #09090b; color: #f4f4f5; padding: 20px; }
+        .container { max-width: 750px; margin: 0 auto; background: #18181b; padding: 30px; border-radius: 12px; border: 1px solid #27272a; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
+        h2 { text-align: center; color: #ef4444; margin-bottom: 5px; }
+        .status-box { background: #27272a; padding: 20px; border-radius: 8px; margin: 20px 0; font-size: 18px; }
+        .counter { font-size: 32px; font-weight: bold; color: #3b82f6; text-align: center; margin: 10px 0; }
+        button.stress-btn { width: 100%; padding: 15px; border: none; border-radius: 8px; background: #dc2626; color: white; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button.stress-btn:hover { background: #b91c1c; }
+        #logs { max-height: 200px; overflow-y: auto; background: #09090b; padding: 10px; font-family: monospace; font-size: 12px; border-radius: 6px; border: 1px solid #3f3f46; color: #a1a1aa; margin-top: 15px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🌌 محرك إدارة بيانات السماء السوداء</h2>
-    <div class="subtitle">السيرفر المستهدف: <code>nour774-blacksky-api.hf.space</code></div>
-    
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('add-novel-tab', this)">إضافة عمل جديد</button>
-        <button class="tab-btn" onclick="switchTab('add-chapter-tab', this)">إضافة فصل</button>
-        <button class="tab-btn" onclick="switchTab('update-info-tab', this)">تعديل سريع</button>
+    <h2>⚡ نظام محاكاة واختبار الضغط الأقصى</h2>
+    <p style="text-align:center; color:#a1a1aa;">سيتم قصف السيرفر بـ 1000 طلب إدخال مكثف متوازي خلال ثوانٍ معدودة لاختبار الاصطدامات والحدود المعمارية.</p>
+
+    <div class="status-box">
+        <div>إجمالي الطلبات المطلوبة في الدفعة: <span style="float:left; color:#fff;">1000 طلب</span></div>
+        <div style="margin-top:10px;">الطلبات التي تم إطلاقها بنجاح للجو:</div>
+        <div class="counter" id="sentCount">0</div>
+        <div>الحالة الحالية: <span id="runStatus" style="color:#e4e4e7; font-weight:bold;">مستعد للهجوم</span></div>
     </div>
 
-    <div id="add-novel-tab" class="tab-content active">
-        <div class="row">
-            <div class="field">
-                <label>الاسم الإنجليزي:</label>
-                <input type="text" id="n_english" value="Sub Sovereign">
-            </div>
-            <div class="field">
-                <label>الاسم العربي:</label>
-                <input type="text" id="n_arabic" value="السيادة الفرعية">
-            </div>
-        </div>
-        <div class="row">
-            <div class="field">
-                <label>الرابط اللطيف (Slug):</label>
-                <input type="text" id="n_slug" value="sub-sovereign">
-            </div>
-            <div class="field">
-                <label>المؤلف:</label>
-                <input type="text" id="n_author" value="Alex">
-            </div>
-        </div>
-        <div class="row">
-            <div class="field">
-                <label>التصنيفات (أرقام مفصولة بفاصلة):</label>
-                <input type="text" id="n_genres" value="1,8">
-            </div>
-            <div class="field">
-                <label>الحالة:</label>
-                <select id="n_status">
-                    <option value="0">مستمرة</option>
-                    <option value="1">مكتملة</option>
-                    <option value="2">متوقفة</option>
-                </select>
-            </div>
-        </div>
-        <div class="row">
-            <div class="field">
-                <label>امتداد الغلاف (إذا سيتم رفعه):</label>
-                <select id="n_coverType">
-                    <option value="png">png</option>
-                    <option value="jpg">jpg</option>
-                    <option value="webp">webp</option>
-                </select>
-            </div>
-            <div class="field">
-                <label>رابط غلاف خارجي (اختياري - يلتهم الامتداد):</label>
-                <input type="text" id="n_coverUrl" placeholder="https://... اختياري">
-            </div>
-        </div>
-        <div class="row">
-            <div class="field">
-                <label>معرف الرافع (Uploader ID):</label>
-                <input type="number" id="n_uploaderId" value="905">
-            </div>
-            <div class="field">
-                <label>اسم الرافع:</label>
-                <input type="text" id="n_uploaderUsername" value="Hyeon_Woo">
-            </div>
-        </div>
-        <label>الوصف (Description):</label>
-        <textarea id="n_description" rows="4">قصة تتحدث عن العوالم المتداخلة والسيادة المطلقة المفقودة في الفراغ...</textarea>
-        
-        <button class="submit-btn" onclick="submitNovel()">إنشاء العمل وجدولته فوراً</button>
-    </div>
+    <button class="stress-btn" onclick="startHyperStressTest()">🚀 إطلاق هجوم الـ 1000 طلب المتوازي</button>
 
-    <div id="add-chapter-tab" class="tab-content">
-        <div class="row">
-            <div class="field">
-                <label>معرف العمل الرقمي (Novel ID):</label>
-                <input type="number" id="c_novelId" value="1" placeholder="مثال: 24">
-            </div>
-            <div class="field">
-                <label>رقم الفصل:</label>
-                <input type="number" id="c_num" value="1">
-            </div>
-        </div>
-        <div class="row">
-            <div class="field">
-                <label>عنوان الفصل:</label>
-                <input type="text" id="c_title" value="بداية الفراغ">
-            </div>
-            <div class="field">
-                <label>نوع المحتوى:</label>
-                <select id="c_type">
-                    <option value="text">نصي (رواية)</option>
-                    <option value="images">صور (مانجا)</option>
-                </select>
-            </div>
-        </div>
-        <label>المساهم (Contributor):</label>
-        <input type="text" id="c_contributor" value="Alex_99">
-        
-        <label>محتوى أو معرف بيانات الفصل (Data):</label>
-        <textarea id="c_data" rows="5" placeholder="اكتب نص الفصل هنا، أو حزمة روابط الصور الحاملة للفصل...">هنا يكتب نص الفصل بالكامل الذي سيتم تخزينه في المجلد الفرعي...</textarea>
-        
-        <button class="submit-btn" onclick="submitChapter()">حقن الفصل وتحديث العدادات</button>
-    </div>
-
-    <div id="update-info-tab" class="tab-content">
-        <label>معرف العمل المراد تعديله (Novel ID):</label>
-        <input type="number" id="u_novelId" value="1">
-        
-        <label>الحقل المراد تعديله:</label>
-        <select id="u_field">
-            <option value="arabicName">الاسم العربي</option>
-            <option value="englishName">الاسم الإنجليزي</option>
-            <option value="status">الحالة (0، 1، 2)</option>
-            <option value="author">المؤلف</option>
-            <option value="slug">الـ Slug</option>
-        </select>
-        
-        <label>القيمة الجديدة:</label>
-        <input type="text" id="u_newValue" value="الاسم المعدل الجديد">
-        
-        <button class="submit-btn" onclick="submitUpdate()">تطبيق التعديل الفهرسي</button>
-    </div>
-
-    <div id="status"></div>
+    <div id="logs">بانتظار إشارة البدء...</div>
 </div>
 
 <script>
-    const BASE_URL = 'https://nour774-blacksky-api.hf.space/api';
-
-    // التبديل بين التبويبات
-    function switchTab(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        btn.classList.add('active');
-        document.getElementById('status').style.display = 'none';
+    const API_URL = 'https://nour774-blacksky-api.hf.space/api';
+    
+    // دالة لتوليد نص عشوائي يحتوي على عدد الكلمات المطلوبة (حماية للذاكرة وباقة الإرسال)
+    function generateLargeContent(wordCount) {
+        const words = ["سماء", "سوداء", "فراغ", "أكوان", "أبعاد", "سيادة", "طاقة", "زراعة", "خلود", "قتال", "مملكة", "عاهل", "قوة", "مستمر"];
+        let result = [];
+        for (let i = 0; i < wordCount; i++) {
+            result.push(words[Math.floor(Math.random() * words.length)]);
+        }
+        return result.join(" ");
     }
 
-    // دالة الإرسال العامة للـ API
-    async function sendRequest(endpoint, bodyData) {
-        const statusDiv = document.getElementById('status');
-        statusDiv.style.display = 'block';
-        statusDiv.className = 'info';
-        statusDiv.innerText = 'جاري ضخ العملية إلى طابور الذاكرة السحابي...';
+    async function startHyperStressTest() {
+        const logDiv = document.getElementById('logs');
+        const sentCounter = document.getElementById('sentCount');
+        const runStatus = document.getElementById('runStatus');
+        
+        logDiv.innerHTML = "=== بدء توليد وتفجير البيانات ===<br>";
+        runStatus.innerText = "جاري القصف المكثف... 🔥";
+        runStatus.style.color = "#ef4444";
+        
+        let sent = 0;
+        const totalRequests = 1000;
+        
+        // تجهيز مصفوفة الوعود (Promises) للإرسال المتوازي الصاعق
+        let promises = [];
 
-        try {
-            const response = await fetch(`${BASE_URL}/${endpoint}`, {
+        // توليد نص الفصل الثابت (1500 كلمة فما فوق) مرة واحدة لتوفير معالجة المتصفح
+        const heavyChapterContent = generateLargeContent(1550);
+
+        for (let i = 1; i <= totalRequests; i++) {
+            let endpoint = '';
+            let bodyData = {};
+
+            // خلط الطلبات: طلب إضافة رواية، يليه طلبات إضافة فصول متتابعة لنفس الرواية أو روايات مختلفة
+            if (i % 5 === 0) {
+                // إرسال طلب إضافة رواية جديدة
+                endpoint = 'add-novel';
+                bodyData = {
+                    englishName: `Stress Novel ${i}`,
+                    arabicName: `رواية الضغط ${i}`,
+                    slug: `stress-novel-${i}`,
+                    genres: [1, 8, 16],
+                    status: 0,
+                    author: "StressBot",
+                    coverType: "png",
+                    uploaderId: 777,
+                    uploaderUsername: "Chaos_Engine",
+                    description: "وصف طويل تم توليده لاختبار قوة تحمل المستودع والملفات."
+                };
+            } else {
+                // إرسال طلب حقن فصل
+                endpoint = 'add-chapter';
+                // سنفترض توزيع الفصول على روايات بمعرفات عشوائية أو متقاربة لفرض تداخل البيانات
+                const targetNovelId = Math.floor(Math.random() * 20) + 1; 
+                bodyData = {
+                    novelId: targetNovelId,
+                    chapterNum: i,
+                    chapterTitle: `الفصل العاصف رقم ${i}`,
+                    contributor: "Hacker_X",
+                    content: heavyChapterContent
+                };
+            }
+
+            // إرسال فوري دون انتظار (Fire and Forget) لكي تصطدم الطلبات في نفس الأجزاء من الثانية!
+            const requestPromise = fetch(`${API_URL}/${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyData)
+            }).then(res => {
+                sent++;
+                sentCounter.innerText = sent;
+                if (sent % 100 === 0) {
+                    logDiv.innerHTML += `[نجاح] تم حقن واستقبال ${sent} طلب في ذاكرة السيرفر السحابي.<br>`;
+                    logDiv.scrollTop = logDiv.scrollHeight;
+                }
+            }).catch(err => {
+                logDiv.innerHTML += `<span style="color:#f87171;">[خطأ اتصال] فشل طلب: ${err.message}</span><br>`;
             });
-            const result = await response.json();
-            if (response.ok) {
-                statusDiv.className = 'success';
-                statusDiv.innerHTML = `<b>نجاح العمل الحسابي:</b><br>${result.message}`;
-            } else {
-                throw new Error(result.error || 'فشلت معالجة الطلب');
+
+            promises.push(requestPromise);
+            
+            // إحداث توقف متناهي الصغر (أجزاء من الملي ثانية) كل 10 طلبات لخلخلة موجات الإرسال وفحص قوة الـ Event Loop
+            if (i % 10 === 0) {
+                await new Promise(resolve => setTimeout(resolve, 2));
             }
-        } catch (error) {
-            statusDiv.className = 'error';
-            statusDiv.innerText = 'خطأ اتصال: ' + error.message;
         }
-    }
 
-    // 1. إرسال إضافة عمل جديد
-    function submitNovel() {
-        const genresArr = document.getElementById('n_genres').value.split(',').map(n => parseInt(n.trim()));
-        const body = {
-            englishName: document.getElementById('n_english').value,
-            arabicName: document.getElementById('n_arabic').value,
-            slug: document.getElementById('n_slug').value,
-            genres: genresArr,
-            status: document.getElementById('n_status').value,
-            rating: 10.0, // تقييم مبدئي مثالي
-            views: 0,
-            author: document.getElementById('n_author').value,
-            coverType: document.getElementById('n_coverType').value,
-            coverUrl: document.getElementById('n_coverUrl').value || null,
-            uploaderId: document.getElementById('n_uploaderId').value,
-            uploaderUsername: document.getElementById('n_uploaderUsername').value,
-            description: document.getElementById('n_description').value
-        };
-        sendRequest('add-novel', body);
-    }
-
-    // 2. إرسال إضافة فصل
-    function submitChapter() {
-        const body = {
-            novelId: document.getElementById('c_novelId').value,
-            chapterNum: parseFloat(document.getElementById('c_num').value),
-            chapterTitle: document.getElementById('c_title').value,
-            chapterType: document.getElementById('c_type').value,
-            contributor: document.getElementById('c_contributor').value,
-            chapterData: document.getElementById('c_data').value
-        };
-        sendRequest('add-chapter', body);
-    }
-
-    // 3. إرسال تعديل سريع
-    function submitUpdate() {
-        let val = document.getElementById('u_newValue').value;
-        // إذا كان الحقل هو الحالة، نقوم بتحويل القيمة لرقم
-        if (document.getElementById('u_field').value === 'status') val = parseInt(val);
+        // الانتظار حتى تنطلق وتستقر كل الـ 1000 قذيفة في رام Hugging Face
+        await Promise.all(promises);
         
-        const body = {
-            novelId: document.getElementById('u_novelId').value,
-            field: document.getElementById('u_field').value,
-            newValue: val
-        };
-        sendRequest('update-info', body);
+        runStatus.innerText = "اكتمل القصف! بانتظار تجميع الـ 15 ثانية... ⏳";
+        runStatus.style.color = "#3b82f6";
+        logDiv.innerHTML += "<b>=== انتهى الهجوم بنجاح! راقب الآن سجلات الـ Logs في Hugging Face وجيثب لتشاهد المعجزة ===</b><br>";
+        logDiv.scrollTop = logDiv.scrollHeight;
     }
 </script>
 
